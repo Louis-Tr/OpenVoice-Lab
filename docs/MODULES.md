@@ -31,7 +31,18 @@ its public contract, but it should not absorb the other module's responsibility.
 | `config` | Environment/model/deployment configuration. |
 | `health` | Liveness/readiness support. |
 
-## Stage 7 implementation status
+## Deployment packaging
+
+| Boundary | Responsibility |
+| --- | --- |
+| `backend/Dockerfile` | Digest-pinned, dependency-locked, non-root Python/ONNX runtime. |
+| `frontend/Dockerfile` | Reproducible Angular production build and Nginx runtime. |
+| `frontend/nginx.conf` | SPA delivery and same-origin proxy for API, audio, and health. |
+| `model-init` | Download and checksum-verify external model dependencies. |
+| `docker-compose.yml` | Startup ordering, ports, health checks, and persistent volumes. |
+| `.dockerignore` | Keep local dependencies, secrets, weights, and outputs out of image contexts. |
+
+## Stage 8 implementation status
 
 The connected vertical slice is intentionally narrow:
 
@@ -45,7 +56,10 @@ The connected vertical slice is intentionally narrow:
   `SynthesisService` → raw outcomes → aggregates → timestamped JSON.
 - Implemented benchmark product path: Angular trigger → FastAPI job service →
   progress polling → failure recovery → comparison table.
-- Still deferred: durable/distributed job storage and advanced analytics.
+- Implemented deployment path: verified model volume → healthy FastAPI service
+  → Angular/Nginx browser entry point.
+- Still deferred: durable/distributed job storage, multi-replica coordination,
+  model-aware readiness, and advanced analytics.
 
 ## Boundary enforcement
 

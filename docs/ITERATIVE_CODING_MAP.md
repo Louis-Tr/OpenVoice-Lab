@@ -97,10 +97,24 @@ accessible table. The README contains a screenshot from the running product.
 
 ## Stage 8 — Packaging and operations
 
-Add Docker packaging, artifact mounts, deployment configuration, observability,
-and distinct liveness/readiness behavior.
+**Status:** complete.
 
-**Exit evidence:** documented clean-machine startup and health behavior.
+Package the Angular and FastAPI application with digest-pinned base images,
+automatic checksum-verified model provisioning, persistent runtime volumes,
+same-origin proxying, startup dependencies, and service health checks.
+
+**Exit evidence:** from a clean source checkout, `docker compose up` builds the
+images, provisions external model files without adding them to Git, reaches a
+healthy FastAPI process, serves Angular on localhost, and produces playable
+speech through the containerized inference path.
+
+## Stage 9 — Production operations
+
+Add durable benchmark jobs, multi-replica coordination, retention policy,
+structured observability, and model-aware readiness behavior.
+
+**Exit evidence:** operations remain correct across process replacement and
+horizontal scaling, with explicit readiness and artifact-retention policy.
 
 ## Working rule
 

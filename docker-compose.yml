@@ -1,0 +1,71 @@
+name: openvoice-lab
+
+x-backend-image: &backend-image
+  image: openvoice-lab-backend:local
+  build:
+    context: .
+    dockerfile: backend/Dockerfile
+
+x-backend-volumes: &backend-volumes
+  - model-artifacts:/app/model-artifacts
+  - generated-audio:/app/artifacts/audio
+  - benchmark-results:/app/benchmark-results
+
+services:
+  model-init:
+    <<: *backend-image
+    command: ["python", "scripts/download_models.py"]
+    volumes:
+      - model-artifacts:/app/model-artifacts
+    restart: "no"
+
+  backend:
+    <<: *backend-image
+    init: true
+    environment:
+      OPENVOICE_ENVIRONMENT: production
+      OPENVOICE_MODEL_ARTIFACT_DIR: /app/model-artifacts
+      OPENVOICE_GENERATED_AUDIO_DIR: /app/artifacts/audio
+      OPENVOICE_BENCHMARK_RESULT_DIR: /app/benchmark-results
+    volumes: *backend-volumes
+    ports:
+      - "${OPENVOICE_API_PORT:-8000}:8000"
+    depends_on:
+      model-init:
+        condition: service_completed_successfully
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=2).read()",
+        ]
+      interval: 10s
+      timeout: 3s
+      retries: 12
+      start_period: 10s
+    restart: unless-stopped
+
+  frontend:
+    image: openvoice-lab-frontend:local
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+    ports:
+      - "${OPENVOICE_WEB_PORT:-4200}:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--spider", "http://127.0.0.1/health"]
+      interval: 10s
+      timeout: 3s
+      retries: 6
+      start_period: 5s
+    restart: unless-stopped
+
+volumes:
+  model-artifacts:
+  generated-audio:
+  benchmark-results:

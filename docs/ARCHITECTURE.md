@@ -7,11 +7,11 @@ application boundary. The repository begins with stable component boundaries so
 that model runtimes and benchmarking mechanics can evolve without leaking into
 the browser or HTTP controllers.
 
-Stage 7 exposes the Stage 6 evaluation system through a lightweight Angular
-dashboard and asynchronous FastAPI job contract. The browser starts a job,
-polls progress, recovers the latest in-process job after navigation, and renders
-deployment metrics. FP32 and INT8 still receive identical inputs in separate
-worker processes; no evaluation logic moves into Angular or API controllers.
+Stage 8 packages those boundaries as a reproducible Compose application. A
+one-shot initializer owns verified model provisioning, FastAPI owns inference
+and runtime artifacts, and Nginx serves the Angular production build while
+proxying the existing `/api`, `/audio`, and `/health` contracts. Container
+packaging changes deployment mechanics, not application ownership.
 
 ## System spine
 
@@ -210,6 +210,32 @@ The table deliberately limits presentation to average and p95 latency, average
 RTF, peak RSS, and failure count. Detailed raw cases, environment data, corpus
 hash, and audio URLs remain in `BenchmarkResult` for engineering use.
 
+### Deployment boundary
+
+```text
+docker compose up
+  ↓
+model-init (one shot)
+  ↓ download + SHA-256 verification
+model-artifacts named volume
+  ↓ service_completed_successfully
+FastAPI backend ── health check ──> healthy
+  ↓
+Angular/Nginx frontend ── /api + /audio proxy ──> FastAPI
+```
+
+Model weights never enter Git, either image build context, or an image layer.
+The initializer downloads them from the documented upstream release into a
+named volume and refuses checksum mismatches. Generated WAVs and benchmark JSON
+use separate persistent volumes. The backend container runs as an unprivileged
+user; Nginx is the browser-facing same-origin boundary.
+
+Compose startup ordering is evidence based: the backend waits for successful
+artifact verification, and the frontend waits for backend health. Base images
+are pinned by immutable manifest digest, Angular installs from its lockfile,
+and Python installs from a container-specific runtime lock. Deployment
+configuration does not expose model paths or ONNX details to Angular.
+
 ## Primary synthesis request flow
 
 The required request path is:
@@ -257,6 +283,8 @@ WAV referenced by `SynthesisResult`.
    every model receives the same hashed corpus and failures remain raw data.
 6. Model weights, generated audio, and benchmark output are runtime artifacts
    and are excluded from Git.
+7. Containers preserve application boundaries: provisioning owns external
+   weights, FastAPI owns inference, and Nginx owns static delivery and proxying.
 
 ## Composition and future work
 
@@ -264,8 +292,9 @@ WAV referenced by `SynthesisResult`.
 definitions, the cached model loader, the Kokoro engine factory, local audio
 delivery, and the benchmark job service. The CLI and browser job coordinator
 both compose one fresh application per model worker and access the same
-`SynthesisService`. Production job persistence, multi-process coordination,
-retention, and readiness policy remain deliberately deferred.
+`SynthesisService`. Compose now reproduces that runtime on Linux. Durable job
+persistence, multi-replica coordination, retention, and a model-aware readiness
+policy remain deliberately deferred.
 
 The implementation sequence and evidence gates are maintained in
 [`ITERATIVE_CODING_MAP.md`](ITERATIVE_CODING_MAP.md).

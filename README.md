@@ -246,7 +246,67 @@ persisted benchmark result for engineering inspection.
 **Portfolio proof:** engineering evaluation and product presentation of the
 same evidence, connected through explicit API contracts.
 
-## Run the full stack locally
+## Stage 8 — Reproducible Docker deployment
+
+> “I made the inference environment reproducible across development and
+> deployment systems.”
+
+**Responsibility:** package the working product without weakening model,
+artifact, or application boundaries.
+
+```text
+Docker Compose
+  ├── model-init → verified Kokoro artifacts → named volume
+  ├── backend → FastAPI + ONNX Runtime → audio/result volumes
+  └── frontend → Angular production build + Nginx → backend proxy
+```
+
+The Python, Node, and Nginx base images are pinned by digest. Angular installs
+from `package-lock.json`; Python installs from a Linux runtime lock. A
+one-shot initializer downloads the upstream FP32, INT8, and voice files,
+verifies their SHA-256 checksums, and stores them outside Git in the
+`model-artifacts` volume. The backend starts only after that verification
+succeeds, and the frontend starts only after FastAPI passes its health check.
+
+Kokoro model weights are Apache-2.0 licensed. The `kokoro-onnx` wrapper and
+conversion repository are MIT licensed. Exact sources, filenames, and
+checksums are recorded in the [artifact provenance](backend/model-artifacts/README.md).
+
+**Portfolio proof:** AI infrastructure, reproducibility, and deployment
+discipline around the same measured application.
+
+## Run from a fresh clone with Docker
+
+Docker Desktop or Docker Engine with Compose is the only local prerequisite.
+No host Python, virtual environment, Node installation, or manual model setup
+is required.
+
+```bash
+git clone https://github.com/Louis-Tr/OpenVoice-Lab.git
+cd OpenVoice-Lab
+docker compose up
+```
+
+On the first run, Compose builds both images and downloads roughly 470 MB of
+checksum-verified model artifacts into a named volume. Later starts reuse and
+re-verify that volume.
+
+Open `http://localhost:4200`. FastAPI remains directly available at
+`http://localhost:8000`, including:
+
+```bash
+curl http://localhost:8000/health
+# {"status":"healthy"}
+
+curl -X POST http://localhost:8000/api/synthesis \
+  -H "Content-Type: application/json" \
+  -d '{"text":"OpenVoice Lab is running in Docker.","modelId":"kokoro-fp32","voiceId":"af_heart"}'
+```
+
+Stop the stack with `docker compose down`. Generated audio, benchmark results,
+and models remain in named volumes so restarts do not require reprovisioning.
+
+## Run the full stack natively
 
 Once the one-time setup below is complete, start both servers from the repository
 root:
@@ -324,4 +384,5 @@ npm test
 TTS product and evaluation system: Angular synthesis and benchmark interfaces,
 FastAPI orchestration, self-hosted open-weight inference, registry-owned
 lifecycle, generated audio, mathematically verified instrumentation, a
-reproducible benchmark, and a browser-visible deployment comparison.
+reproducible benchmark, a browser-visible deployment comparison, and a
+health-checked Docker deployment with verified external model provisioning.

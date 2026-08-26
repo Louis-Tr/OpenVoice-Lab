@@ -1,0 +1,47 @@
+# Source-control and local tooling
+.git/
+.github/
+.idea/
+.vscode/
+**/.DS_Store
+**/Thumbs.db
+
+# Local dependency and build output
+**/.venv/
+**/venv/
+**/node_modules/
+**/dist/
+**/.angular/
+**/__pycache__/
+**/.pytest_cache/
+**/.pytest-tmp/
+**/.ruff_cache/
+**/*.py[cod]
+**/*.egg-info/
+
+# Secrets and machine-specific configuration
+.env
+.env.*
+!.env.example
+
+# Models and generated runtime artifacts
+backend/model-artifacts/*
+!backend/model-artifacts/README.md
+backend/artifacts/
+backend/benchmark-results/
+**/*.onnx
+**/*.ort
+**/*.pt
+**/*.pth
+**/*.ckpt
+**/*.safetensors
+**/*.gguf
+**/*.tflite
+**/*.wav
+**/*.mp3
+**/*.flac
+**/*.ogg
+
+# Files not required by either image
+docs/
+start.ps1
