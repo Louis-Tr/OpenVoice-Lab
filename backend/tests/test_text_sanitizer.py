@@ -36,18 +36,18 @@ def test_processing_rejects_input_without_speakable_content() -> None:
     service = TextProcessingService()
 
     with pytest.raises(TextProcessingError, match="removed all speakable content"):
-        service.process("./ -- ,,, $ %", sanitize_text=True)
+        service.process("./ -- ,,, $ %", sanitize_text=True, normalize_text=True)
 
 
 def test_processing_can_be_disabled_without_changing_the_input() -> None:
     service = TextProcessingService()
     source = "  Keep ./ -- $25 exactly.  "
 
-    assert service.process(source, sanitize_text=False) == source
+    assert service.process(source, sanitize_text=False, normalize_text=False) == source
 
 
 def test_processing_enforces_its_output_limit() -> None:
     service = TextProcessingService(max_output_length=10)
 
     with pytest.raises(TextProcessingError, match="exceeds 10 characters"):
-        service.process("eleven chars", sanitize_text=True)
+        service.process("eleven chars", sanitize_text=True, normalize_text=True)

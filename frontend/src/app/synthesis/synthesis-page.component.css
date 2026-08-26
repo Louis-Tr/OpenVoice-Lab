@@ -65,6 +65,32 @@ h2 span {
   gap: 24px;
 }
 
+.processed-preview {
+  min-width: 0;
+  padding: 18px 20px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-left: 3px solid var(--color-accent);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-card);
+}
+
+.processed-preview p {
+  margin: 0 0 8px;
+  color: var(--color-accent);
+  font: 700 10px/1.5 var(--font-mono);
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+}
+
+.processed-preview blockquote {
+  margin: 0;
+  color: var(--color-foreground);
+  font-size: 14px;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+
 .request-card {
   min-width: 0;
   padding: 28px;

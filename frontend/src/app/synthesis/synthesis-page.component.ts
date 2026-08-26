@@ -54,8 +54,10 @@ import {
             [submitting]="isSubmitting()"
             [canSubmit]="modelState() === 'ready'"
             [sanitizeText]="sanitizeText()"
+            [normalizeText]="normalizeText()"
             (textChange)="setText($event)"
             (sanitizeTextChange)="sanitizeText.set($event)"
+            (normalizeTextChange)="normalizeText.set($event)"
             (generate)="submit()"
           >
             <ovl-model-selector
@@ -84,6 +86,12 @@ import {
 
         <div class="output-stack">
           <ovl-audio-player [result]="result()" />
+          @if (processedTextPreview(); as processedText) {
+            <section class="processed-preview" aria-labelledby="processed-text-heading">
+              <p id="processed-text-heading">Text sent to model</p>
+              <blockquote>{{ processedText }}</blockquote>
+            </section>
+          }
           <ovl-inference-metrics [metrics]="result()?.metrics ?? null" />
         </div>
       </div>
@@ -108,11 +116,20 @@ export class SynthesisPageComponent implements OnInit, OnDestroy {
   readonly requestError = signal('');
   readonly isSubmitting = signal(false);
   readonly sanitizeText = signal(true);
+  readonly normalizeText = signal(true);
   readonly result = signal<SynthesisResult | null>(null);
 
   readonly selectedModel = computed(() =>
     this.models().find((model) => model.id === this.selectedModelId()),
   );
+
+  readonly processedTextPreview = computed(() => {
+    const result = this.result();
+    if (!result || result.normalizedText === result.text) {
+      return null;
+    }
+    return result.normalizedText;
+  });
 
   @ViewChild(SynthesisFormComponent) private synthesisForm?: SynthesisFormComponent;
 
@@ -202,6 +219,7 @@ export class SynthesisPageComponent implements OnInit, OnDestroy {
           modelId: model.id,
           voiceId: this.selectedVoiceId(),
           sanitizeText: this.sanitizeText(),
+          normalizeText: this.normalizeText(),
         })
         .pipe(finalize(() => this.isSubmitting.set(false)))
         .subscribe({

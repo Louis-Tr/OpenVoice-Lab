@@ -12,7 +12,7 @@ import pytest
 
 from app.audio.service import AudioService
 from app.benchmark.evaluator import BenchmarkEvaluator
-from app.benchmark.runner import BenchmarkRunner, load_corpus
+from app.benchmark.runner import BenchmarkRunner, build_parser, load_corpus
 from app.benchmark.service import BenchmarkJobNotFoundError, BenchmarkJobService
 from app.config.settings import Settings
 from app.main import create_app
@@ -53,11 +53,16 @@ def case_result(
     latency_ms: float,
     real_time_factor: float,
     memory_mb: float,
+    sanitize_text: bool = True,
+    normalize_text: bool = True,
 ) -> BenchmarkCaseResult:
     return BenchmarkCaseResult(
         case_id=case_id,
         category="test",
         text="Benchmark text",
+        normalized_text="Benchmark text",
+        sanitize_text=sanitize_text,
+        normalize_text=normalize_text,
         model_id=model.id,
         precision=model.precision,
         model_variant=model.variant,
@@ -75,6 +80,14 @@ def case_result(
     )
 
 
+class RecordedSynthesisError(RuntimeError):
+    """Failure double that exposes the exact text passed to fake inference."""
+
+    def __init__(self, message: str, normalized_text: str) -> None:
+        super().__init__(message)
+        self.normalized_text = normalized_text
+
+
 class RecordingSynthesisService:
     """Deterministic service double that retains the complete workload."""
 
@@ -83,8 +96,19 @@ class RecordingSynthesisService:
 
     async def synthesize(self, request: SynthesisRequest) -> SynthesisResult:
         self.requests.append(request)
+        normalized_text = request.text
+        if request.normalize_text:
+            normalized_text = normalized_text.replace("$25", "25 dollars")
+        if request.sanitize_text:
+            normalized_text = normalized_text.replace("$", "").replace(
+                " --- ",
+                " ",
+            )
         if request.model_id == "kokoro-q8" and "failure" in request.text:
-            raise RuntimeError("record this evaluation failure")
+            raise RecordedSynthesisError(
+                "record this evaluation failure",
+                normalized_text,
+            )
 
         variant = "fp32" if request.model_id == "kokoro-fp32" else "quantized"
         inference_ms = 100.0 if variant == "fp32" else 80.0
@@ -92,7 +116,7 @@ class RecordingSynthesisService:
             status="ok",
             model=request.model_id,
             text=request.text,
-            normalized_text=request.text,
+            normalized_text=normalized_text,
             audio_url=f"/audio/{request.model_id}.wav",
             metrics=SynthesisMetrics(
                 model_load_ms=0,
@@ -142,6 +166,8 @@ def benchmark_coordinator(
         *,
         model_ids: Sequence[str] | None,
         voice_id: str,
+        sanitize_text: bool,
+        normalize_text: bool,
         corpus_path: Path,
         result_dir: Path,
         run_id: str | None,
@@ -156,6 +182,8 @@ def benchmark_coordinator(
                 latency_ms=100 if model.precision == "FP32" else 80,
                 real_time_factor=0.1 if model.precision == "FP32" else 0.08,
                 memory_mb=400 if model.precision == "FP32" else 300,
+                sanitize_text=sanitize_text,
+                normalize_text=normalize_text,
             )
             for model in selected
             for case_id in ("case-a", "case-b")
@@ -177,6 +205,8 @@ def benchmark_coordinator(
             corpus_version="test-1",
             corpus_sha256="a" * 64,
             voice_id=voice_id,
+            sanitize_text=sanitize_text,
+            normalize_text=normalize_text,
             model_ids=[model.id for model in selected],
             environment=BenchmarkEnvironment(
                 python_version="3.13",
@@ -219,6 +249,9 @@ def test_evaluator_calculates_latency_rtf_memory_and_failures() -> None:
             case_id="case-5",
             category="test",
             text="Failed text",
+            normalized_text=None,
+            sanitize_text=True,
+            normalize_text=True,
             model_id=model.id,
             precision=model.precision,
             model_variant=model.variant,
@@ -295,15 +328,94 @@ def test_runner_uses_identical_cases_and_persists_failures(tmp_path: Path) -> No
     quantized = next(item for item in result.aggregates if item.model_id == "kokoro-q8")
     assert quantized.failure_count == 1
     failed = next(item for item in result.raw_results if item.status == "failure")
-    assert failed.error_type == "RuntimeError"
+    assert failed.error_type == "RecordedSynthesisError"
     assert failed.error_message == "record this evaluation failure"
+    assert failed.text == "Record this failure."
+    assert failed.normalized_text == "Record this failure."
+    assert failed.sanitize_text is True
+    assert failed.normalize_text is True
+    assert result.sanitize_text is True
+    assert result.normalize_text is True
 
     output_path = output_dir / str(result.result_file)
     assert output_path.is_file()
     persisted = json.loads(output_path.read_text(encoding="utf-8"))
     assert persisted["corpusVersion"] == "test-1"
+    assert persisted["sanitizeText"] is True
+    assert persisted["normalizeText"] is True
     assert len(persisted["rawResults"]) == 6
+    assert persisted["rawResults"][0]["text"] == "Hello."
+    assert persisted["rawResults"][0]["normalizedText"] == "Hello."
+    assert persisted["rawResults"][0]["sanitizeText"] is True
+    assert persisted["rawResults"][0]["normalizeText"] is True
     assert persisted["aggregates"][1]["failureCount"] == 1
+
+
+@pytest.mark.parametrize(
+    ("sanitize_text", "normalize_text", "expected_text"),
+    (
+        (True, True, "Price: 25 dollars today."),
+        (True, False, "Price: 25 today."),
+        (False, True, "Price: 25 dollars --- today."),
+        (False, False, "Price: $25 --- today."),
+    ),
+)
+def test_runner_records_independent_processing_configuration(
+    tmp_path: Path,
+    sanitize_text: bool,
+    normalize_text: bool,
+    expected_text: str,
+) -> None:
+    corpus_path = tmp_path / "processing-corpus.json"
+    corpus_path.write_text(
+        json.dumps(
+            {
+                "version": "processing-1",
+                "cases": [
+                    {
+                        "id": "technical",
+                        "category": "technical",
+                        "text": "Price: $25 --- today.",
+                    }
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+    service = RecordingSynthesisService()
+    runner = BenchmarkRunner(
+        service,
+        registry(tmp_path),
+        corpus_path=corpus_path,
+    )
+    destination = tmp_path / f"result-{sanitize_text}-{normalize_text}.json"
+
+    result = asyncio.run(
+        runner.run(
+            BenchmarkRequest(
+                model_ids=["kokoro-fp32"],
+                sanitize_text=sanitize_text,
+                normalize_text=normalize_text,
+            ),
+            result_path=destination,
+        )
+    )
+
+    assert result.sanitize_text is sanitize_text
+    assert result.normalize_text is normalize_text
+    assert service.requests[0].sanitize_text is sanitize_text
+    assert service.requests[0].normalize_text is normalize_text
+    raw = result.raw_results[0]
+    assert raw.text == "Price: $25 --- today."
+    assert raw.normalized_text == expected_text
+    assert raw.sanitize_text is sanitize_text
+    assert raw.normalize_text is normalize_text
+
+    persisted = json.loads(destination.read_text(encoding="utf-8"))
+    assert persisted["sanitizeText"] is sanitize_text
+    assert persisted["normalizeText"] is normalize_text
+    assert persisted["rawResults"][0]["text"] == "Price: $25 --- today."
+    assert persisted["rawResults"][0]["normalizedText"] == expected_text
 
 
 def test_default_corpus_covers_required_evaluation_categories() -> None:
@@ -325,6 +437,26 @@ def test_default_corpus_covers_required_evaluation_categories() -> None:
 def test_empty_model_selection_is_rejected() -> None:
     with pytest.raises(ValueError):
         BenchmarkRequest(model_ids=[])
+
+
+def test_benchmark_cli_processing_options_default_on_and_toggle_independently() -> None:
+    parser = build_parser()
+
+    defaults = parser.parse_args([])
+    sanitizer_only = parser.parse_args(["--sanitize-text", "--no-normalize-text"])
+    normalizer_only = parser.parse_args(["--no-sanitize-text", "--normalize-text"])
+    neither = parser.parse_args(["--no-sanitize-text", "--no-normalize-text"])
+
+    assert (defaults.sanitize_text, defaults.normalize_text) == (True, True)
+    assert (sanitizer_only.sanitize_text, sanitizer_only.normalize_text) == (
+        True,
+        False,
+    )
+    assert (normalizer_only.sanitize_text, normalizer_only.normalize_text) == (
+        False,
+        True,
+    )
+    assert (neither.sanitize_text, neither.normalize_text) == (False, False)
 
 
 def test_job_service_reports_progress_and_completed_result(tmp_path: Path) -> None:
@@ -455,6 +587,8 @@ def test_benchmark_http_contract_runs_and_polls_job(tmp_path: Path) -> None:
                 json={
                     "modelIds": ["kokoro-fp32", "kokoro-q8"],
                     "voiceId": "af_heart",
+                    "sanitizeText": False,
+                    "normalizeText": True,
                 },
             )
             assert started.status_code == 202
@@ -467,6 +601,10 @@ def test_benchmark_http_contract_runs_and_polls_job(tmp_path: Path) -> None:
                 await asyncio.sleep(0.01)
             assert polled.status_code == 200
             assert polled.json()["completedEvaluations"] == 4
+            assert polled.json()["result"]["sanitizeText"] is False
+            assert polled.json()["result"]["normalizeText"] is True
+            assert polled.json()["result"]["rawResults"][0]["sanitizeText"] is False
+            assert polled.json()["result"]["rawResults"][0]["normalizeText"] is True
             assert len(polled.json()["result"]["aggregates"]) == 2
 
             latest = await client.get("/api/benchmarks/latest")

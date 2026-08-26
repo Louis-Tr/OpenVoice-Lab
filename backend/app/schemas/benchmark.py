@@ -29,6 +29,8 @@ class BenchmarkRequest(ApiSchema):
 
     model_ids: list[str] | None = Field(default=None, min_length=1)
     voice_id: str = Field(default="af_heart", min_length=1)
+    sanitize_text: bool = True
+    normalize_text: bool = True
 
 
 class BenchmarkCaseResult(ApiSchema):
@@ -37,6 +39,9 @@ class BenchmarkCaseResult(ApiSchema):
     case_id: str
     category: str
     text: str
+    normalized_text: str | None
+    sanitize_text: bool
+    normalize_text: bool
     model_id: str
     precision: Literal["FP32", "INT8"]
     model_variant: ModelVariant
@@ -86,6 +91,8 @@ class BenchmarkResult(ApiSchema):
     corpus_version: str
     corpus_sha256: str
     voice_id: str
+    sanitize_text: bool
+    normalize_text: bool
     model_ids: list[str]
     environment: BenchmarkEnvironment
     raw_results: list[BenchmarkCaseResult]

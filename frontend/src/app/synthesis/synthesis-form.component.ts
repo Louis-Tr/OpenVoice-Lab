@@ -42,20 +42,47 @@ import {
 
       <fieldset class="text-cleanup">
         <legend>Text cleanup</legend>
-        <label class="cleanup-option" for="sanitize-text">
-          <input
-            id="sanitize-text"
-            name="sanitizeText"
-            type="checkbox"
-            [checked]="sanitizeText"
-            [disabled]="disabled"
-            (change)="onSanitizeTextChange($event)"
-          />
-          <span class="cleanup-copy">
-            <strong>Sanitize noisy characters</strong>
-            <small>Remove isolated symbols and repeated punctuation before local inference.</small>
-          </span>
-        </label>
+        <div class="cleanup-options">
+          <label class="cleanup-option" for="sanitize-text">
+            <input
+              class="switch-input"
+              id="sanitize-text"
+              name="sanitizeText"
+              type="checkbox"
+              [checked]="sanitizeText"
+              [disabled]="disabled"
+              (change)="onSanitizeTextChange($event)"
+            />
+            <span class="cleanup-copy">
+              <strong>Sanitize noisy characters</strong>
+              <small>Remove leftover noise before local inference.</small>
+            </span>
+            <span class="switch-meta" aria-hidden="true">
+              <span class="switch-status"></span>
+              <span class="switch-track"><i></i></span>
+            </span>
+          </label>
+
+          <label class="cleanup-option" for="normalize-text">
+            <input
+              class="switch-input"
+              id="normalize-text"
+              name="normalizeText"
+              type="checkbox"
+              [checked]="normalizeText"
+              [disabled]="disabled"
+              (change)="onNormalizeTextChange($event)"
+            />
+            <span class="cleanup-copy">
+              <strong>Normalize technical text</strong>
+              <small>Convert supported notation into speakable English.</small>
+            </span>
+            <span class="switch-meta" aria-hidden="true">
+              <span class="switch-status"></span>
+              <span class="switch-track"><i></i></span>
+            </span>
+          </label>
+        </div>
       </fieldset>
 
       <ng-content />
@@ -81,9 +108,11 @@ export class SynthesisFormComponent {
   @Input() submitting = false;
   @Input() canSubmit = false;
   @Input() sanitizeText = true;
+  @Input() normalizeText = true;
 
   @Output() readonly textChange = new EventEmitter<string>();
   @Output() readonly sanitizeTextChange = new EventEmitter<boolean>();
+  @Output() readonly normalizeTextChange = new EventEmitter<boolean>();
   @Output() readonly generate = new EventEmitter<void>();
 
   @ViewChild('textArea') private textArea?: ElementRef<HTMLTextAreaElement>;
@@ -94,6 +123,10 @@ export class SynthesisFormComponent {
 
   onSanitizeTextChange(event: Event): void {
     this.sanitizeTextChange.emit((event.target as HTMLInputElement).checked);
+  }
+
+  onNormalizeTextChange(event: Event): void {
+    this.normalizeTextChange.emit((event.target as HTMLInputElement).checked);
   }
 
   onSubmit(event: SubmitEvent): void {

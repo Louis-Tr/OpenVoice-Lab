@@ -5,6 +5,7 @@ export interface SynthesisRequest {
   readonly modelId: string;
   readonly voiceId: string;
   readonly sanitizeText: boolean;
+  readonly normalizeText: boolean;
 }
 
 export interface InferenceMetrics {

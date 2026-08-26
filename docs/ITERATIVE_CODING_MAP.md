@@ -124,13 +124,17 @@ request produces a playable WAV.
 
 ## Stage 10 — Speakable English normalization
 
+**Status:** complete.
+
 Convert meaningful currency, percentages, URLs, email addresses, paths,
 Markdown, and code fragments into deterministic spoken English before the
 sanitizer runs.
 
 **Exit evidence:** independent sanitizer/normalizer toggles cover all four
 combinations, original and inference text remain auditable, and technical input
-produces a playable result without raw symbol pronunciation.
+produces a playable WAV without sending raw supported notation to inference.
+Benchmark raw results preserve the original text, final text, and both option
+states.
 
 ## Stage 11 — Production operations
 

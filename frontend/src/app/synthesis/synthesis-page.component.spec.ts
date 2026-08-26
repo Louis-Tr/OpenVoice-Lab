@@ -119,16 +119,18 @@ describe('SynthesisPageComponent', () => {
       modelId: 'kokoro-q8',
       voiceId: 'voice-one',
       sanitizeText: true,
+      normalizeText: true,
     });
   });
 
-  it('defaults sanitization on and sends an independent option state', () => {
+  it('defaults both processing options on and sends independent option states', () => {
     const api = createApi();
     const component = new SynthesisPageComponent(api);
     component.ngOnInit();
     component.setText('Keep ./ -- $25 exactly.');
 
     expect(component.sanitizeText()).toBe(true);
+    expect(component.normalizeText()).toBe(true);
     component.sanitizeText.set(false);
     component.submit();
 
@@ -137,7 +139,57 @@ describe('SynthesisPageComponent', () => {
       modelId: 'kokoro-fp32',
       voiceId: 'voice-one',
       sanitizeText: false,
+      normalizeText: true,
     });
+  });
+
+  it.each([
+    [true, true],
+    [true, false],
+    [false, true],
+    [false, false],
+  ])(
+    'sends sanitizer=%s and normalizer=%s without coupling them',
+    (sanitizeText, normalizeText) => {
+      const api = createApi();
+      const component = new SynthesisPageComponent(api);
+      component.ngOnInit();
+      component.setText('Process this text');
+      component.sanitizeText.set(sanitizeText);
+      component.normalizeText.set(normalizeText);
+
+      component.submit();
+
+      expect(api.synthesize).toHaveBeenCalledWith(
+        expect.objectContaining({ sanitizeText, normalizeText }),
+      );
+    },
+  );
+
+  it('shows processed text only when the backend changed the inference input', () => {
+    const component = new SynthesisPageComponent(createApi());
+
+    expect(component.processedTextPreview()).toBeNull();
+
+    component.result.set({
+      status: 'ok',
+      model: 'kokoro-fp32',
+      text: 'Save 15% today.',
+      normalizedText: 'Save 15 percent today.',
+      audioUrl: '/audio/normalized.wav',
+      metrics,
+    });
+    expect(component.processedTextPreview()).toBe('Save 15 percent today.');
+
+    component.result.set({
+      status: 'ok',
+      model: 'kokoro-fp32',
+      text: 'Natural speech.',
+      normalizedText: 'Natural speech.',
+      audioUrl: '/audio/unchanged.wav',
+      metrics,
+    });
+    expect(component.processedTextPreview()).toBeNull();
   });
 
   it('gives a recovery path when the backend is unavailable', () => {

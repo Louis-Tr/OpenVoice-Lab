@@ -123,6 +123,8 @@ class BenchmarkJobService:
                 self._coordinator,
                 model_ids=request.model_ids,
                 voice_id=request.voice_id,
+                sanitize_text=request.sanitize_text,
+                normalize_text=request.normalize_text,
                 corpus_path=self._corpus_path,
                 result_dir=self._result_dir,
                 run_id=identifier,

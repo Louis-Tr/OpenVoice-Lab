@@ -299,10 +299,11 @@ questions, and grammatical hyphens. A request that contains no speakable text
 after cleanup receives `422` before a model is loaded.
 
 The response keeps `text` as submitted and exposes `normalizedText` as the
-exact string used for inference and deterministic audio identity. Disabling
-`sanitizeText` sends the validated original text unchanged.
+exact string used for inference and deterministic audio identity. At Stage 9,
+disabling `sanitizeText` sent the validated original unchanged; Stage 10 adds
+normalization as a second independent policy.
 
-Actual warm request measured on the local development machine:
+Actual warm request recorded at Stage 9 on the local development machine:
 
 ```json
 {
@@ -325,6 +326,85 @@ claims.
 
 **Portfolio proof:** input-quality engineering behind an explicit,
 replaceable preprocessing boundary—not model-specific string replacement.
+
+## Stage 10 — Speakable English normalization
+
+> “I preserved the meaning of technical and symbolic text by converting it
+> into deterministic, speech-friendly English before inference.”
+
+**Responsibility:** convert supported notation into speakable English without
+an LLM, external normalization API, or model-specific logic.
+
+```text
+Raw text
+  ↓
+TextNormalizer, when enabled
+  ↓
+TextSanitizer, when enabled
+  ↓
+exact normalizedText → SynthesisService → Kokoro
+```
+
+The backend handles USD amounts, percentages, emails, HTTP(S) URLs, relative
+paths, Markdown emphasis and links, inline code, common comparison operators,
+snake case, and camel case. Normalization runs first so `$25` and `15%` become
+`25 dollars` and `15 percent` before sanitization can remove leftover symbols.
+
+Both controls default on and remain independent:
+
+| Sanitize | Normalize | Result |
+| --- | --- | --- |
+| On | On | Expand supported meaning, then remove remaining noise. |
+| On | Off | Remove noise without semantic expansion. |
+| Off | On | Expand supported notation and preserve unrelated raw characters. |
+| Off | Off | Send the validated original unchanged. |
+
+Angular sends only these policy flags and displays a compact **Text sent to
+model** preview when `normalizedText` differs from `text`; every rule remains in
+the backend. Benchmark JSON records both strings and both flags for each case.
+
+Genuine warm Kokoro FP32 request from the local development machine:
+
+```json
+{
+  "text": "Email dev.team@example.com -- open ./docs/api-guide.md.\nThe price is $25, with a 15% discount.",
+  "modelId": "kokoro-fp32",
+  "voiceId": "af_heart",
+  "sanitizeText": true,
+  "normalizeText": true
+}
+```
+
+```json
+{
+  "status": "ok",
+  "model": "kokoro-fp32",
+  "text": "Email dev.team@example.com -- open ./docs/api-guide.md.\nThe price is $25, with a 15% discount.",
+  "normalizedText": "Email dev dot team at example dot com—open docs slash api guide dot M D. The price is 25 dollars, with a 15 percent discount.",
+  "audioUrl": "/audio/kokoro-fp32-af_heart-20d61f2c1fcbd897.wav",
+  "metrics": {
+    "modelLoadMs": 0.0,
+    "inferenceMs": 2108.453,
+    "audioDurationMs": 10623.292,
+    "realTimeFactor": 0.198475,
+    "memoryMb": 829.41,
+    "warm": true,
+    "modelVariant": "fp32"
+  }
+}
+```
+
+The returned 509,962-byte file was verified as a playable mono 24 kHz WAV.
+These measurements describe this machine and request; they are not fixed
+performance claims.
+
+**Known limits:** normalization is English-focused, `$` means USD, Markdown
+parsing is intentionally shallow, and arbitrary programming languages or
+natural-language number expansion are out of scope. Unsupported notation is
+left for the independently selected sanitizer or the TTS engine.
+
+**Portfolio proof:** deterministic input semantics, auditable inference text,
+and reproducible evaluation—not opaque prompt rewriting.
 
 ## Run from a fresh clone with Docker
 
@@ -399,7 +479,7 @@ Open `http://localhost:4200`. The development proxy keeps `/api` and generated
 ```text
 curl -X POST http://localhost:8000/api/synthesis \
   -H "Content-Type: application/json" \
-  -d '{"text":"OpenVoice Lab is running locally.","modelId":"kokoro-fp32","voiceId":"af_heart","sanitizeText":true}'
+  -d '{"text":"OpenVoice Lab is running locally.","modelId":"kokoro-fp32","voiceId":"af_heart","sanitizeText":true,"normalizeText":true}'
   ↓
 {"status":"ok","model":"kokoro-fp32","text":"OpenVoice Lab is running locally.","normalizedText":"OpenVoice Lab is running locally.","audioUrl":"/audio/kokoro-fp32-af_heart-27561063304ff41f.wav"}
 ```
@@ -408,21 +488,22 @@ Result: `kokoro-fp32-af_heart-27561063304ff41f.wav`
 
 The automated suite verifies both real model variants, playable WAVs, useful API
 errors, stable output, warm reuse, one load per configuration, and deterministic
-text sanitization:
+text normalization and sanitization:
 
 ```powershell
 .\.venv\Scripts\pytest.exe -q
-# 30 passed
+# 61 passed
 ```
 
 The Angular suite covers dynamic variant discovery and selection, empty input,
-the locked loading state, sanitizer policy, backend unavailability, inference
-failure, and successful audio delivery:
+the locked loading state, two independent preprocessing policies, processed-text
+preview, backend unavailability, inference failure, and successful audio
+delivery:
 
 ```powershell
 cd frontend
 npm test
-# 17 passed
+# 22 passed
 ```
 
 ## Boundaries and roadmap
@@ -438,4 +519,5 @@ FastAPI orchestration, self-hosted open-weight inference, registry-owned
 lifecycle, generated audio, mathematically verified instrumentation, a
 reproducible benchmark, a browser-visible deployment comparison, and a
 health-checked Docker deployment with verified external model provisioning.
-It also owns deterministic, user-controlled text sanitization before inference.
+It also owns deterministic, user-controlled text normalization and sanitization
+before inference, with the exact evaluated text retained as evidence.

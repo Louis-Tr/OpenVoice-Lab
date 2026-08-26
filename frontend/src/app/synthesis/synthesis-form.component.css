@@ -72,29 +72,37 @@ textarea[aria-invalid='true'] {
   letter-spacing: 0.08em;
 }
 
+.cleanup-options {
+  overflow: hidden;
+  background: var(--color-background);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+}
+
 .cleanup-option {
-  display: grid;
-  grid-template-columns: 22px minmax(0, 1fr);
-  gap: 12px;
-  align-items: start;
-  min-height: 52px;
+  position: relative;
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 64px;
   margin: 0;
-  padding: 12px 14px;
+  padding: 10px 14px 10px 16px;
   color: var(--color-foreground);
   text-transform: none;
   letter-spacing: 0;
   cursor: pointer;
-  background: var(--color-background);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-sm);
+  background: transparent;
   transition:
-    border-color var(--motion-fast) ease-out,
     background-color var(--motion-fast) ease-out;
+}
+
+.cleanup-option + .cleanup-option {
+  border-top: 1px solid var(--color-border);
 }
 
 .cleanup-option:hover:has(input:not(:disabled)) {
   background: var(--color-surface-raised);
-  border-color: var(--color-muted-foreground);
 }
 
 .cleanup-option:has(input:disabled) {
@@ -102,26 +110,15 @@ textarea[aria-invalid='true'] {
   opacity: 0.5;
 }
 
-.cleanup-option input {
-  width: 20px;
-  height: 20px;
-  margin: 1px 0 0;
-  accent-color: var(--color-accent);
-  cursor: pointer;
-}
-
-.cleanup-option input:disabled {
-  cursor: not-allowed;
-}
-
 .cleanup-option:has(input:focus-visible) {
+  z-index: 1;
   outline: 2px solid var(--color-accent-strong);
-  outline-offset: 3px;
-  box-shadow: var(--focus-ring);
+  outline-offset: -2px;
 }
 
 .cleanup-copy {
   display: grid;
+  min-width: 0;
   gap: 4px;
 }
 
@@ -132,6 +129,80 @@ textarea[aria-invalid='true'] {
 .cleanup-copy small {
   color: var(--color-muted-foreground);
   font: 400 12px/1.5 var(--font-sans);
+}
+
+.switch-input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  opacity: 0;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.switch-meta {
+  display: inline-flex;
+  flex: 0 0 auto;
+  gap: 8px;
+  align-items: center;
+}
+
+.switch-status {
+  min-width: 22px;
+  color: var(--color-muted-foreground);
+  font: 700 10px/1 var(--font-mono);
+  text-align: right;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.switch-status::before {
+  content: 'Off';
+}
+
+.switch-track {
+  position: relative;
+  display: inline-block;
+  width: 42px;
+  height: 24px;
+  background: var(--color-surface-raised);
+  border: 1px solid var(--color-muted-foreground);
+  border-radius: 999px;
+  transition:
+    background-color var(--motion-fast) ease-out,
+    border-color var(--motion-fast) ease-out;
+}
+
+.switch-track i {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 16px;
+  height: 16px;
+  background: var(--color-muted-foreground);
+  border-radius: 50%;
+  transition:
+    background-color var(--motion-fast) ease-out,
+    transform var(--motion-fast) ease-out;
+}
+
+.switch-input:checked ~ .switch-meta .switch-status {
+  color: var(--color-accent);
+}
+
+.switch-input:checked ~ .switch-meta .switch-status::before {
+  content: 'On';
+}
+
+.switch-input:checked ~ .switch-meta .switch-track {
+  background: rgb(67 224 125 / 18%);
+  border-color: var(--color-accent);
+}
+
+.switch-input:checked ~ .switch-meta .switch-track i {
+  background: var(--color-accent);
+  transform: translateX(18px);
 }
 
 .field-error {
@@ -189,5 +260,20 @@ button:disabled {
 @keyframes spin {
   to {
     transform: rotate(360deg);
+  }
+}
+
+@media (max-width: 420px) {
+  .cleanup-option {
+    align-items: flex-start;
+    padding-block: 12px;
+  }
+
+  .switch-meta {
+    margin-top: 1px;
+  }
+
+  .switch-status {
+    display: none;
   }
 }

@@ -1,9 +1,9 @@
 # API contract
 
-Stage 9 adds optional deterministic sanitization to the synthesis contract.
-The original request remains visible while `normalizedText` records the exact
-string passed to inference. Generated WAV files remain local, and no external
-inference or text-processing API is used.
+Stage 10 exposes two independent preprocessing options. Deterministic English
+normalization runs before sanitization, the original request remains visible,
+and `normalizedText` records the exact string passed to inference. Generated
+WAV files remain local; no external inference or text-processing API is used.
 
 ## `POST /api/synthesis`
 
@@ -14,42 +14,63 @@ Request:
 
 ```json
 {
-  "text": "OpenVoice Lab ./ --- produces clean local speech for $25 ,,, today.",
+  "text": "Save 15% at [https://example.com](https://example.com). Price: $25.",
   "modelId": "kokoro-fp32",
   "voiceId": "af_heart",
-  "sanitizeText": true
+  "sanitizeText": true,
+  "normalizeText": true
 }
 ```
 
-Current success response:
+Genuine warm response recorded on the local development machine:
 
 ```json
 {
   "status": "ok",
   "model": "kokoro-fp32",
-  "text": "OpenVoice Lab ./ --- produces clean local speech for $25 ,,, today.",
-  "normalizedText": "OpenVoice Lab produces clean local speech for 25 today.",
-  "audioUrl": "/audio/kokoro-fp32-af_heart-79d9b4da288a625f.wav",
+  "text": "Save 15% at [https://example.com](https://example.com). Price: $25.",
+  "normalizedText": "Save 15 percent at example dot com. Price: 25 dollars.",
+  "audioUrl": "/audio/kokoro-fp32-af_heart-7fd22f34e5a3c2e0.wav",
   "metrics": {
     "modelLoadMs": 0.0,
-    "inferenceMs": 1012.396,
-    "audioDurationMs": 4490.667,
-    "realTimeFactor": 0.225444,
-    "memoryMb": 603.75,
+    "inferenceMs": 895.835,
+    "audioDurationMs": 4853.333,
+    "realTimeFactor": 0.184581,
+    "memoryMb": 878.172,
     "warm": true,
     "modelVariant": "fp32"
   }
 }
 ```
 
-Current behavior: `sanitizeText` defaults to `true`. When enabled, deterministic
-Unicode, whitespace, control-character, and punctuation-noise cleanup runs
-before model loading. `normalizedText` is the exact inference input and `text`
-is the unchanged request value. If cleanup leaves no alphanumeric content, the
-service returns `422`; `sanitizeText: false` bypasses cleanup. Missing fields
-and malformed values also receive Pydantic `422` responses. Unsupported voices
-return `422`, unknown models return `404`, unavailable artifacts return `503`,
-and inference/measurement/storage failures return `500`.
+The returned 233,004-byte artifact was retrieved successfully. Metric values
+are evidence for this machine and request, not fixed service guarantees.
+
+Current behavior: `normalizeText` and `sanitizeText` both default to `true` and
+operate independently. Normalization expands supported English notation;
+sanitization then performs Unicode, whitespace, control-character, and
+punctuation-noise cleanup. With both disabled, the validated request string is
+sent unchanged. `normalizedText` always equals the exact inference input while
+`text` remains the original request value. Processing happens before model
+loading and is excluded from `inferenceMs`. If enabled sanitization leaves no
+alphanumeric content, the service returns `422`. Missing or malformed values
+also receive Pydantic `422`; unsupported voices return `422`, unknown models
+return `404`, unavailable artifacts return `503`, and inference, measurement,
+or storage failures return `500`.
+
+Supported deterministic transformations include USD `$` amounts, numeric
+percentages, email addresses, HTTP(S) URLs, relative `./` paths, Markdown links
+and emphasis, inline code, common comparison operators, snake case, and camel
+case. The implementation is English-focused and deliberately does not attempt
+nested Markdown, arbitrary source-code parsing, non-USD currencies, or general
+natural-language number expansion.
+
+| `sanitizeText` | `normalizeText` | Processing |
+| --- | --- | --- |
+| `true` | `true` | Normalize, then sanitize. |
+| `true` | `false` | Sanitize raw input only. |
+| `false` | `true` | Normalize supported notation only. |
+| `false` | `false` | Preserve validated input exactly. |
 
 Measurement semantics:
 
@@ -61,8 +82,7 @@ Measurement semantics:
 - `warm`: whether the engine was already loaded before this request.
 - `modelVariant`: the measured deployed precision variant.
 
-TODO: add speakable English normalization, then define artifact retention and
-cancellation.
+TODO: define artifact retention and cancellation.
 
 ## `GET /api/models`
 
@@ -114,7 +134,9 @@ Request:
 ```json
 {
   "modelIds": ["kokoro-fp32", "kokoro-q8"],
-  "voiceId": "af_heart"
+  "voiceId": "af_heart",
+  "sanitizeText": true,
+  "normalizeText": true
 }
 ```
 
@@ -134,9 +156,14 @@ Current `202 Accepted` response:
 }
 ```
 
-Current behavior: validates model IDs and voice, creates an in-memory job, and
-returns before inference begins. The background job runs one isolated process
-per model and persists the merged Stage 6 JSON result.
+Current behavior: validates model IDs, voice, and independent preprocessing
+flags, creates an in-memory job, and returns before inference begins. Both flags
+default to `true`. The background job runs one isolated process per model and
+persists the merged JSON result. Each raw result records original `text`, final
+`normalizedText`, `sanitizeText`, and `normalizeText`; the run-level result
+records the same processing configuration. Failed cases preserve exact final
+text when preprocessing completed and use `null` when no honest final value
+exists.
 
 ## `GET /api/benchmarks/config`
 

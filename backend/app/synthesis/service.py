@@ -35,37 +35,42 @@ class SynthesisService:
         normalized_text = self._text_processing_service.process(
             request.text,
             sanitize_text=request.sanitize_text,
+            normalize_text=request.normalize_text,
         )
-        model = self._model_registry.get(request.model_id)
-        artifact_key = "\0".join(
-            (
-                model.label,
-                request.voice_id,
-                model.language,
-                str(model.speed),
-                normalized_text,
+        try:
+            model = self._model_registry.get(request.model_id)
+            artifact_key = "\0".join(
+                (
+                    model.label,
+                    request.voice_id,
+                    model.language,
+                    str(model.speed),
+                    normalized_text,
+                )
             )
-        )
-        loaded = self._metrics_collector.measure_model_load(
-            lambda: self._model_loader.load_with_state(model)
-        )
-        measured = self._metrics_collector.measure(
-            lambda: loaded.value.engine.synthesize(
-                normalized_text,
-                request.voice_id,
-                speed=model.speed,
-                language=model.language,
-            ),
-            model_load_ms=loaded.elapsed_ms,
-            warm=loaded.value.warm,
-            model_variant=model.variant,
-        )
-        artifact = self._audio_service.create_artifact(
-            measured.audio,
-            model=model.label,
-            voice=request.voice_id,
-            artifact_key=artifact_key,
-        )
+            loaded = self._metrics_collector.measure_model_load(
+                lambda: self._model_loader.load_with_state(model)
+            )
+            measured = self._metrics_collector.measure(
+                lambda: loaded.value.engine.synthesize(
+                    normalized_text,
+                    request.voice_id,
+                    speed=model.speed,
+                    language=model.language,
+                ),
+                model_load_ms=loaded.elapsed_ms,
+                warm=loaded.value.warm,
+                model_variant=model.variant,
+            )
+            artifact = self._audio_service.create_artifact(
+                measured.audio,
+                model=model.label,
+                voice=request.voice_id,
+                artifact_key=artifact_key,
+            )
+        except Exception as error:
+            error.normalized_text = normalized_text
+            raise
         snapshot = measured.metrics
         return SynthesisResult(
             status="ok",

@@ -7,10 +7,11 @@ application boundary. The repository begins with stable component boundaries so
 that model runtimes and benchmarking mechanics can evolve without leaking into
 the browser or HTTP controllers.
 
-Stage 9 adds a deterministic text-processing boundary inside synthesis
-orchestration. Angular selects whether sanitization runs; the backend owns every
-cleanup rule and returns the exact inference text. Controllers and inference
-adapters remain unaware of Unicode, punctuation, and whitespace policy.
+Stage 10 completes the deterministic text-processing boundary inside synthesis
+orchestration. Angular selects normalization and sanitization independently;
+the backend owns every transformation rule and returns the exact inference
+text. Controllers and inference adapters remain unaware of notation, Unicode,
+punctuation, and whitespace policy.
 
 ## System spine
 
@@ -50,7 +51,7 @@ and audio URL contracts.
 ├────────────────────────────────┬─────────────────────────────────┤
 │ SynthesisService: complete synthesis workflow orchestration     │
 ├──────────────────────────────────────────────────────────────────┤
-│ Text processing: optional deterministic sanitization            │
+│ Text processing: optional normalization, then sanitization      │
 ├───────────────┬────────────────┼────────────────┬────────────────┤
 │ Model registry│ Inference port │ Metrics        │ Audio service  │
 │ and lifecycle │ (abstract)     │ collector      │                │
@@ -66,20 +67,21 @@ calls to documented backend contracts. It must not import, model, configure, or
 otherwise depend on Kokoro, ONNX, runtime sessions, tensor formats, model-file
 paths, or other inference implementation details.
 
-The current synthesis page owns text and selection state, the sanitizer toggle,
-model discovery, request lifecycle, and user-facing recovery messages. It does
-not implement cleanup rules. `model-selector` and `audio-player` are
-presentational boundaries. `api` is the only frontend module that performs HTTP
-calls. Local development proxies `/api` and `/audio` without changing those
-public contracts.
+The current synthesis page owns text and selection state, two independent
+preprocessing toggles, model discovery, request lifecycle, and user-facing
+recovery messages. It displays the final inference text when processing changed
+the input but does not implement transformation rules. `model-selector` and
+`audio-player` are presentational boundaries. `api` is the only frontend module
+that performs HTTP calls. Local development proxies `/api` and `/audio` without
+changing those public contracts.
 
 ### API boundary
 
 FastAPI controllers are transport adapters. They may validate Pydantic request
 contracts, invoke an application service, serialize its result, and map known
-application errors to HTTP responses. They must not sanitize text, choose or
-load models, run inference, encode audio, calculate RTF, inspect process memory,
-or aggregate benchmark results.
+application errors to HTTP responses. They must not normalize or sanitize text,
+choose or load models, run inference, encode audio, calculate RTF, inspect
+process memory, or aggregate benchmark results.
 
 The current executable path is:
 
@@ -121,18 +123,23 @@ order. It has no HTTP or Angular concerns and depends on inference through
 Raw request text
   ↓
 TextProcessingService
+  ↓ optional TextNormalizer
   ↓ optional TextSanitizer
 exact normalizedText
   ↓
 measured inference
 ```
 
-`TextProcessingService` owns optional execution and validation;
-`TextSanitizer` owns deterministic NFKC normalization, whitespace/control
-cleanup, and punctuation-noise rules. The original request remains available
-as `text`, while `normalizedText` is the exact engine input and artifact-key
-input. Cleanup occurs before model loading and outside `inferenceMs`. A result
-with no speakable alphanumeric content is a domain error mapped to `422`.
+`TextProcessingService` owns order, optional execution, output limits, and
+validation. `TextNormalizer` converts supported English currency, percentage,
+URL, email, relative-path, Markdown, code, operator, snake-case, and camel-case
+notation into speech-friendly text. `TextSanitizer` then owns deterministic
+NFKC canonicalization, whitespace/control cleanup, and remaining punctuation-noise
+rules. Either step can be bypassed independently; both disabled means the
+validated original is unchanged. The original request remains available as
+`text`, while `normalizedText` is the exact engine input and artifact-key input.
+Processing occurs before model loading and outside `inferenceMs`. A sanitized
+result with no speakable alphanumeric content is a domain error mapped to `422`.
 
 ### Model boundary
 
@@ -198,9 +205,11 @@ immutable timestamped JSON
 Model processes are isolated because process RSS is not comparable if the
 second model shares a process with the first model's cached runtime. Each worker
 records the corpus version and hash, model ID, precision, voice, case identity,
-raw metrics, audio URL, and any exception. The coordinator rejects a worker
-whose corpus hash differs. The evaluator never removes failed cases; it reports
-success and failure counts and aggregates only successful measurements.
+original corpus text, final inference text, both preprocessing states, raw
+metrics, audio URL, and any exception. The coordinator rejects a worker whose
+corpus hash or text-processing configuration differs. The evaluator never
+removes failed cases; it reports success and failure counts and aggregates only
+successful measurements.
 
 Aggregate semantics:
 
@@ -311,9 +320,9 @@ WAV referenced by `SynthesisResult`.
    and are excluded from Git.
 7. Containers preserve application boundaries: provisioning owns external
    weights, FastAPI owns inference, and Nginx owns static delivery and proxying.
-8. Text cleanup belongs to `text_processing`; Angular chooses policy, the
-   synthesis service sequences it, and inference adapters receive only the
-   final text.
+8. Text transformation belongs to `text_processing`; Angular chooses policy,
+   the synthesis service sequences normalization before sanitization, and
+   inference adapters receive only the final text.
 
 ## Composition and future work
 

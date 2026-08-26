@@ -265,6 +265,27 @@ def test_sanitization_is_enabled_by_default_and_reaches_inference(
     assert response.json()["metrics"]["inferenceMs"] == 25.0
 
 
+def test_normalization_is_enabled_by_default_and_reaches_inference(
+    harness: ApiHarness,
+) -> None:
+    response = request(
+        harness.app,
+        "POST",
+        "/api/synthesis",
+        {
+            "text": "Save 15% at https://example.com. Price: $25.",
+            "modelId": "kokoro-fp32",
+            "voiceId": "af_heart",
+        },
+    )
+
+    expected = "Save 15 percent at example dot com. Price: 25 dollars."
+    assert response.status_code == 200
+    assert response.json()["normalizedText"] == expected
+    assert harness.engines["kokoro-fp32"].received_texts == [expected]
+    assert response.json()["metrics"]["inferenceMs"] == 25.0
+
+
 def test_sanitization_can_be_disabled_without_changing_inference_text(
     harness: ApiHarness,
 ) -> None:
@@ -278,12 +299,49 @@ def test_sanitization_can_be_disabled_without_changing_inference_text(
             "modelId": "kokoro-fp32",
             "voiceId": "af_heart",
             "sanitizeText": False,
+            "normalizeText": False,
         },
     )
 
     assert response.status_code == 200
     assert response.json()["normalizedText"] == raw_text
     assert harness.engines["kokoro-fp32"].received_texts == [raw_text]
+
+
+@pytest.mark.parametrize(
+    ("sanitize_text", "normalize_text", "expected"),
+    (
+        (True, True, "Price: 25 dollars today"),
+        (True, False, "Price: 25 today"),
+        (False, True, "Price: 25 dollars ,,, today"),
+        (False, False, "Price: $25 ,,, today"),
+    ),
+)
+def test_preprocessing_toggles_are_independent_api_options(
+    harness: ApiHarness,
+    sanitize_text: bool,
+    normalize_text: bool,
+    expected: str,
+) -> None:
+    source = "Price: $25 ,,, today"
+    response = request(
+        harness.app,
+        "POST",
+        "/api/synthesis",
+        {
+            "text": source,
+            "modelId": "kokoro-fp32",
+            "voiceId": "af_heart",
+            "sanitizeText": sanitize_text,
+            "normalizeText": normalize_text,
+        },
+    )
+
+    assert response.status_code == 200
+    assert response.json()["text"] == source
+    assert response.json()["normalizedText"] == expected
+    assert harness.engines["kokoro-fp32"].received_texts == [expected]
+    assert response.json()["metrics"]["inferenceMs"] == 25.0
 
 
 def test_noise_only_input_returns_422_before_model_loading(harness: ApiHarness) -> None:
@@ -327,6 +385,35 @@ def test_warm_requests_reuse_loaded_model(harness: ApiHarness) -> None:
     assert second.json()["metrics"]["modelLoadMs"] == 0.0
     assert harness.loader.load_count("kokoro-fp32") == 1
     assert harness.engines["kokoro-fp32"].call_count == 2
+
+
+def test_audio_identity_uses_the_final_inference_text(harness: ApiHarness) -> None:
+    common = {
+        "modelId": "kokoro-fp32",
+        "voiceId": "af_heart",
+    }
+
+    technical = request(
+        harness.app,
+        "POST",
+        "/api/synthesis",
+        {**common, "text": "Price: $25."},
+    )
+    already_spoken = request(
+        harness.app,
+        "POST",
+        "/api/synthesis",
+        {**common, "text": "Price: 25 dollars."},
+    )
+
+    assert technical.status_code == already_spoken.status_code == 200
+    assert technical.json()["normalizedText"] == "Price: 25 dollars."
+    assert already_spoken.json()["normalizedText"] == "Price: 25 dollars."
+    assert technical.json()["audioUrl"] == already_spoken.json()["audioUrl"]
+    assert harness.engines["kokoro-fp32"].received_texts == [
+        "Price: 25 dollars.",
+        "Price: 25 dollars.",
+    ]
 
 
 def test_same_request_runs_against_both_registered_variants(harness: ApiHarness) -> None:

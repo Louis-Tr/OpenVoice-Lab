@@ -16,6 +16,7 @@ class SynthesisRequest(ApiSchema):
     model_id: str = Field(min_length=1)
     voice_id: str = Field(min_length=1)
     sanitize_text: bool = True
+    normalize_text: bool = True
 
 
 class SynthesisMetrics(ApiSchema):

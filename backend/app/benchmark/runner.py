@@ -142,6 +142,8 @@ class BenchmarkRunner:
                             text=case.text,
                             model_id=model.id,
                             voice_id=request.voice_id,
+                            sanitize_text=request.sanitize_text,
+                            normalize_text=request.normalize_text,
                         )
                     )
                     raw_results.append(
@@ -149,6 +151,9 @@ class BenchmarkRunner:
                             case_id=case.id,
                             category=case.category,
                             text=case.text,
+                            normalized_text=synthesis.normalized_text,
+                            sanitize_text=request.sanitize_text,
+                            normalize_text=request.normalize_text,
                             model_id=model.id,
                             precision=model.precision,
                             model_variant=model.variant,
@@ -164,6 +169,13 @@ class BenchmarkRunner:
                             case_id=case.id,
                             category=case.category,
                             text=case.text,
+                            normalized_text=(
+                                case.text
+                                if not request.sanitize_text and not request.normalize_text
+                                else getattr(error, "normalized_text", None)
+                            ),
+                            sanitize_text=request.sanitize_text,
+                            normalize_text=request.normalize_text,
                             model_id=model.id,
                             precision=model.precision,
                             model_variant=model.variant,
@@ -187,6 +199,8 @@ class BenchmarkRunner:
             corpus_version=corpus.version,
             corpus_sha256=corpus_hash,
             voice_id=request.voice_id,
+            sanitize_text=request.sanitize_text,
+            normalize_text=request.normalize_text,
             model_ids=[model.id for model in models],
             environment=describe_environment(isolated=process_isolation),
             raw_results=raw_results,
@@ -195,10 +209,13 @@ class BenchmarkRunner:
         destination = result_path or self._result_dir / f"{result.benchmark_id}.json"
         return write_benchmark_result(result, destination)
 
+
 async def run_worker(
     *,
     model_id: str,
     voice_id: str,
+    sanitize_text: bool,
+    normalize_text: bool,
     corpus_path: Path,
     result_path: Path,
 ) -> None:
@@ -213,7 +230,12 @@ async def run_worker(
         result_dir=result_path.parent,
     )
     await runner.run(
-        BenchmarkRequest(model_ids=[model_id], voice_id=voice_id),
+        BenchmarkRequest(
+            model_ids=[model_id],
+            voice_id=voice_id,
+            sanitize_text=sanitize_text,
+            normalize_text=normalize_text,
+        ),
         result_path=result_path,
         process_isolation=True,
     )
@@ -223,6 +245,8 @@ def run_isolated_benchmark(
     *,
     model_ids: Sequence[str] | None,
     voice_id: str,
+    sanitize_text: bool = True,
+    normalize_text: bool = True,
     corpus_path: Path,
     result_dir: Path,
     clock: UtcClock = utc_now,
@@ -255,6 +279,8 @@ def run_isolated_benchmark(
                 str(partial_path),
                 "--voice-id",
                 voice_id,
+                "--sanitize-text" if sanitize_text else "--no-sanitize-text",
+                "--normalize-text" if normalize_text else "--no-normalize-text",
                 "--corpus",
                 str(corpus_path),
             ]
@@ -264,6 +290,13 @@ def run_isolated_benchmark(
             )
             if partial.corpus_sha256 != corpus_hash:
                 raise RuntimeError("Worker corpus hash does not match the coordinator.")
+            if (
+                partial.sanitize_text != sanitize_text
+                or partial.normalize_text != normalize_text
+            ):
+                raise RuntimeError(
+                    "Worker text-processing configuration does not match the coordinator."
+                )
             raw_results.extend(partial.raw_results)
             if progress_callback:
                 progress_callback(len(raw_results), total_evaluations)
@@ -281,6 +314,8 @@ def run_isolated_benchmark(
         corpus_version=corpus.version,
         corpus_sha256=corpus_hash,
         voice_id=voice_id,
+        sanitize_text=sanitize_text,
+        normalize_text=normalize_text,
         model_ids=[model.id for model in models],
         environment=describe_environment(isolated=True),
         raw_results=raw_results,
@@ -302,6 +337,18 @@ def build_parser() -> argparse.ArgumentParser:
         help="Registry ID to benchmark; repeat to select multiple. Defaults to all.",
     )
     parser.add_argument("--voice-id", default="af_heart")
+    parser.add_argument(
+        "--sanitize-text",
+        action=argparse.BooleanOptionalAction,
+        default=True,
+        help="Enable deterministic sanitization for every benchmark case.",
+    )
+    parser.add_argument(
+        "--normalize-text",
+        action=argparse.BooleanOptionalAction,
+        default=True,
+        help="Enable speakable-English normalization for every benchmark case.",
+    )
     parser.add_argument("--corpus", type=Path, default=DEFAULT_CORPUS_PATH)
     parser.add_argument("--output-dir", type=Path, default=DEFAULT_RESULT_DIR)
     parser.add_argument("--worker-model", help=argparse.SUPPRESS)
@@ -334,6 +381,8 @@ def main() -> None:
             run_worker(
                 model_id=args.worker_model,
                 voice_id=args.voice_id,
+                sanitize_text=args.sanitize_text,
+                normalize_text=args.normalize_text,
                 corpus_path=args.corpus.resolve(),
                 result_path=args.worker_result.resolve(),
             )
@@ -343,6 +392,8 @@ def main() -> None:
     result, output_path = run_isolated_benchmark(
         model_ids=args.model_ids,
         voice_id=args.voice_id,
+        sanitize_text=args.sanitize_text,
+        normalize_text=args.normalize_text,
         corpus_path=args.corpus.resolve(),
         result_dir=args.output_dir.resolve(),
     )

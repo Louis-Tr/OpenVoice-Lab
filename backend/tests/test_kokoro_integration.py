@@ -110,5 +110,31 @@ def test_real_kokoro_audio_is_playable_reproducible_and_warm() -> None:
         assert audio_file.getframerate() == 24_000
         assert audio_file.getnframes() > 0
 
+    synthetic_text = (
+        "Email dev.team@example.com -- open ./docs/api-guide.md.\n"
+        "The price is $25, with a 15% discount."
+    )
+    synthetic = request(
+        app,
+        "POST",
+        "/api/synthesis",
+        {
+            "text": synthetic_text,
+            "modelId": "kokoro-fp32",
+            "voiceId": "af_heart",
+        },
+    )
+    assert synthetic.status_code == 200
+    synthetic_payload = synthetic.json()
+    assert synthetic_payload["normalizedText"] == (
+        "Email dev dot team at example dot com—open docs slash api guide dot M D. "
+        "The price is 25 dollars, with a 15 percent discount."
+    )
+    synthetic_audio = request(app, "GET", synthetic_payload["audioUrl"])
+    assert synthetic_audio.status_code == 200
+    with wave.open(BytesIO(synthetic_audio.content), "rb") as audio_file:
+        assert audio_file.getframerate() == 24_000
+        assert audio_file.getnframes() > 0
+
     output_file = resolve_backend_path(settings.generated_audio_dir) / Path(first_url).name
     assert output_file.is_file()
