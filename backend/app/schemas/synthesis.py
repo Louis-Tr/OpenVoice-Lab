@@ -15,6 +15,7 @@ class SynthesisRequest(ApiSchema):
     text: str = Field(min_length=1, max_length=5_000)
     model_id: str = Field(min_length=1)
     voice_id: str = Field(min_length=1)
+    sanitize_text: bool = True
 
 
 class SynthesisMetrics(ApiSchema):
@@ -35,5 +36,6 @@ class SynthesisResult(ApiSchema):
     status: Literal["mock", "ok"]
     model: str
     text: str
+    normalized_text: str
     audio_url: str | None = None
     metrics: SynthesisMetrics

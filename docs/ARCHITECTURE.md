@@ -7,11 +7,10 @@ application boundary. The repository begins with stable component boundaries so
 that model runtimes and benchmarking mechanics can evolve without leaking into
 the browser or HTTP controllers.
 
-Stage 8 packages those boundaries as a reproducible Compose application. A
-one-shot initializer owns verified model provisioning, FastAPI owns inference
-and runtime artifacts, and Nginx serves the Angular production build while
-proxying the existing `/api`, `/audio`, and `/health` contracts. Container
-packaging changes deployment mechanics, not application ownership.
+Stage 9 adds a deterministic text-processing boundary inside synthesis
+orchestration. Angular selects whether sanitization runs; the backend owns every
+cleanup rule and returns the exact inference text. Controllers and inference
+adapters remain unaware of Unicode, punctuation, and whitespace policy.
 
 ## System spine
 
@@ -23,6 +22,8 @@ REST
 FastAPI
   ↓
 SynthesisService
+  ↓
+TextProcessingService
   ↓
 Inference abstraction
   ↓
@@ -48,6 +49,8 @@ and audio URL contracts.
 │ FastAPI controllers: validation, status codes, serialization    │
 ├────────────────────────────────┬─────────────────────────────────┤
 │ SynthesisService: complete synthesis workflow orchestration     │
+├──────────────────────────────────────────────────────────────────┤
+│ Text processing: optional deterministic sanitization            │
 ├───────────────┬────────────────┼────────────────┬────────────────┤
 │ Model registry│ Inference port │ Metrics        │ Audio service  │
 │ and lifecycle │ (abstract)     │ collector      │                │
@@ -63,19 +66,20 @@ calls to documented backend contracts. It must not import, model, configure, or
 otherwise depend on Kokoro, ONNX, runtime sessions, tensor formats, model-file
 paths, or other inference implementation details.
 
-The current synthesis page owns text and selection state, model discovery,
-request lifecycle, and user-facing recovery messages. `model-selector` and
-`audio-player` are presentational boundaries. `api` is the only frontend module
-that performs HTTP calls. Local development proxies `/api` and `/audio` without
-changing those public contracts.
+The current synthesis page owns text and selection state, the sanitizer toggle,
+model discovery, request lifecycle, and user-facing recovery messages. It does
+not implement cleanup rules. `model-selector` and `audio-player` are
+presentational boundaries. `api` is the only frontend module that performs HTTP
+calls. Local development proxies `/api` and `/audio` without changing those
+public contracts.
 
 ### API boundary
 
 FastAPI controllers are transport adapters. They may validate Pydantic request
 contracts, invoke an application service, serialize its result, and map known
-application errors to HTTP responses. They must not choose or load models, run
-inference, encode audio, calculate RTF, inspect process memory, or aggregate
-benchmark results.
+application errors to HTTP responses. They must not sanitize text, choose or
+load models, run inference, encode audio, calculate RTF, inspect process memory,
+or aggregate benchmark results.
 
 The current executable path is:
 
@@ -87,6 +91,8 @@ FastAPI controller
 Pydantic validation
   ↓
 Application service
+  ↓
+TextProcessingService
   ↓
 ModelRegistry
   ↓
@@ -104,9 +110,29 @@ Typed JSON response + local WAV
 ### Synthesis application boundary
 
 `SynthesisService` owns the complete synthesis workflow. It currently
-coordinates model resolution/lifecycle, measured inference, and audio artifact
-creation. This is the only layer that decides workflow order. It has no HTTP or
-Angular concerns and depends on inference through `TTSInferenceEngine`.
+coordinates text processing, model resolution/lifecycle, measured inference,
+and audio artifact creation. This is the only layer that decides workflow
+order. It has no HTTP or Angular concerns and depends on inference through
+`TTSInferenceEngine`.
+
+### Text-processing boundary
+
+```text
+Raw request text
+  ↓
+TextProcessingService
+  ↓ optional TextSanitizer
+exact normalizedText
+  ↓
+measured inference
+```
+
+`TextProcessingService` owns optional execution and validation;
+`TextSanitizer` owns deterministic NFKC normalization, whitespace/control
+cleanup, and punctuation-noise rules. The original request remains available
+as `text`, while `normalizedText` is the exact engine input and artifact-key
+input. Cleanup occurs before model loading and outside `inferenceMs`. A result
+with no speakable alphanumeric content is a domain error mapped to `422`.
 
 ### Model boundary
 
@@ -285,6 +311,9 @@ WAV referenced by `SynthesisResult`.
    and are excluded from Git.
 7. Containers preserve application boundaries: provisioning owns external
    weights, FastAPI owns inference, and Nginx owns static delivery and proxying.
+8. Text cleanup belongs to `text_processing`; Angular chooses policy, the
+   synthesis service sequences it, and inference adapters receive only the
+   final text.
 
 ## Composition and future work
 

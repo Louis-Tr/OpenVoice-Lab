@@ -275,6 +275,57 @@ checksums are recorded in the [artifact provenance](backend/model-artifacts/READ
 **Portfolio proof:** AI infrastructure, reproducibility, and deployment
 discipline around the same measured application.
 
+## Stage 9 — Deterministic text sanitization
+
+> “I traced robotic TTS output to noisy raw input and introduced a
+> deterministic sanitization boundary before inference.”
+
+**Responsibility:** remove meaningless text noise without damaging useful
+English punctuation or coupling cleanup logic to Kokoro.
+
+```text
+Raw text
+  ↓
+TextProcessingService → TextSanitizer
+  ↓
+SynthesisService → inference abstraction → Kokoro
+```
+
+Sanitization is enabled by default and independently switchable in Angular.
+The backend applies Unicode and whitespace cleanup, removes control and
+zero-width characters, strips isolated `./`, `$`, and `%` noise, cleans
+repeated punctuation, and preserves normal commas, periods, apostrophes,
+questions, and grammatical hyphens. A request that contains no speakable text
+after cleanup receives `422` before a model is loaded.
+
+The response keeps `text` as submitted and exposes `normalizedText` as the
+exact string used for inference and deterministic audio identity. Disabling
+`sanitizeText` sends the validated original text unchanged.
+
+Actual warm request measured on the local development machine:
+
+```json
+{
+  "text": "OpenVoice Lab ./ --- produces clean local speech for $25 ,,, today.",
+  "normalizedText": "OpenVoice Lab produces clean local speech for 25 today.",
+  "audioUrl": "/audio/kokoro-fp32-af_heart-79d9b4da288a625f.wav",
+  "metrics": {
+    "inferenceMs": 1012.396,
+    "audioDurationMs": 4490.667,
+    "realTimeFactor": 0.225444,
+    "memoryMb": 603.75,
+    "warm": true
+  }
+}
+```
+
+The returned file was retrieved successfully as a playable 24 kHz WAV.
+Measurements are recorded evidence from this machine, not fixed performance
+claims.
+
+**Portfolio proof:** input-quality engineering behind an explicit,
+replaceable preprocessing boundary—not model-specific string replacement.
+
 ## Run from a fresh clone with Docker
 
 Docker Desktop or Docker Engine with Compose is the only local prerequisite.
@@ -348,29 +399,30 @@ Open `http://localhost:4200`. The development proxy keeps `/api` and generated
 ```text
 curl -X POST http://localhost:8000/api/synthesis \
   -H "Content-Type: application/json" \
-  -d '{"text":"OpenVoice Lab is running locally.","modelId":"kokoro-fp32","voiceId":"af_heart"}'
+  -d '{"text":"OpenVoice Lab is running locally.","modelId":"kokoro-fp32","voiceId":"af_heart","sanitizeText":true}'
   ↓
-{"status":"ok","model":"kokoro-fp32","text":"OpenVoice Lab is running locally.","audioUrl":"/audio/kokoro-fp32-af_heart-27561063304ff41f.wav"}
+{"status":"ok","model":"kokoro-fp32","text":"OpenVoice Lab is running locally.","normalizedText":"OpenVoice Lab is running locally.","audioUrl":"/audio/kokoro-fp32-af_heart-27561063304ff41f.wav"}
 ```
 
 Result: `kokoro-fp32-af_heart-27561063304ff41f.wav`
 
 The automated suite verifies both real model variants, playable WAVs, useful API
-errors, stable output, warm reuse, and one load per configuration:
+errors, stable output, warm reuse, one load per configuration, and deterministic
+text sanitization:
 
 ```powershell
 .\.venv\Scripts\pytest.exe -q
-# 18 passed
+# 30 passed
 ```
 
 The Angular suite covers dynamic variant discovery and selection, empty input,
-the locked loading state, backend unavailability, inference failure, and
-successful audio delivery:
+the locked loading state, sanitizer policy, backend unavailability, inference
+failure, and successful audio delivery:
 
 ```powershell
 cd frontend
 npm test
-# 14 passed
+# 17 passed
 ```
 
 ## Boundaries and roadmap
@@ -386,3 +438,4 @@ FastAPI orchestration, self-hosted open-weight inference, registry-owned
 lifecycle, generated audio, mathematically verified instrumentation, a
 reproducible benchmark, a browser-visible deployment comparison, and a
 health-checked Docker deployment with verified external model provisioning.
+It also owns deterministic, user-controlled text sanitization before inference.

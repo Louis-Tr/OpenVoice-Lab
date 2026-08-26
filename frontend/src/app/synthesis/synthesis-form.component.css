@@ -10,7 +10,7 @@ label {
   letter-spacing: 0.08em;
 }
 
-label span {
+label > span[aria-hidden='true'] {
   color: var(--color-accent);
 }
 
@@ -54,6 +54,84 @@ textarea[aria-invalid='true'] {
 .text-meta p,
 .field-error {
   margin: 0;
+}
+
+.text-cleanup {
+  min-width: 0;
+  margin: 24px 0 0;
+  padding: 0;
+  border: 0;
+}
+
+.text-cleanup legend {
+  margin-bottom: 8px;
+  padding: 0;
+  color: var(--color-muted-foreground);
+  font: 700 12px/1.3 var(--font-mono);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.cleanup-option {
+  display: grid;
+  grid-template-columns: 22px minmax(0, 1fr);
+  gap: 12px;
+  align-items: start;
+  min-height: 52px;
+  margin: 0;
+  padding: 12px 14px;
+  color: var(--color-foreground);
+  text-transform: none;
+  letter-spacing: 0;
+  cursor: pointer;
+  background: var(--color-background);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  transition:
+    border-color var(--motion-fast) ease-out,
+    background-color var(--motion-fast) ease-out;
+}
+
+.cleanup-option:hover:has(input:not(:disabled)) {
+  background: var(--color-surface-raised);
+  border-color: var(--color-muted-foreground);
+}
+
+.cleanup-option:has(input:disabled) {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.cleanup-option input {
+  width: 20px;
+  height: 20px;
+  margin: 1px 0 0;
+  accent-color: var(--color-accent);
+  cursor: pointer;
+}
+
+.cleanup-option input:disabled {
+  cursor: not-allowed;
+}
+
+.cleanup-option:has(input:focus-visible) {
+  outline: 2px solid var(--color-accent-strong);
+  outline-offset: 3px;
+  box-shadow: var(--focus-ring);
+}
+
+.cleanup-copy {
+  display: grid;
+  gap: 4px;
+}
+
+.cleanup-copy strong {
+  font: 700 14px/1.4 var(--font-sans);
+}
+
+.cleanup-copy small {
+  color: var(--color-muted-foreground);
+  font: 400 12px/1.5 var(--font-sans);
 }
 
 .field-error {

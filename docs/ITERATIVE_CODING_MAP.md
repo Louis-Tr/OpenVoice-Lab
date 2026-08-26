@@ -108,7 +108,31 @@ images, provisions external model files without adding them to Git, reaches a
 healthy FastAPI process, serves Angular on localhost, and produces playable
 speech through the containerized inference path.
 
-## Stage 9 — Production operations
+## Stage 9 — Deterministic text sanitization
+
+**Status:** complete.
+
+Insert a backend-owned sanitizer before inference. Remove Unicode controls,
+zero-width characters, isolated path fragments, symbol noise, and repeated
+punctuation without damaging ordinary English phrasing. Expose a default-on,
+independent Angular/API toggle and the exact processed inference text.
+
+**Exit evidence:** synthetic rules are deterministic and idempotent, noise-only
+input returns `422` before model loading, inference receives exactly
+`normalizedText`, metrics exclude preprocessing, and a genuine sanitized Kokoro
+request produces a playable WAV.
+
+## Stage 10 — Speakable English normalization
+
+Convert meaningful currency, percentages, URLs, email addresses, paths,
+Markdown, and code fragments into deterministic spoken English before the
+sanitizer runs.
+
+**Exit evidence:** independent sanitizer/normalizer toggles cover all four
+combinations, original and inference text remain auditable, and technical input
+produces a playable result without raw symbol pronunciation.
+
+## Stage 11 — Production operations
 
 Add durable benchmark jobs, multi-replica coordination, retention policy,
 structured observability, and model-aware readiness behavior.

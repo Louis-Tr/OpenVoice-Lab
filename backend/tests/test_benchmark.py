@@ -92,6 +92,7 @@ class RecordingSynthesisService:
             status="ok",
             model=request.model_id,
             text=request.text,
+            normalized_text=request.text,
             audio_url=f"/audio/{request.model_id}.wav",
             metrics=SynthesisMetrics(
                 model_load_ms=0,

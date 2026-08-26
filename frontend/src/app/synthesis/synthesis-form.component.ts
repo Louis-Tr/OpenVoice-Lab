@@ -40,6 +40,24 @@ import {
         <p id="synthesis-text-error" class="field-error" role="alert">{{ error }}</p>
       }
 
+      <fieldset class="text-cleanup">
+        <legend>Text cleanup</legend>
+        <label class="cleanup-option" for="sanitize-text">
+          <input
+            id="sanitize-text"
+            name="sanitizeText"
+            type="checkbox"
+            [checked]="sanitizeText"
+            [disabled]="disabled"
+            (change)="onSanitizeTextChange($event)"
+          />
+          <span class="cleanup-copy">
+            <strong>Sanitize noisy characters</strong>
+            <small>Remove isolated symbols and repeated punctuation before local inference.</small>
+          </span>
+        </label>
+      </fieldset>
+
       <ng-content />
 
       <button type="submit" [disabled]="disabled || !canSubmit">
@@ -62,14 +80,20 @@ export class SynthesisFormComponent {
   @Input() disabled = false;
   @Input() submitting = false;
   @Input() canSubmit = false;
+  @Input() sanitizeText = true;
 
   @Output() readonly textChange = new EventEmitter<string>();
+  @Output() readonly sanitizeTextChange = new EventEmitter<boolean>();
   @Output() readonly generate = new EventEmitter<void>();
 
   @ViewChild('textArea') private textArea?: ElementRef<HTMLTextAreaElement>;
 
   onTextInput(event: Event): void {
     this.textChange.emit((event.target as HTMLTextAreaElement).value);
+  }
+
+  onSanitizeTextChange(event: Event): void {
+    this.sanitizeTextChange.emit((event.target as HTMLInputElement).checked);
   }
 
   onSubmit(event: SubmitEvent): void {

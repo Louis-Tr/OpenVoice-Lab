@@ -7,6 +7,7 @@ from app.metrics.collector import MetricsCollector
 from app.models.loader import ModelLoader
 from app.models.registry import ModelRegistry
 from app.schemas.synthesis import SynthesisMetrics, SynthesisRequest, SynthesisResult
+from app.text_processing.service import TextProcessingService
 
 
 class SynthesisService:
@@ -18,17 +19,23 @@ class SynthesisService:
         model_loader: ModelLoader,
         audio_service: AudioService,
         metrics_collector: MetricsCollector,
+        text_processing_service: TextProcessingService,
     ) -> None:
         self._model_registry = model_registry
         self._model_loader = model_loader
         self._audio_service = audio_service
         self._metrics_collector = metrics_collector
+        self._text_processing_service = text_processing_service
 
     async def synthesize(self, request: SynthesisRequest) -> SynthesisResult:
         """Run blocking local inference away from the event-loop thread."""
         return await asyncio.to_thread(self._synthesize_sync, request)
 
     def _synthesize_sync(self, request: SynthesisRequest) -> SynthesisResult:
+        normalized_text = self._text_processing_service.process(
+            request.text,
+            sanitize_text=request.sanitize_text,
+        )
         model = self._model_registry.get(request.model_id)
         artifact_key = "\0".join(
             (
@@ -36,7 +43,7 @@ class SynthesisService:
                 request.voice_id,
                 model.language,
                 str(model.speed),
-                request.text,
+                normalized_text,
             )
         )
         loaded = self._metrics_collector.measure_model_load(
@@ -44,7 +51,7 @@ class SynthesisService:
         )
         measured = self._metrics_collector.measure(
             lambda: loaded.value.engine.synthesize(
-                request.text,
+                normalized_text,
                 request.voice_id,
                 speed=model.speed,
                 language=model.language,
@@ -64,6 +71,7 @@ class SynthesisService:
             status="ok",
             model=model.label,
             text=request.text,
+            normalized_text=normalized_text,
             audio_url=artifact.url,
             metrics=SynthesisMetrics(
                 model_load_ms=snapshot.model_load_ms,

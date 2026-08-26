@@ -4,6 +4,7 @@ export interface SynthesisRequest {
   readonly text: string;
   readonly modelId: string;
   readonly voiceId: string;
+  readonly sanitizeText: boolean;
 }
 
 export interface InferenceMetrics {
@@ -20,6 +21,7 @@ export interface SynthesisResult {
   readonly status: 'mock' | 'ok';
   readonly model: string;
   readonly text: string;
+  readonly normalizedText: string;
   readonly audioUrl: string | null;
   readonly metrics: InferenceMetrics;
 }

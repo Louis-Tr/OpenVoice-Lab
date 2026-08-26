@@ -25,6 +25,7 @@ class FakeInferenceEngine(TTSInferenceEngine):
 
     def __init__(self, tone_hz: float) -> None:
         self.call_count = 0
+        self.received_texts: list[str] = []
         self._tone_hz = tone_hz
 
     @property
@@ -39,10 +40,11 @@ class FakeInferenceEngine(TTSInferenceEngine):
         speed: float = 1.0,
         language: str = "en-us",
     ) -> AudioResult:
-        del text, speed, language
+        del speed, language
         if voice not in self.voices:
             raise UnsupportedVoiceError(f"Voice '{voice}' is not available.")
         self.call_count += 1
+        self.received_texts.append(text)
         sample_rate = 24_000
         frames = np.arange(2_400, dtype=np.float32)
         samples = (
@@ -200,6 +202,7 @@ def test_valid_synthesis_request_returns_playable_wav(harness: ApiHarness) -> No
     assert payload["status"] == "ok"
     assert payload["model"] == "kokoro-fp32"
     assert payload["text"] == "Hello world"
+    assert payload["normalizedText"] == "Hello world"
     assert payload["audioUrl"].startswith("/audio/kokoro-fp32-af_heart-")
     assert payload["metrics"] == {
         "modelLoadMs": 25.0,
@@ -239,6 +242,71 @@ def test_invalid_synthesis_request_is_rejected(harness: ApiHarness) -> None:
 
     assert response.status_code == 422
     assert response.json()["detail"][0]["loc"] == ["body", "text"]
+
+
+def test_sanitization_is_enabled_by_default_and_reaches_inference(
+    harness: ApiHarness,
+) -> None:
+    response = request(
+        harness.app,
+        "POST",
+        "/api/synthesis",
+        {
+            "text": "Hello ./ --- world",
+            "modelId": "kokoro-fp32",
+            "voiceId": "af_heart",
+        },
+    )
+
+    assert response.status_code == 200
+    assert response.json()["text"] == "Hello ./ --- world"
+    assert response.json()["normalizedText"] == "Hello world"
+    assert harness.engines["kokoro-fp32"].received_texts == ["Hello world"]
+    assert response.json()["metrics"]["inferenceMs"] == 25.0
+
+
+def test_sanitization_can_be_disabled_without_changing_inference_text(
+    harness: ApiHarness,
+) -> None:
+    raw_text = "  Keep ./ -- $25 exactly.  "
+    response = request(
+        harness.app,
+        "POST",
+        "/api/synthesis",
+        {
+            "text": raw_text,
+            "modelId": "kokoro-fp32",
+            "voiceId": "af_heart",
+            "sanitizeText": False,
+        },
+    )
+
+    assert response.status_code == 200
+    assert response.json()["normalizedText"] == raw_text
+    assert harness.engines["kokoro-fp32"].received_texts == [raw_text]
+
+
+def test_noise_only_input_returns_422_before_model_loading(harness: ApiHarness) -> None:
+    response = request(
+        harness.app,
+        "POST",
+        "/api/synthesis",
+        {
+            "text": "./ -- ,,, $ %",
+            "modelId": "kokoro-fp32",
+            "voiceId": "af_heart",
+        },
+    )
+
+    assert response.status_code == 422
+    assert response.json() == {
+        "detail": (
+            "Sanitization removed all speakable content. "
+            "Enter words or disable sanitization."
+        )
+    }
+    assert harness.loader.load_count("kokoro-fp32") == 0
+    assert harness.engines["kokoro-fp32"].received_texts == []
 
 
 def test_warm_requests_reuse_loaded_model(harness: ApiHarness) -> None:

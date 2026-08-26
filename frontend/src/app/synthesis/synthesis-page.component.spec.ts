@@ -46,6 +46,7 @@ function createApi(overrides: Partial<SynthesisApiService> = {}): SynthesisApiSe
         status: 'ok',
         model: 'kokoro-fp32',
         text: 'Hello',
+        normalizedText: 'Hello',
         audioUrl: '/audio/hello.wav',
         metrics,
       } satisfies SynthesisResult),
@@ -90,6 +91,7 @@ describe('SynthesisPageComponent', () => {
       status: 'ok',
       model: 'kokoro-fp32',
       text: 'Generate this',
+      normalizedText: 'Generate this',
       audioUrl: '/audio/generated.wav',
       metrics,
     });
@@ -116,6 +118,25 @@ describe('SynthesisPageComponent', () => {
       text: 'Run the quantized configuration',
       modelId: 'kokoro-q8',
       voiceId: 'voice-one',
+      sanitizeText: true,
+    });
+  });
+
+  it('defaults sanitization on and sends an independent option state', () => {
+    const api = createApi();
+    const component = new SynthesisPageComponent(api);
+    component.ngOnInit();
+    component.setText('Keep ./ -- $25 exactly.');
+
+    expect(component.sanitizeText()).toBe(true);
+    component.sanitizeText.set(false);
+    component.submit();
+
+    expect(api.synthesize).toHaveBeenCalledWith({
+      text: 'Keep ./ -- $25 exactly.',
+      modelId: 'kokoro-fp32',
+      voiceId: 'voice-one',
+      sanitizeText: false,
     });
   });
 

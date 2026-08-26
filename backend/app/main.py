@@ -15,6 +15,7 @@ from app.metrics.collector import MetricsCollector
 from app.models.loader import ModelLoader
 from app.models.registry import ModelDefinition, ModelRegistry
 from app.synthesis.service import SynthesisService
+from app.text_processing.service import TextProcessingService
 
 BACKEND_ROOT = Path(__file__).resolve().parents[1]
 
@@ -32,6 +33,7 @@ def create_app(
     audio_service: AudioService | None = None,
     metrics_collector: MetricsCollector | None = None,
     benchmark_job_service: BenchmarkJobService | None = None,
+    text_processing_service: TextProcessingService | None = None,
 ) -> FastAPI:
     """Create the API and compose controllers with application services."""
     resolved_settings = settings or Settings()
@@ -74,11 +76,13 @@ def create_app(
         resolved_settings.audio_url_prefix,
     )
     resolved_metrics = metrics_collector or MetricsCollector()
+    resolved_text_processing = text_processing_service or TextProcessingService()
     synthesis_service = SynthesisService(
         resolved_registry,
         resolved_loader,
         resolved_audio,
         resolved_metrics,
+        resolved_text_processing,
     )
     resolved_benchmark_jobs = benchmark_job_service or BenchmarkJobService(
         resolved_registry,
@@ -88,10 +92,10 @@ def create_app(
 
     application = FastAPI(
         title="OpenVoice Lab API",
-        version="0.7.0",
+        version="0.9.0",
         description=(
-            "Measured self-hosted Kokoro ONNX variants with browser-triggered "
-            "benchmark jobs."
+            "Measured self-hosted Kokoro ONNX variants with deterministic "
+            "text sanitization and browser-triggered benchmark jobs."
         ),
     )
     application.include_router(synthesis.create_router(synthesis_service), prefix="/api")
@@ -111,6 +115,7 @@ def create_app(
     application.state.model_registry = resolved_registry
     application.state.metrics_collector = resolved_metrics
     application.state.synthesis_service = synthesis_service
+    application.state.text_processing_service = resolved_text_processing
     application.state.benchmark_job_service = resolved_benchmark_jobs
     return application
 

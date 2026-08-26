@@ -53,7 +53,9 @@ import {
             [disabled]="isSubmitting()"
             [submitting]="isSubmitting()"
             [canSubmit]="modelState() === 'ready'"
+            [sanitizeText]="sanitizeText()"
             (textChange)="setText($event)"
+            (sanitizeTextChange)="sanitizeText.set($event)"
             (generate)="submit()"
           >
             <ovl-model-selector
@@ -105,6 +107,7 @@ export class SynthesisPageComponent implements OnInit, OnDestroy {
   readonly textError = signal('');
   readonly requestError = signal('');
   readonly isSubmitting = signal(false);
+  readonly sanitizeText = signal(true);
   readonly result = signal<SynthesisResult | null>(null);
 
   readonly selectedModel = computed(() =>
@@ -198,6 +201,7 @@ export class SynthesisPageComponent implements OnInit, OnDestroy {
           text,
           modelId: model.id,
           voiceId: this.selectedVoiceId(),
+          sanitizeText: this.sanitizeText(),
         })
         .pipe(finalize(() => this.isSubmitting.set(false)))
         .subscribe({

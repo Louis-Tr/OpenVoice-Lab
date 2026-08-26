@@ -1,9 +1,9 @@
 # API contract
 
-Stage 7 adds an asynchronous browser contract over the Stage 6 benchmark. The
-POST endpoint returns immediately, Angular polls job progress, and the completed
-response contains the same raw and aggregate evidence as the CLI. Generated WAV
-files are served locally, and no external inference API is used.
+Stage 9 adds optional deterministic sanitization to the synthesis contract.
+The original request remains visible while `normalizedText` records the exact
+string passed to inference. Generated WAV files remain local, and no external
+inference or text-processing API is used.
 
 ## `POST /api/synthesis`
 
@@ -14,9 +14,10 @@ Request:
 
 ```json
 {
-  "text": "OpenVoice Lab measures local inference.",
+  "text": "OpenVoice Lab ./ --- produces clean local speech for $25 ,,, today.",
   "modelId": "kokoro-fp32",
-  "voiceId": "af_heart"
+  "voiceId": "af_heart",
+  "sanitizeText": true
 }
 ```
 
@@ -26,22 +27,27 @@ Current success response:
 {
   "status": "ok",
   "model": "kokoro-fp32",
-  "text": "OpenVoice Lab measures local inference.",
-  "audioUrl": "/audio/kokoro-fp32-af_heart-5cf95926dd1375d6.wav",
+  "text": "OpenVoice Lab ./ --- produces clean local speech for $25 ,,, today.",
+  "normalizedText": "OpenVoice Lab produces clean local speech for 25 today.",
+  "audioUrl": "/audio/kokoro-fp32-af_heart-79d9b4da288a625f.wav",
   "metrics": {
     "modelLoadMs": 0.0,
-    "inferenceMs": 676.107,
-    "audioDurationMs": 2782.667,
-    "realTimeFactor": 0.242971,
-    "memoryMb": 529.816,
+    "inferenceMs": 1012.396,
+    "audioDurationMs": 4490.667,
+    "realTimeFactor": 0.225444,
+    "memoryMb": 603.75,
     "warm": true,
     "modelVariant": "fp32"
   }
 }
 ```
 
-Current behavior: `200 OK` with a playable local WAV for valid input. Missing
-fields and malformed values receive Pydantic `422` responses. Unsupported voices
+Current behavior: `sanitizeText` defaults to `true`. When enabled, deterministic
+Unicode, whitespace, control-character, and punctuation-noise cleanup runs
+before model loading. `normalizedText` is the exact inference input and `text`
+is the unchanged request value. If cleanup leaves no alphanumeric content, the
+service returns `422`; `sanitizeText: false` bypasses cleanup. Missing fields
+and malformed values also receive Pydantic `422` responses. Unsupported voices
 return `422`, unknown models return `404`, unavailable artifacts return `503`,
 and inference/measurement/storage failures return `500`.
 
@@ -55,7 +61,8 @@ Measurement semantics:
 - `warm`: whether the engine was already loaded before this request.
 - `modelVariant`: the measured deployed precision variant.
 
-TODO: define artifact retention, request limits, and cancellation.
+TODO: add speakable English normalization, then define artifact retention and
+cancellation.
 
 ## `GET /api/models`
 

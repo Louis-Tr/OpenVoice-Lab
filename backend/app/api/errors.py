@@ -9,6 +9,7 @@ from app.inference.base import InferenceError, UnsupportedVoiceError
 from app.metrics.collector import MetricsCollectionError
 from app.models.loader import ModelLoadError
 from app.models.registry import ModelNotFoundError
+from app.text_processing.service import TextProcessingError
 
 
 def register_error_handlers(application: FastAPI) -> None:
@@ -35,9 +36,10 @@ def register_error_handlers(application: FastAPI) -> None:
         )
 
     @application.exception_handler(UnsupportedVoiceError)
-    async def unsupported_voice(
+    @application.exception_handler(TextProcessingError)
+    async def invalid_synthesis_input(
         _request: Request,
-        error: UnsupportedVoiceError,
+        error: UnsupportedVoiceError | TextProcessingError,
     ) -> JSONResponse:
         return JSONResponse(
             status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
