@@ -1,16 +1,19 @@
 """Model discovery contracts."""
 
+from typing import Literal
+
 from app.schemas.base import ApiSchema
 from app.schemas.synthesis import ModelVariant
 
 
 class ModelSummary(ApiSchema):
-    """A selectable model with voices and available precision variants."""
+    """One selectable, deployable model configuration."""
 
     id: str
-    display_name: str
+    name: str
+    precision: Literal["FP32", "INT8"]
+    variant: ModelVariant
     voices: list[str]
-    variants: list[ModelVariant]
     model_version: str
     runtime: str
     hosting: str

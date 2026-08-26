@@ -7,10 +7,11 @@ application boundary. The repository begins with stable component boundaries so
 that model runtimes and benchmarking mechanics can evolve without leaking into
 the browser or HTTP controllers.
 
-Stage 4 instruments the Stage 3 synthesis path without moving evaluation logic
-into the inference adapter. A fresh browser request now receives its generated
-WAV plus model-load, latency, duration, RTF, RSS memory, lifecycle, and variant
-measurements. The repository does not yet execute aggregate benchmarks.
+Stage 5 makes the instrumented synthesis path model-configuration aware without
+adding branches to product logic. A fresh browser discovers FP32 and INT8
+configurations from the API, selects one stable registry ID, and receives its
+generated WAV plus metrics identifying the producing variant. The repository
+does not yet execute aggregate benchmarks.
 
 ## System spine
 
@@ -109,9 +110,12 @@ Angular concerns and depends on inference through `TTSInferenceEngine`.
 
 ### Model boundary
 
-The model registry maps stable API identifiers to backend model metadata. The
-loader owns runtime lifecycle and the load-once cache. Neither responsibility
-belongs to an API controller or Angular component.
+The model registry maps each stable API identifier to one complete backend
+configuration: precision, artifact path, voices, runtime metadata, and inference
+settings. `kokoro-fp32` and `kokoro-q8` use the same engine abstraction while
+maintaining separate cached runtime sessions. The loader owns runtime lifecycle
+and the load-once cache. Neither responsibility belongs to an API controller,
+Angular component, or conditional branch in `SynthesisService`.
 
 ### Inference boundary
 
@@ -188,7 +192,8 @@ WAV referenced by `SynthesisResult`.
 2. Backend API controllers depend on Pydantic contracts and application
    services, never concrete inference adapters.
 3. `SynthesisService` owns sequencing across the model, measured inference, and
-   audio boundaries; measurement logic never enters controllers or adapters.
+   audio boundaries; measurement and model-variant branching never enter
+   controllers or adapters.
 4. Concrete inference adapters depend inward on the inference abstraction's
    contracts; no domain or controller depends on Kokoro ONNX directly.
 5. Benchmark execution reuses synthesis orchestration and metric semantics.
@@ -197,10 +202,11 @@ WAV referenced by `SynthesisResult`.
 
 ## Composition and future work
 
-`backend/app/main.py` composes routers, services, the registry, the cached model
-loader, the Kokoro engine factory, and local audio delivery. Angular consumes
-the resulting contracts without backend imports. Benchmark execution,
-production retention, and readiness policy remain deliberately deferred.
+`backend/app/main.py` declaratively composes routers, services, both registry
+definitions, the cached model loader, the Kokoro engine factory, and local audio
+delivery. Angular consumes the resulting contracts without backend imports.
+Benchmark execution, production retention, and readiness policy remain
+deliberately deferred.
 
 The implementation sequence and evidence gates are maintained in
 [`ITERATIVE_CODING_MAP.md`](ITERATIVE_CODING_MAP.md).

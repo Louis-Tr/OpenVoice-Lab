@@ -12,6 +12,7 @@ $frontendPath = Join-Path $repositoryPath 'frontend'
 $backendPython = Join-Path $backendPath '.venv\Scripts\python.exe'
 $frontendCli = Join-Path $frontendPath 'node_modules\.bin\ng.cmd'
 $modelPath = Join-Path $backendPath 'model-artifacts\kokoro-v1.0.onnx'
+$quantizedModelPath = Join-Path $backendPath 'model-artifacts\kokoro-v1.0.int8.onnx'
 $voicesPath = Join-Path $backendPath 'model-artifacts\voices-v1.0.bin'
 $npmCommand = Get-Command 'npm.cmd' -ErrorAction SilentlyContinue
 
@@ -47,6 +48,12 @@ if (-not $npmCommand) {
 }
 
 Assert-RequiredFile -LiteralPath $modelPath -SetupHint @"
+Download the local model artifacts:
+  cd $backendPath
+  .\.venv\Scripts\python.exe scripts\download_models.py
+"@
+
+Assert-RequiredFile -LiteralPath $quantizedModelPath -SetupHint @"
 Download the local model artifacts:
   cd $backendPath
   .\.venv\Scripts\python.exe scripts\download_models.py

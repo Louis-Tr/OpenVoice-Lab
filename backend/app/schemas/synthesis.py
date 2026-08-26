@@ -15,7 +15,6 @@ class SynthesisRequest(ApiSchema):
     text: str = Field(min_length=1, max_length=5_000)
     model_id: str = Field(min_length=1)
     voice_id: str = Field(min_length=1)
-    variant: ModelVariant = "fp32"
 
 
 class SynthesisMetrics(ApiSchema):

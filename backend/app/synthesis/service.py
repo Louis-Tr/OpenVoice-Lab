@@ -29,7 +29,7 @@ class SynthesisService:
         return await asyncio.to_thread(self._synthesize_sync, request)
 
     def _synthesize_sync(self, request: SynthesisRequest) -> SynthesisResult:
-        model = self._model_registry.get(request.model_id, request.variant)
+        model = self._model_registry.get(request.model_id)
         artifact_key = "\0".join(
             (
                 model.label,

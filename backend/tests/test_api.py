@@ -23,8 +23,9 @@ from app.models.registry import ModelDefinition, ModelRegistry
 class FakeInferenceEngine(TTSInferenceEngine):
     """Deterministic local engine used to exercise orchestration in unit tests."""
 
-    def __init__(self) -> None:
+    def __init__(self, tone_hz: float) -> None:
         self.call_count = 0
+        self._tone_hz = tone_hz
 
     @property
     def voices(self) -> tuple[str, ...]:
@@ -44,7 +45,9 @@ class FakeInferenceEngine(TTSInferenceEngine):
         self.call_count += 1
         sample_rate = 24_000
         frames = np.arange(2_400, dtype=np.float32)
-        samples = (0.1 * np.sin(2 * np.pi * 440 * frames / sample_rate)).astype(np.float32)
+        samples = (
+            0.1 * np.sin(2 * np.pi * self._tone_hz * frames / sample_rate)
+        ).astype(np.float32)
         return AudioResult(samples=samples, sample_rate_hz=sample_rate)
 
 
@@ -52,7 +55,7 @@ class FakeInferenceEngine(TTSInferenceEngine):
 class ApiHarness:
     app: FastAPI
     loader: ModelLoader
-    engine: FakeInferenceEngine
+    engines: dict[str, FakeInferenceEngine]
     audio_dir: Path
 
 
@@ -71,23 +74,41 @@ class StepClock:
 
 @pytest.fixture
 def harness(tmp_path: Path) -> ApiHarness:
-    model_path = tmp_path / "kokoro-v1.0.onnx"
+    fp32_path = tmp_path / "kokoro-v1.0.onnx"
+    quantized_path = tmp_path / "kokoro-v1.0.int8.onnx"
     voices_path = tmp_path / "voices-v1.0.bin"
-    model_path.write_bytes(b"test-model")
+    fp32_path.write_bytes(b"test-fp32-model")
+    quantized_path.write_bytes(b"test-int8-model")
     voices_path.write_bytes(b"test-voices")
 
-    definition = ModelDefinition(
-        model_id="kokoro",
-        display_name="Kokoro",
-        variant="fp32",
-        model_version="1.0",
-        model_path=model_path,
-        voices_path=voices_path,
-        voices=("af_heart",),
+    definitions = (
+        ModelDefinition(
+            model_id="kokoro-fp32",
+            display_name="Kokoro",
+            precision="FP32",
+            variant="fp32",
+            model_version="1.0",
+            model_path=fp32_path,
+            voices_path=voices_path,
+            voices=("af_heart",),
+        ),
+        ModelDefinition(
+            model_id="kokoro-q8",
+            display_name="Kokoro",
+            precision="INT8",
+            variant="quantized",
+            model_version="1.0",
+            model_path=quantized_path,
+            voices_path=voices_path,
+            voices=("af_heart",),
+        ),
     )
-    registry = ModelRegistry((definition,))
-    engine = FakeInferenceEngine()
-    loader = ModelLoader(engine_factory=lambda _model: engine)
+    registry = ModelRegistry(definitions)
+    engines = {
+        "kokoro-fp32": FakeInferenceEngine(440),
+        "kokoro-q8": FakeInferenceEngine(330),
+    }
+    loader = ModelLoader(engine_factory=lambda model: engines[model.model_id])
     metrics = MetricsCollector(
         clock=StepClock(0.025),
         memory_reader=lambda: 384.0,
@@ -101,7 +122,7 @@ def harness(tmp_path: Path) -> ApiHarness:
         audio_service=audio,
         metrics_collector=metrics,
     )
-    return ApiHarness(app=app, loader=loader, engine=engine, audio_dir=audio_dir)
+    return ApiHarness(app=app, loader=loader, engines=engines, audio_dir=audio_dir)
 
 
 def request(
@@ -136,16 +157,29 @@ def test_model_listing(harness: ApiHarness) -> None:
     assert response.status_code == 200
     assert response.json() == [
         {
-            "id": "kokoro",
-            "displayName": "Kokoro",
+            "id": "kokoro-fp32",
+            "name": "Kokoro",
+            "precision": "FP32",
+            "variant": "fp32",
             "voices": ["af_heart"],
-            "variants": ["fp32"],
             "modelVersion": "1.0",
             "runtime": "ONNX",
             "hosting": "self-hosted",
             "externalInferenceApis": [],
             "available": True,
-        }
+        },
+        {
+            "id": "kokoro-q8",
+            "name": "Kokoro",
+            "precision": "INT8",
+            "variant": "quantized",
+            "voices": ["af_heart"],
+            "modelVersion": "1.0",
+            "runtime": "ONNX",
+            "hosting": "self-hosted",
+            "externalInferenceApis": [],
+            "available": True,
+        },
     ]
 
 
@@ -156,9 +190,8 @@ def test_valid_synthesis_request_returns_playable_wav(harness: ApiHarness) -> No
         "/api/synthesis",
         {
             "text": "Hello world",
-            "modelId": "kokoro",
+            "modelId": "kokoro-fp32",
             "voiceId": "af_heart",
-            "variant": "fp32",
         },
     )
 
@@ -199,9 +232,8 @@ def test_invalid_synthesis_request_is_rejected(harness: ApiHarness) -> None:
         "/api/synthesis",
         {
             "text": "",
-            "modelId": "kokoro",
+            "modelId": "kokoro-fp32",
             "voiceId": "af_heart",
-            "variant": "fp32",
         },
     )
 
@@ -212,9 +244,8 @@ def test_invalid_synthesis_request_is_rejected(harness: ApiHarness) -> None:
 def test_warm_requests_reuse_loaded_model(harness: ApiHarness) -> None:
     payload = {
         "text": "OpenVoice Lab is running locally.",
-        "modelId": "kokoro",
+        "modelId": "kokoro-fp32",
         "voiceId": "af_heart",
-        "variant": "fp32",
     }
 
     first = request(harness.app, "POST", "/api/synthesis", payload)
@@ -226,8 +257,37 @@ def test_warm_requests_reuse_loaded_model(harness: ApiHarness) -> None:
     assert second.json()["metrics"]["warm"] is True
     assert first.json()["metrics"]["modelLoadMs"] == 25.0
     assert second.json()["metrics"]["modelLoadMs"] == 0.0
-    assert harness.loader.load_count("kokoro", "fp32") == 1
-    assert harness.engine.call_count == 2
+    assert harness.loader.load_count("kokoro-fp32") == 1
+    assert harness.engines["kokoro-fp32"].call_count == 2
+
+
+def test_same_request_runs_against_both_registered_variants(harness: ApiHarness) -> None:
+    base_payload = {
+        "text": "Compare the same synthesis request.",
+        "voiceId": "af_heart",
+    }
+
+    fp32 = request(
+        harness.app,
+        "POST",
+        "/api/synthesis",
+        {**base_payload, "modelId": "kokoro-fp32"},
+    )
+    quantized = request(
+        harness.app,
+        "POST",
+        "/api/synthesis",
+        {**base_payload, "modelId": "kokoro-q8"},
+    )
+
+    assert fp32.status_code == quantized.status_code == 200
+    assert fp32.json()["model"] == "kokoro-fp32"
+    assert quantized.json()["model"] == "kokoro-q8"
+    assert fp32.json()["metrics"]["modelVariant"] == "fp32"
+    assert quantized.json()["metrics"]["modelVariant"] == "quantized"
+    assert fp32.json()["audioUrl"] != quantized.json()["audioUrl"]
+    assert harness.loader.load_count("kokoro-fp32") == 1
+    assert harness.loader.load_count("kokoro-q8") == 1
 
 
 def test_unknown_model_returns_useful_error(harness: ApiHarness) -> None:
@@ -239,11 +299,8 @@ def test_unknown_model_returns_useful_error(harness: ApiHarness) -> None:
             "text": "Hello world",
             "modelId": "unknown",
             "voiceId": "af_heart",
-            "variant": "fp32",
         },
     )
 
     assert response.status_code == 404
-    assert response.json() == {
-        "detail": "Model 'unknown' with variant 'fp32' is not registered."
-    }
+    assert response.json() == {"detail": "Model 'unknown' is not registered."}

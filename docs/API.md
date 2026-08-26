@@ -1,9 +1,9 @@
 # API contract
 
-Stage 4 extends the synthesis response with measurements from the same inference
-operation that produced the returned audio. The browser displays this contract
-without knowing how the backend runtime collects it. Generated WAV files are
-served locally; no external inference API is used.
+Stage 5 assigns one stable ID to each deployable model configuration. The
+browser discovers those IDs and their public metadata, then selects one through
+the synthesis request. It does not map precision names to runtime artifacts.
+Generated WAV files are served locally; no external inference API is used.
 
 ## `POST /api/synthesis`
 
@@ -15,9 +15,8 @@ Request:
 ```json
 {
   "text": "OpenVoice Lab measures local inference.",
-  "modelId": "kokoro",
-  "voiceId": "af_heart",
-  "variant": "fp32"
+  "modelId": "kokoro-fp32",
+  "voiceId": "af_heart"
 }
 ```
 
@@ -60,18 +59,31 @@ TODO: define artifact retention, request limits, and cancellation.
 
 ## `GET /api/models`
 
-List selectable models, voices, deployed variants, and public runtime metadata
-without exposing local artifact paths.
+List selectable deployable configurations, voices, precision, and public runtime
+metadata without exposing local artifact paths.
 
 Current response:
 
 ```json
 [
   {
-    "id": "kokoro",
-    "displayName": "Kokoro",
+    "id": "kokoro-fp32",
+    "name": "Kokoro",
+    "precision": "FP32",
+    "variant": "fp32",
     "voices": ["af_heart"],
-    "variants": ["fp32"],
+    "modelVersion": "1.0",
+    "runtime": "ONNX",
+    "hosting": "self-hosted",
+    "externalInferenceApis": [],
+    "available": true
+  },
+  {
+    "id": "kokoro-q8",
+    "name": "Kokoro",
+    "precision": "INT8",
+    "variant": "quantized",
+    "voices": ["af_heart"],
     "modelVersion": "1.0",
     "runtime": "ONNX",
     "hosting": "self-hosted",
@@ -81,11 +93,10 @@ Current response:
 ]
 ```
 
-Current behavior: `200 OK` with public model/runtime metadata and local artifact
-availability. Listing metadata does not load the ONNX session.
+Current behavior: `200 OK` with one entry per registry configuration and local
+artifact availability. Listing metadata does not load either ONNX session.
 
-TODO: define richer capabilities, readiness policy, pagination, and stable
-identifier policy.
+TODO: define richer capabilities, readiness policy, and pagination.
 
 ## `POST /api/benchmarks`
 
@@ -96,8 +107,7 @@ Placeholder request:
 
 ```json
 {
-  "model_id": "model-id",
-  "variant": "quantized"
+  "modelId": "kokoro-q8"
 }
 ```
 

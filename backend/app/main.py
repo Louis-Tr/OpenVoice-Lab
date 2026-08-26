@@ -39,10 +39,25 @@ def create_app(
             ModelDefinition(
                 model_id=resolved_settings.default_model_id,
                 display_name=resolved_settings.default_model_display_name,
+                precision="FP32",
                 variant="fp32",
                 model_version=resolved_settings.kokoro_model_version,
                 model_path=resolve_backend_path(resolved_settings.model_artifact_dir)
                 / resolved_settings.kokoro_model_filename,
+                voices_path=resolve_backend_path(resolved_settings.model_artifact_dir)
+                / resolved_settings.kokoro_voices_filename,
+                voices=(resolved_settings.default_voice_id,),
+                language=resolved_settings.kokoro_language,
+                speed=resolved_settings.kokoro_speed,
+            ),
+            ModelDefinition(
+                model_id=resolved_settings.quantized_model_id,
+                display_name=resolved_settings.default_model_display_name,
+                precision="INT8",
+                variant="quantized",
+                model_version=resolved_settings.kokoro_model_version,
+                model_path=resolve_backend_path(resolved_settings.model_artifact_dir)
+                / resolved_settings.kokoro_quantized_model_filename,
                 voices_path=resolve_backend_path(resolved_settings.model_artifact_dir)
                 / resolved_settings.kokoro_voices_filename,
                 voices=(resolved_settings.default_voice_id,),
@@ -66,10 +81,10 @@ def create_app(
 
     application = FastAPI(
         title="OpenVoice Lab API",
-        version="0.4.0",
+        version="0.5.0",
         description=(
-            "Measured self-hosted Kokoro ONNX synthesis behind a replaceable "
-            "inference boundary."
+            "Measured self-hosted Kokoro ONNX variants behind a replaceable "
+            "registry and inference boundary."
         ),
     )
     application.include_router(synthesis.create_router(synthesis_service), prefix="/api")

@@ -3,13 +3,14 @@
 from collections.abc import Iterable
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Literal
 
 from app.schemas.model import ModelSummary
 from app.schemas.synthesis import ModelVariant
 
 
 class ModelNotFoundError(LookupError):
-    """Raised when a requested model variant is not registered."""
+    """Raised when a requested model configuration is not registered."""
 
 
 @dataclass(frozen=True, slots=True)
@@ -18,6 +19,7 @@ class ModelDefinition:
 
     model_id: str
     display_name: str
+    precision: Literal["FP32", "INT8"]
     variant: ModelVariant
     model_version: str
     model_path: Path
@@ -29,12 +31,12 @@ class ModelDefinition:
     speed: float = 1.0
 
     @property
-    def key(self) -> tuple[str, ModelVariant]:
-        return self.model_id, self.variant
+    def key(self) -> str:
+        return self.model_id
 
     @property
     def label(self) -> str:
-        return f"{self.model_id}-{self.variant}"
+        return self.model_id
 
     @property
     def artifacts_available(self) -> bool:
@@ -48,25 +50,24 @@ class ModelRegistry:
         definitions = tuple(models)
         self._models = {model.key: model for model in definitions}
         if len(self._models) != len(definitions):
-            raise ValueError("Duplicate model identifiers and variants are not allowed.")
+            raise ValueError("Duplicate model identifiers are not allowed.")
 
-    def get(self, model_id: str, variant: ModelVariant) -> ModelDefinition:
-        """Resolve a registered model or return a useful domain error."""
+    def get(self, model_id: str) -> ModelDefinition:
+        """Resolve a deployable configuration or return a useful domain error."""
         try:
-            return self._models[(model_id, variant)]
+            return self._models[model_id]
         except KeyError as error:
-            raise ModelNotFoundError(
-                f"Model '{model_id}' with variant '{variant}' is not registered."
-            ) from error
+            raise ModelNotFoundError(f"Model '{model_id}' is not registered.") from error
 
     def list_available(self) -> list[ModelSummary]:
         """Expose public model metadata without runtime implementation details."""
         return [
             ModelSummary(
                 id=model.model_id,
-                display_name=model.display_name,
+                name=model.display_name,
+                precision=model.precision,
+                variant=model.variant,
                 voices=list(model.voices),
-                variants=[model.variant],
                 model_version=model.model_version,
                 runtime=model.runtime,
                 hosting=model.hosting,

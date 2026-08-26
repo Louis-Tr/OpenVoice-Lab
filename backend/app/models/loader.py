@@ -28,8 +28,8 @@ class ModelLoader:
 
     def __init__(self, engine_factory: EngineFactory | None = None) -> None:
         self._engine_factory = engine_factory or self._create_engine
-        self._engines: dict[tuple[str, str], TTSInferenceEngine] = {}
-        self._load_counts: dict[tuple[str, str], int] = {}
+        self._engines: dict[str, TTSInferenceEngine] = {}
+        self._load_counts: dict[str, int] = {}
         self._lock = Lock()
 
     def load(self, model: ModelDefinition) -> TTSInferenceEngine:
@@ -65,9 +65,9 @@ class ModelLoader:
             self._load_counts[key] = self._load_counts.get(key, 0) + 1
             return ModelLoadResult(engine=engine, warm=False)
 
-    def load_count(self, model_id: str, variant: str) -> int:
+    def load_count(self, model_id: str) -> int:
         """Expose lifecycle evidence for diagnostics and tests."""
-        return self._load_counts.get((model_id, variant), 0)
+        return self._load_counts.get(model_id, 0)
 
     @staticmethod
     def _create_engine(model: ModelDefinition) -> TTSInferenceEngine:

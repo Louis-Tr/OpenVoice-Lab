@@ -9,15 +9,23 @@ import { ModelSummary, SynthesisResult } from './synthesis.types';
 import { SynthesisPageComponent } from './synthesis-page.component';
 
 const model: ModelSummary = {
-  id: 'local-model',
-  displayName: 'Local Model',
+  id: 'kokoro-fp32',
+  name: 'Kokoro',
+  precision: 'FP32',
+  variant: 'fp32',
   voices: ['voice-one'],
-  variants: ['fp32'],
   modelVersion: '1.0',
   runtime: 'local-runtime',
   hosting: 'self-hosted',
   externalInferenceApis: [],
   available: true,
+};
+
+const quantizedModel: ModelSummary = {
+  ...model,
+  id: 'kokoro-q8',
+  precision: 'INT8',
+  variant: 'quantized',
 };
 
 const metrics = {
@@ -32,11 +40,11 @@ const metrics = {
 
 function createApi(overrides: Partial<SynthesisApiService> = {}): SynthesisApiService {
   return {
-    listModels: vi.fn(() => of([model])),
+    listModels: vi.fn(() => of([model, quantizedModel])),
     synthesize: vi.fn(() =>
       of({
         status: 'ok',
-        model: 'local-model-fp32',
+        model: 'kokoro-fp32',
         text: 'Hello',
         audioUrl: '/audio/hello.wav',
         metrics,
@@ -53,7 +61,7 @@ describe('SynthesisPageComponent', () => {
     component.ngOnInit();
 
     expect(component.modelState()).toBe('ready');
-    expect(component.selectedModelId()).toBe('local-model');
+    expect(component.selectedModelId()).toBe('kokoro-fp32');
     expect(component.selectedVoiceId()).toBe('voice-one');
   });
 
@@ -80,7 +88,7 @@ describe('SynthesisPageComponent', () => {
 
     response.next({
       status: 'ok',
-      model: 'local-model-fp32',
+      model: 'kokoro-fp32',
       text: 'Generate this',
       audioUrl: '/audio/generated.wav',
       metrics,
@@ -93,6 +101,22 @@ describe('SynthesisPageComponent', () => {
       metrics.inferenceMs / metrics.audioDurationMs,
       5,
     );
+  });
+
+  it('submits the selected registry configuration without frontend variant logic', () => {
+    const api = createApi();
+    const component = new SynthesisPageComponent(api);
+    component.ngOnInit();
+    component.setModelSelection({ modelId: 'kokoro-q8' });
+    component.setText('Run the quantized configuration');
+
+    component.submit();
+
+    expect(api.synthesize).toHaveBeenCalledWith({
+      text: 'Run the quantized configuration',
+      modelId: 'kokoro-q8',
+      voiceId: 'voice-one',
+    });
   });
 
   it('gives a recovery path when the backend is unavailable', () => {

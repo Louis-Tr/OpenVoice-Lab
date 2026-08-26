@@ -6,14 +6,9 @@ import {
   Output,
 } from '@angular/core';
 
-import {
-  ModelSelection,
-  ModelSummary,
-  ModelVariant,
-} from '../synthesis/synthesis.types';
+import { ModelSelection, ModelSummary } from '../synthesis/synthesis.types';
 
 interface ModelChoice extends ModelSelection {
-  readonly key: string;
   readonly label: string;
 }
 
@@ -43,11 +38,11 @@ interface ModelChoice extends ModelSelection {
           <span>Model</span>
           <select
             aria-describedby="model-status"
-            [value]="selectedChoice"
+            [value]="selectedModelId"
             (change)="onModelChange($event)"
           >
-            @for (choice of choices; track choice.key) {
-              <option [value]="choice.key">{{ choice.label }}</option>
+            @for (choice of choices; track choice.modelId) {
+              <option [value]="choice.modelId">{{ choice.label }}</option>
             }
           </select>
         </label>
@@ -59,7 +54,7 @@ interface ModelChoice extends ModelSelection {
         } @else if (state === 'error') {
           Model discovery is unavailable.
         } @else if (selectedModel) {
-          {{ selectedModel.modelVersion }} · {{ selectedModel.hosting }}
+          {{ selectedModel.precision }} · {{ selectedModel.modelVersion }} · {{ selectedModel.hosting }}
         }
       </p>
     </fieldset>
@@ -68,7 +63,6 @@ interface ModelChoice extends ModelSelection {
 export class ModelSelectorComponent {
   @Input() models: readonly ModelSummary[] = [];
   @Input() selectedModelId = '';
-  @Input() selectedVariant: ModelVariant = 'fp32';
   @Input() selectedVoiceId = '';
   @Input() state: 'loading' | 'ready' | 'error' = 'loading';
   @Input() disabled = false;
@@ -85,28 +79,17 @@ export class ModelSelectorComponent {
   }
 
   get choices(): readonly ModelChoice[] {
-    return this.models.flatMap((model) =>
-      model.variants.map((variant) => ({
-        key: `${model.id}:${variant}`,
-        label: `${model.displayName} ${variant.toUpperCase()}`,
-        modelId: model.id,
-        variant,
-      })),
-    );
-  }
-
-  get selectedChoice(): string {
-    return `${this.selectedModelId}:${this.selectedVariant}`;
+    return this.models.map((model) => ({
+      label: `${model.name} ${model.precision}`,
+      modelId: model.id,
+    }));
   }
 
   onModelChange(event: Event): void {
-    const key = (event.target as HTMLSelectElement).value;
-    const choice = this.choices.find((item) => item.key === key);
+    const modelId = (event.target as HTMLSelectElement).value;
+    const choice = this.choices.find((item) => item.modelId === modelId);
     if (choice) {
-      this.modelSelectionChange.emit({
-        modelId: choice.modelId,
-        variant: choice.variant,
-      });
+      this.modelSelectionChange.emit({ modelId: choice.modelId });
     }
   }
 

@@ -18,7 +18,6 @@ import { SynthesisFormComponent } from './synthesis-form.component';
 import {
   ModelSelection,
   ModelSummary,
-  ModelVariant,
   SynthesisResult,
 } from './synthesis.types';
 
@@ -60,7 +59,6 @@ import {
             <ovl-model-selector
               [models]="models()"
               [selectedModelId]="selectedModelId()"
-              [selectedVariant]="selectedVariant()"
               [selectedVoiceId]="selectedVoiceId()"
               [state]="modelState()"
               [disabled]="isSubmitting()"
@@ -102,7 +100,6 @@ export class SynthesisPageComponent implements OnInit, OnDestroy {
   readonly models = signal<readonly ModelSummary[]>([]);
   readonly modelState = signal<'loading' | 'ready' | 'error'>('loading');
   readonly selectedModelId = signal('');
-  readonly selectedVariant = signal<ModelVariant>('fp32');
   readonly selectedVoiceId = signal('');
   readonly text = signal('');
   readonly textError = signal('');
@@ -148,7 +145,6 @@ export class SynthesisPageComponent implements OnInit, OnDestroy {
 
           const firstModel = availableModels[0];
           this.selectedModelId.set(firstModel.id);
-          this.selectedVariant.set(firstModel.variants[0] ?? 'fp32');
           this.selectedVoiceId.set(firstModel.voices[0] ?? '');
           this.modelState.set('ready');
         },
@@ -169,7 +165,6 @@ export class SynthesisPageComponent implements OnInit, OnDestroy {
 
   setModelSelection(selection: ModelSelection): void {
     this.selectedModelId.set(selection.modelId);
-    this.selectedVariant.set(selection.variant);
 
     const model = this.models().find((item) => item.id === selection.modelId);
     if (model && !model.voices.includes(this.selectedVoiceId())) {
@@ -203,7 +198,6 @@ export class SynthesisPageComponent implements OnInit, OnDestroy {
           text,
           modelId: model.id,
           voiceId: this.selectedVoiceId(),
-          variant: this.selectedVariant(),
         })
         .pipe(finalize(() => this.isSubmitting.set(false)))
         .subscribe({

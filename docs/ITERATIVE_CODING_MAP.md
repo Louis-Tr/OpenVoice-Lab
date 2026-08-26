@@ -59,7 +59,19 @@ to the model adapter.
 tested metrics, RTF matches inference time divided by audio duration, Angular
 displays the values, and the README records a real local measurement.
 
-## Stage 5 — Benchmark engine
+## Stage 5 — Model registry and inference variants
+
+**Status:** complete.
+
+Represent FP32 and quantized Kokoro deployments as stable, data-driven registry
+configurations. Let Angular discover and select them without model-specific
+mapping or branching in product logic.
+
+**Exit evidence:** the same request runs against `kokoro-fp32` and `kokoro-q8`
+in one process, both produce playable audio, both report variant identity, and
+each runtime loads once and serves warm requests.
+
+## Stage 6 — Benchmark engine
 
 Version the sentence corpus, execute it through the same synthesis path, and
 aggregate comparable results. Add failure and cancellation policy.
@@ -67,7 +79,7 @@ aggregate comparable results. Add failure and cancellation policy.
 **Exit evidence:** reproducible benchmark output with corpus and environment
 metadata.
 
-## Stage 6 — Packaging and operations
+## Stage 7 — Packaging and operations
 
 Add Docker packaging, artifact mounts, deployment configuration, observability,
 and distinct liveness/readiness behavior.

@@ -128,6 +128,47 @@ hardware and workload; these values are recorded output, not benchmark claims.
 **Portfolio proof:** the project moves from “I can run AI” to “I can measure AI
 systems.”
 
+## Stage 5 — Model registry and inference variants
+
+> “I designed the inference layer so multiple model configurations can be
+> evaluated without changing product logic.”
+
+**Responsibility:** make model configuration interchangeable. Keep product logic
+out of model selection.
+
+One ID represents one deployable configuration:
+
+| Registry ID | Precision | Why it exists |
+| --- | --- | --- |
+| `kokoro-fp32` | FP32 | Full-precision baseline for performance and output comparison. |
+| `kokoro-q8` | INT8 | Smaller quantized configuration for measuring latency and memory tradeoffs. |
+
+```text
+request.modelId
+  ↓
+ModelRegistry
+  ├── kokoro-fp32 → FP32 artifact → cached KokoroONNXEngine
+  └── kokoro-q8   → INT8 artifact → cached KokoroONNXEngine
+```
+
+There are no model-specific branches in Angular, controllers, or
+`SynthesisService`. `/api/models` supplies labels, precision, voices, and stable
+IDs; Angular renders that response and sends the chosen ID back. The registry
+resolves the artifact and metadata. Switching precision is request data—not a
+restart or code change.
+
+Both variants will be benchmarked with the same text, voice, runtime, and
+hardware. The comparison will cover load time, inference latency, RTF, process
+memory, generated duration, and output quality. Stage 5 does not claim a winner;
+it establishes the honest comparison boundary.
+
+**Acceptance proof:** the real integration test synthesizes the same sentence
+through both local ONNX variants in one FastAPI process, verifies playable WAVs,
+confirms distinct variant metrics, and proves one load per configuration.
+
+**Portfolio proof:** model-serving architecture with interchangeable runtime
+configurations—not a one-model integration.
+
 ## Run the full stack locally
 
 Once the one-time setup below is complete, start both servers from the repository
@@ -170,28 +211,29 @@ Open `http://localhost:4200`. The development proxy keeps `/api` and generated
 ```text
 curl -X POST http://localhost:8000/api/synthesis \
   -H "Content-Type: application/json" \
-  -d '{"text":"OpenVoice Lab is running locally.","modelId":"kokoro","voiceId":"af_heart","variant":"fp32"}'
+  -d '{"text":"OpenVoice Lab is running locally.","modelId":"kokoro-fp32","voiceId":"af_heart"}'
   ↓
 {"status":"ok","model":"kokoro-fp32","text":"OpenVoice Lab is running locally.","audioUrl":"/audio/kokoro-fp32-af_heart-27561063304ff41f.wav"}
 ```
 
 Result: `kokoro-fp32-af_heart-27561063304ff41f.wav`
 
-The automated suite verifies the playable WAV, useful API errors, stable output,
-and two warm requests with exactly one model load:
+The automated suite verifies both real model variants, playable WAVs, useful API
+errors, stable output, warm reuse, and one load per configuration:
 
 ```powershell
 .\.venv\Scripts\pytest.exe -q
-# 10 passed
+# 11 passed
 ```
 
-The Angular suite covers fresh model discovery, empty input, the locked loading
-state, backend unavailability, inference failure, and successful audio delivery:
+The Angular suite covers dynamic variant discovery and selection, empty input,
+the locked loading state, backend unavailability, inference failure, and
+successful audio delivery:
 
 ```powershell
 cd frontend
 npm test
-# 6 passed
+# 9 passed
 ```
 
 ## Boundaries and roadmap
@@ -201,8 +243,8 @@ npm test
 - [API contract](docs/API.md)
 - [Iterative coding map](docs/ITERATIVE_CODING_MAP.md)
 
-**Portfolio status:** this repository now demonstrates a measured synthesis
-vertical slice: Angular contract client, FastAPI orchestration, self-hosted
-open-weight inference, generated audio, browser playback, and mathematically
-verified performance instrumentation. Benchmarking remains an explicit future
-stage—not an implied feature.
+**Portfolio status:** this repository now demonstrates a measured, multi-variant
+synthesis vertical slice: Angular contract client, FastAPI orchestration,
+self-hosted open-weight inference, registry-owned model lifecycle, generated
+audio, browser playback, and mathematically verified instrumentation.
+Benchmark aggregation remains an explicit future stage—not an implied feature.
