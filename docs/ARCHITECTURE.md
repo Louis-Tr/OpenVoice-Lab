@@ -7,11 +7,11 @@ application boundary. The repository begins with stable component boundaries so
 that model runtimes and benchmarking mechanics can evolve without leaking into
 the browser or HTTP controllers.
 
-Stage 5 makes the instrumented synthesis path model-configuration aware without
-adding branches to product logic. A fresh browser discovers FP32 and INT8
-configurations from the API, selects one stable registry ID, and receives its
-generated WAV plus metrics identifying the producing variant. The repository
-does not yet execute aggregate benchmarks.
+Stage 6 executes a versioned evaluation corpus through the same instrumented
+synthesis path used by the product. FP32 and INT8 receive identical inputs in
+separate worker processes, raw failures remain visible, and aggregation happens
+only after case execution. The browser-facing benchmark UI and job API remain
+future delivery concerns; the complete benchmark is executable from the CLI.
 
 ## System spine
 
@@ -153,6 +153,37 @@ services used by interactive synthesis. The evaluator aggregates individual
 measurements. Benchmark code must not create a second, behaviorally different
 inference path.
 
+The executable benchmark flow is:
+
+```text
+sentences.json + SHA-256
+  ↓
+benchmark coordinator
+  ├── fresh FP32 worker ──> SynthesisService ──> raw results
+  └── fresh INT8 worker ──> SynthesisService ──> raw results
+  ↓
+corpus-hash verification
+  ↓
+BenchmarkEvaluator
+  ↓
+immutable timestamped JSON
+```
+
+Model processes are isolated because process RSS is not comparable if the
+second model shares a process with the first model's cached runtime. Each worker
+records the corpus version and hash, model ID, precision, voice, case identity,
+raw metrics, audio URL, and any exception. The coordinator rejects a worker
+whose corpus hash differs. The evaluator never removes failed cases; it reports
+success and failure counts and aggregates only successful measurements.
+
+Aggregate semantics:
+
+- Average and median latency use `inferenceMs` from successful cases.
+- P95 latency uses deterministic linear interpolation over successful cases.
+- Average RTF is the mean of per-case RTF values.
+- Memory includes average and peak process RSS from the isolated model worker.
+- Failure count includes every case without a synthesis result.
+
 ## Primary synthesis request flow
 
 The required request path is:
@@ -196,7 +227,8 @@ WAV referenced by `SynthesisResult`.
    controllers or adapters.
 4. Concrete inference adapters depend inward on the inference abstraction's
    contracts; no domain or controller depends on Kokoro ONNX directly.
-5. Benchmark execution reuses synthesis orchestration and metric semantics.
+5. Benchmark execution reuses synthesis orchestration and metric semantics;
+   every model receives the same hashed corpus and failures remain raw data.
 6. Model weights, generated audio, and benchmark output are runtime artifacts
    and are excluded from Git.
 
@@ -204,9 +236,10 @@ WAV referenced by `SynthesisResult`.
 
 `backend/app/main.py` declaratively composes routers, services, both registry
 definitions, the cached model loader, the Kokoro engine factory, and local audio
-delivery. Angular consumes the resulting contracts without backend imports.
-Benchmark execution, production retention, and readiness policy remain
-deliberately deferred.
+delivery. The CLI composes one fresh application per model worker and accesses
+the same `SynthesisService` through application state. Angular consumes the
+resulting contracts without backend imports. Benchmark HTTP job orchestration,
+production retention, and readiness policy remain deliberately deferred.
 
 The implementation sequence and evidence gates are maintained in
 [`ITERATIVE_CODING_MAP.md`](ITERATIVE_CODING_MAP.md).

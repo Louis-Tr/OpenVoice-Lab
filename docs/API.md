@@ -1,9 +1,9 @@
 # API contract
 
-Stage 5 assigns one stable ID to each deployable model configuration. The
-browser discovers those IDs and their public metadata, then selects one through
-the synthesis request. It does not map precision names to runtime artifacts.
-Generated WAV files are served locally; no external inference API is used.
+Stage 6 adds an executable CLI benchmark over the same synthesis service used by
+the API. The benchmark HTTP endpoint remains an explicit job-orchestration
+placeholder; no synchronous success response is claimed. Generated WAV files
+are served locally, and no external inference API is used.
 
 ## `POST /api/synthesis`
 
@@ -100,31 +100,41 @@ TODO: define richer capabilities, readiness policy, and pagination.
 
 ## `POST /api/benchmarks`
 
-Trigger the predefined sentence corpus for a selected model variant and return
-or schedule aggregate results.
+Planned asynchronous transport for the benchmark system. The current complete
+execution path is the CLI command documented below.
 
 Placeholder request:
 
 ```json
 {
-  "modelId": "kokoro-q8"
+  "modelIds": ["kokoro-fp32", "kokoro-q8"],
+  "voiceId": "af_heart"
 }
 ```
 
-Response:
+Current response:
 
 ```json
 {
-  "benchmark_id": "benchmark-id",
-  "status": "pending",
-  "aggregates": {}
+  "detail": "Benchmark HTTP job orchestration is not implemented yet."
 }
 ```
 
-Current scaffold behavior: `501 Not Implemented`.
+Current HTTP behavior: `501 Not Implemented`. This is not the Stage 6 execution
+surface and is not presented as working.
 
-TODO: choose synchronous versus job-based execution, define progress and
-cancellation, version the sentence corpus, and specify aggregate statistics.
+The executable benchmark is:
+
+```powershell
+cd backend
+.\.venv\Scripts\python.exe -m app.benchmark.runner
+```
+
+It writes a timestamped JSON file containing corpus version/hash, environment,
+raw case outcomes, and per-model aggregates to `backend/benchmark-results/`.
+
+TODO: define job creation, progress, cancellation, result retention, and result
+retrieval for the HTTP transport.
 
 ## `GET /health`
 

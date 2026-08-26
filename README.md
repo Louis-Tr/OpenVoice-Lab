@@ -169,6 +169,60 @@ confirms distinct variant metrics, and proves one load per configuration.
 **Portfolio proof:** model-serving architecture with interchangeable runtime
 configurations—not a one-model integration.
 
+## Stage 6 — Reproducible benchmark system
+
+> “I built an automated evaluation pipeline to compare inference
+> configurations using identical workloads.”
+
+**Responsibility:** turn model selection into evidence.
+
+```text
+Versioned evaluation cases
+  ↓
+isolated process per model
+  ↓
+SynthesisService → metrics → raw case results
+  ↓
+BenchmarkEvaluator → comparable aggregates
+```
+
+The `1.0.0` corpus covers short and medium conversation, long-form text,
+numbers, dates, punctuation, questions, and unusual names or words. Every model
+receives the same eight case IDs, text, and voice. Each case is retained as a
+success or failure; the evaluator calculates average, median, and p95 latency,
+average RTF, average and peak process memory, and failure count.
+
+Actual run: `benchmark-2026-08-26T11-02-02-123480Z.json`, Windows 11, Python
+3.13.5, 16 logical CPUs, `af_heart`, 8 identical cases per model, 0 failures.
+Each model ran in a fresh process so its RSS measurement excludes the other
+model. Corpus SHA-256:
+`eaf6215e4cf13e670e0b3cfb56f33b6a50939a61e30a2b3296ed7c44d1d9cb98`.
+
+| Variant | Avg latency | P95 latency | Avg RTF | Peak RSS memory |
+| --- | ---: | ---: | ---: | ---: |
+| FP32 | 1,273.603 ms | 2,571.653 ms | 0.217205 | 766.098 MB |
+| Q8 / INT8 | 12,865.738 ms | 25,304.652 ms | 2.151270 | 601.859 MB |
+
+On this CPU/runtime, INT8 reduced peak RSS by 164.239 MB, or 21.4%, but average
+latency was about 10.1× higher and slower than real time. I would deploy FP32
+for latency-sensitive local synthesis on this machine. Q8 is defensible only
+when that memory saving matters more than response time; this single-machine
+result is evidence for this environment, not a universal model claim.
+
+Run the complete benchmark with one command:
+
+```powershell
+cd backend
+.\.venv\Scripts\python.exe -m app.benchmark.runner
+```
+
+Raw inputs, measurements, failures, aggregates, corpus hash, and environment
+metadata are written to `backend/benchmark-results/`. Runtime result files stay
+out of Git; the measured summary above remains the portfolio record.
+
+**Portfolio proof:** a deployment decision backed by identical workloads and
+recorded measurements—not intuition.
+
 ## Run the full stack locally
 
 Once the one-time setup below is complete, start both servers from the repository
@@ -223,7 +277,7 @@ errors, stable output, warm reuse, and one load per configuration:
 
 ```powershell
 .\.venv\Scripts\pytest.exe -q
-# 11 passed
+# 15 passed
 ```
 
 The Angular suite covers dynamic variant discovery and selection, empty input,
@@ -244,7 +298,7 @@ npm test
 - [Iterative coding map](docs/ITERATIVE_CODING_MAP.md)
 
 **Portfolio status:** this repository now demonstrates a measured, multi-variant
-synthesis vertical slice: Angular contract client, FastAPI orchestration,
-self-hosted open-weight inference, registry-owned model lifecycle, generated
-audio, browser playback, and mathematically verified instrumentation.
-Benchmark aggregation remains an explicit future stage—not an implied feature.
+TTS product and evaluation system: Angular contract client, FastAPI
+orchestration, self-hosted open-weight inference, registry-owned lifecycle,
+generated audio, browser playback, mathematically verified instrumentation, and
+a reproducible benchmark that supports an explicit deployment decision.

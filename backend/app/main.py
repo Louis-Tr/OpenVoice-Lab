@@ -81,10 +81,10 @@ def create_app(
 
     application = FastAPI(
         title="OpenVoice Lab API",
-        version="0.5.0",
+        version="0.6.0",
         description=(
-            "Measured self-hosted Kokoro ONNX variants behind a replaceable "
-            "registry and inference boundary."
+            "Measured self-hosted Kokoro ONNX variants with a reproducible "
+            "benchmark boundary."
         ),
     )
     application.include_router(synthesis.create_router(synthesis_service), prefix="/api")
@@ -100,6 +100,7 @@ def create_app(
     application.state.model_loader = resolved_loader
     application.state.model_registry = resolved_registry
     application.state.metrics_collector = resolved_metrics
+    application.state.synthesis_service = synthesis_service
     return application
 
 

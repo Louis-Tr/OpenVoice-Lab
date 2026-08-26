@@ -13,9 +13,8 @@ router = APIRouter(tags=["benchmarks"])
     status_code=status.HTTP_202_ACCEPTED,
 )
 async def create_benchmark(_request: BenchmarkRequest) -> BenchmarkResult:
-    """Accept the contract while benchmark execution remains unimplemented."""
+    """Reserve the transport contract while HTTP job orchestration is deferred."""
     raise HTTPException(
         status_code=status.HTTP_501_NOT_IMPLEMENTED,
-        detail="Benchmark execution is not implemented yet.",
+        detail="Benchmark HTTP job orchestration is not implemented yet.",
     )
-

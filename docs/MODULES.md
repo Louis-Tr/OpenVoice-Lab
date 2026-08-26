@@ -31,7 +31,7 @@ its public contract, but it should not absorb the other module's responsibility.
 | `config` | Environment/model/deployment configuration. |
 | `health` | Liveness/readiness support. |
 
-## Stage 5 implementation status
+## Stage 6 implementation status
 
 The connected vertical slice is intentionally narrow:
 
@@ -41,7 +41,9 @@ The connected vertical slice is intentionally narrow:
   `metrics` → `audio`.
 - Implemented variants: API-discovered `kokoro-fp32` and `kokoro-q8`
   configurations, each with independent lifecycle and measurements.
-- Still scaffolded: frontend and backend benchmark execution.
+- Implemented benchmark CLI: hashed corpus → isolated model workers →
+  `SynthesisService` → raw outcomes → aggregates → timestamped JSON.
+- Still scaffolded: frontend benchmark UI and HTTP job orchestration.
 
 ## Boundary enforcement
 

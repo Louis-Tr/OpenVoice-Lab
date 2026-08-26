@@ -73,11 +73,15 @@ each runtime loads once and serves warm requests.
 
 ## Stage 6 — Benchmark engine
 
+**Status:** complete.
+
 Version the sentence corpus, execute it through the same synthesis path, and
-aggregate comparable results. Add failure and cancellation policy.
+aggregate comparable results. Record case-level failures and isolate model
+processes so memory remains comparable.
 
 **Exit evidence:** reproducible benchmark output with corpus and environment
-metadata.
+metadata, identical case IDs for FP32 and INT8, explicit failure counts, and a
+README deployment decision based on genuine local measurements.
 
 ## Stage 7 — Packaging and operations
 

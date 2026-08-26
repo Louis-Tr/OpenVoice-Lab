@@ -1,2 +1,45 @@
-[]
-
+{
+  "version": "1.0.0",
+  "cases": [
+    {
+      "id": "short-conversational-01",
+      "category": "short conversational",
+      "text": "Hi, I’m glad you’re here."
+    },
+    {
+      "id": "medium-conversational-01",
+      "category": "medium conversational",
+      "text": "I finished the first draft this morning, so we can review the results together after lunch."
+    },
+    {
+      "id": "long-form-01",
+      "category": "long-form",
+      "text": "A reliable speech system needs more than one fast demonstration. It should handle changing sentence lengths, preserve useful punctuation, report failures honestly, and produce measurements that can be compared under the same conditions."
+    },
+    {
+      "id": "numbers-01",
+      "category": "numbers",
+      "text": "The order contains 17 items, costs $248.75, and ships to apartment 506."
+    },
+    {
+      "id": "dates-01",
+      "category": "dates",
+      "text": "The review is scheduled for August 26, 2026, at 9:30 a.m."
+    },
+    {
+      "id": "punctuation-01",
+      "category": "punctuation",
+      "text": "Wait—did you say ‘ready’? Yes: ready, tested, and documented."
+    },
+    {
+      "id": "questions-01",
+      "category": "questions",
+      "text": "Which model sounds clearer, responds faster, and uses less memory?"
+    },
+    {
+      "id": "unusual-names-words-01",
+      "category": "unusual names/words",
+      "text": "Saoirse, Nguyen, and Joaquin compared quinoa, Worcestershire sauce, and xylophones."
+    }
+  ]
+}
