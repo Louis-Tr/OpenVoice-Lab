@@ -1,6 +1,7 @@
 """Model loading and lifecycle boundary."""
 
 from collections.abc import Callable
+from dataclasses import dataclass
 from threading import Lock
 
 from app.inference.base import InferenceError, TTSInferenceEngine
@@ -14,6 +15,14 @@ class ModelLoadError(RuntimeError):
     """Raised when local model artifacts cannot become a runtime engine."""
 
 
+@dataclass(frozen=True, slots=True)
+class ModelLoadResult:
+    """Engine plus lifecycle state for one load request."""
+
+    engine: TTSInferenceEngine
+    warm: bool
+
+
 class ModelLoader:
     """Load each runtime engine once and reuse it for warm requests."""
 
@@ -25,11 +34,15 @@ class ModelLoader:
 
     def load(self, model: ModelDefinition) -> TTSInferenceEngine:
         """Return a cached engine, loading its local artifacts at most once."""
+        return self.load_with_state(model).engine
+
+    def load_with_state(self, model: ModelDefinition) -> ModelLoadResult:
+        """Return the engine and whether this request reused a loaded runtime."""
         key = model.key
         with self._lock:
             cached = self._engines.get(key)
             if cached is not None:
-                return cached
+                return ModelLoadResult(engine=cached, warm=True)
 
             missing = [
                 str(path)
@@ -50,7 +63,7 @@ class ModelLoader:
 
             self._engines[key] = engine
             self._load_counts[key] = self._load_counts.get(key, 0) + 1
-            return engine
+            return ModelLoadResult(engine=engine, warm=False)
 
     def load_count(self, model_id: str, variant: str) -> int:
         """Expose lifecycle evidence for diagnostics and tests."""

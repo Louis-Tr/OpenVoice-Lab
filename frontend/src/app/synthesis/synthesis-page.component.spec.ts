@@ -20,6 +20,16 @@ const model: ModelSummary = {
   available: true,
 };
 
+const metrics = {
+  modelLoadMs: 0,
+  inferenceMs: 412,
+  audioDurationMs: 4310,
+  realTimeFactor: 0.095592,
+  memoryMb: 715,
+  warm: true,
+  modelVariant: 'fp32' as const,
+};
+
 function createApi(overrides: Partial<SynthesisApiService> = {}): SynthesisApiService {
   return {
     listModels: vi.fn(() => of([model])),
@@ -29,6 +39,7 @@ function createApi(overrides: Partial<SynthesisApiService> = {}): SynthesisApiSe
         model: 'local-model-fp32',
         text: 'Hello',
         audioUrl: '/audio/hello.wav',
+        metrics,
       } satisfies SynthesisResult),
     ),
     ...overrides,
@@ -72,11 +83,16 @@ describe('SynthesisPageComponent', () => {
       model: 'local-model-fp32',
       text: 'Generate this',
       audioUrl: '/audio/generated.wav',
+      metrics,
     });
     response.complete();
 
     expect(component.isSubmitting()).toBe(false);
     expect(component.result()?.audioUrl).toBe('/audio/generated.wav');
+    expect(component.result()?.metrics.realTimeFactor).toBeCloseTo(
+      metrics.inferenceMs / metrics.audioDurationMs,
+      5,
+    );
   });
 
   it('gives a recovery path when the backend is unavailable', () => {

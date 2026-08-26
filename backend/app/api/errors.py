@@ -5,6 +5,7 @@ from fastapi.responses import JSONResponse
 
 from app.audio.service import AudioStorageError
 from app.inference.base import InferenceError, UnsupportedVoiceError
+from app.metrics.collector import MetricsCollectionError
 from app.models.loader import ModelLoadError
 from app.models.registry import ModelNotFoundError
 
@@ -44,9 +45,10 @@ def register_error_handlers(application: FastAPI) -> None:
 
     @application.exception_handler(InferenceError)
     @application.exception_handler(AudioStorageError)
+    @application.exception_handler(MetricsCollectionError)
     async def synthesis_failed(
         _request: Request,
-        error: InferenceError | AudioStorageError,
+        error: InferenceError | AudioStorageError | MetricsCollectionError,
     ) -> JSONResponse:
         return JSONResponse(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,

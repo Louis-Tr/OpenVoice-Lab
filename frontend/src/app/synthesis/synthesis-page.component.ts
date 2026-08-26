@@ -12,6 +12,7 @@ import { finalize, Subscription } from 'rxjs';
 
 import { AudioPlayerComponent } from '../audio-player/audio-player.component';
 import { SynthesisApiService } from '../api/synthesis-api.service';
+import { InferenceMetricsComponent } from '../metrics/inference-metrics.component';
 import { ModelSelectorComponent } from '../model-selector/model-selector.component';
 import { SynthesisFormComponent } from './synthesis-form.component';
 import {
@@ -26,6 +27,7 @@ import {
   standalone: true,
   imports: [
     AudioPlayerComponent,
+    InferenceMetricsComponent,
     ModelSelectorComponent,
     SynthesisFormComponent,
   ],
@@ -80,7 +82,10 @@ import {
           }
         </section>
 
-        <ovl-audio-player [result]="result()" />
+        <div class="output-stack">
+          <ovl-audio-player [result]="result()" />
+          <ovl-inference-metrics [metrics]="result()?.metrics ?? null" />
+        </div>
       </div>
 
       <footer class="proof-strip" aria-label="Workflow guarantees">
@@ -88,7 +93,7 @@ import {
         <i aria-hidden="true"></i>
         <span>Local model</span>
         <i aria-hidden="true"></i>
-        <span>Playable WAV</span>
+        <span>Measured inference</span>
       </footer>
     </section>
   `,

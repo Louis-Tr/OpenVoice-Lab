@@ -8,12 +8,13 @@ export interface SynthesisRequest {
 }
 
 export interface InferenceMetrics {
-  readonly latencyMs: number;
+  readonly modelLoadMs: number;
+  readonly inferenceMs: number;
+  readonly audioDurationMs: number;
   readonly realTimeFactor: number;
   readonly memoryMb: number;
-  readonly coldStart: boolean;
-  readonly modelId: string;
-  readonly variant: ModelVariant;
+  readonly warm: boolean;
+  readonly modelVariant: ModelVariant;
 }
 
 export interface SynthesisResult {
@@ -21,6 +22,7 @@ export interface SynthesisResult {
   readonly model: string;
   readonly text: string;
   readonly audioUrl: string | null;
+  readonly metrics: InferenceMetrics;
 }
 
 export interface ModelSummary {

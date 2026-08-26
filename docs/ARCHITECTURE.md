@@ -7,10 +7,10 @@ application boundary. The repository begins with stable component boundaries so
 that model runtimes and benchmarking mechanics can evolve without leaking into
 the browser or HTTP controllers.
 
-Stage 3 connects the Angular workflow to the Stage 2 locally hosted synthesis
-path. A fresh browser session discovers available models, submits validated
-contract data, receives a generated WAV URL, and plays the result. The
-repository does not yet collect performance measurements or execute benchmarks.
+Stage 4 instruments the Stage 3 synthesis path without moving evaluation logic
+into the inference adapter. A fresh browser request now receives its generated
+WAV plus model-load, latency, duration, RTF, RSS memory, lifecycle, and variant
+measurements. The repository does not yet execute aggregate benchmarks.
 
 ## System spine
 
@@ -91,7 +91,7 @@ ModelRegistry
   ↓
 ModelLoader (cached)
   ↓
-TTSInferenceEngine
+MetricsCollector wraps TTSInferenceEngine
   ↓
 KokoroONNXEngine
   ↓
@@ -103,10 +103,9 @@ Typed JSON response + local WAV
 ### Synthesis application boundary
 
 `SynthesisService` owns the complete synthesis workflow. It currently
-coordinates model resolution/lifecycle, an inference engine, result reuse, and
-audio artifact creation; metrics join this sequence next. This is the only layer
-that decides workflow order. It has no HTTP or Angular concerns and depends on
-inference through `TTSInferenceEngine`.
+coordinates model resolution/lifecycle, measured inference, and audio artifact
+creation. This is the only layer that decides workflow order. It has no HTTP or
+Angular concerns and depends on inference through `TTSInferenceEngine`.
 
 ### Model boundary
 
@@ -124,9 +123,24 @@ composition, without changing Angular or the public synthesis contract.
 ### Audio and metrics boundaries
 
 The audio service owns encoding, duration, storage, and externally addressable
-audio artifacts. The metrics collector owns inference latency, process memory,
-real-time factor, and cold/warm classification. Inference adapters return raw
-audio; they do not format API responses.
+audio artifacts. The metrics collector owns inference latency, exact generated
+duration, process RSS memory, real-time factor, and cold/warm classification.
+The collector times the model-loader boundary; the loader reports reuse state.
+Inference adapters return raw audio; they do not calculate or format metrics.
+
+### Measurement definitions
+
+- Model load timing covers the cold loader boundary, including artifact
+  validation and runtime initialization, and is zero for warm cache reuse.
+- Inference timing starts immediately before `TTSInferenceEngine.synthesize`
+  and ends when raw audio returns. Model loading, encoding, and storage are
+  excluded.
+- Audio duration is derived from `sample_count / sample_rate`.
+- RTF is `inference_time / audio_duration`.
+- Memory is process resident set size measured after inference.
+- Warm means the engine existed before the current request; it does not mean a
+  previous response was returned. Every synthesis request executes inference so
+  every metric snapshot belongs to that request.
 
 ### Benchmark boundary
 
@@ -163,9 +177,9 @@ Registry Adapter     Collector
 ```
 
 In implementation terms, the registry resolves metadata, `ModelLoader` creates
-one cached engine, `SynthesisService` invokes the abstract inference port, and
-the audio service writes a stable request-addressed WAV referenced by
-`SynthesisResult`. Metrics will wrap this path in the next stage.
+one cached engine and reports its load lifecycle, `MetricsCollector` measures the
+abstract inference call, and the audio service writes a stable request-addressed
+WAV referenced by `SynthesisResult`.
 
 ## Dependency rules
 
@@ -173,8 +187,8 @@ the audio service writes a stable request-addressed WAV referenced by
    frontend contracts, never backend implementation modules.
 2. Backend API controllers depend on Pydantic contracts and application
    services, never concrete inference adapters.
-3. `SynthesisService` owns sequencing across the model, inference, and audio
-   boundaries; metrics will join that orchestration without entering controllers.
+3. `SynthesisService` owns sequencing across the model, measured inference, and
+   audio boundaries; measurement logic never enters controllers or adapters.
 4. Concrete inference adapters depend inward on the inference abstraction's
    contracts; no domain or controller depends on Kokoro ONNX directly.
 5. Benchmark execution reuses synthesis orchestration and metric semantics.
@@ -185,7 +199,7 @@ the audio service writes a stable request-addressed WAV referenced by
 
 `backend/app/main.py` composes routers, services, the registry, the cached model
 loader, the Kokoro engine factory, and local audio delivery. Angular consumes
-the resulting contracts without backend imports. Metrics, benchmark execution,
+the resulting contracts without backend imports. Benchmark execution,
 production retention, and readiness policy remain deliberately deferred.
 
 The implementation sequence and evidence gates are maintained in

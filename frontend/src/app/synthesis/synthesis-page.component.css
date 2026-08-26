@@ -59,6 +59,12 @@ h2 span {
   align-items: start;
 }
 
+.output-stack {
+  display: grid;
+  min-width: 0;
+  gap: 24px;
+}
+
 .request-card {
   min-width: 0;
   padding: 28px;

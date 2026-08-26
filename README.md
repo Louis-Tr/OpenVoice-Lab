@@ -97,6 +97,37 @@ request/response contracts—never ONNX sessions, model paths, or Python classes
 **Portfolio proof:** a visitor can use a real full-stack, self-hosted AI product,
 not just inspect a backend experiment.
 
+## Stage 4 — Instrument inference performance
+
+> “I added model-level performance instrumentation so inference decisions can
+> be based on measurements rather than intuition.”
+
+**Responsibility:** separate model execution from model evaluation.
+
+`MetricsCollector` measures each inference call independently from the engine.
+The API and Angular now expose model load time, inference latency, exact audio
+duration, RTF, process RSS memory, cold/warm state, and model variant.
+
+Actual warm request measured on the local development machine:
+
+| Measurement | Observed value |
+| --- | ---: |
+| **Model** | `kokoro-fp32` |
+| **Inference** | 676.107 ms |
+| **Audio duration** | 2,782.667 ms |
+| **RTF** | 0.242971 |
+| **Process memory** | 529.816 MB |
+| **Model load** | 0.000 ms |
+| **Lifecycle state** | Warm |
+
+Mathematical check: `676.107 ÷ 2,782.667 = 0.242971`. Measurements vary by
+hardware and workload; these values are recorded output, not benchmark claims.
+
+![OpenVoice Lab inference metrics UI](docs/images/metrics-ui.png)
+
+**Portfolio proof:** the project moves from “I can run AI” to “I can measure AI
+systems.”
+
 ## Run the full stack locally
 
 Once the one-time setup below is complete, start both servers from the repository
@@ -151,7 +182,7 @@ and two warm requests with exactly one model load:
 
 ```powershell
 .\.venv\Scripts\pytest.exe -q
-# 7 passed
+# 10 passed
 ```
 
 The Angular suite covers fresh model discovery, empty input, the locked loading
@@ -160,7 +191,7 @@ state, backend unavailability, inference failure, and successful audio delivery:
 ```powershell
 cd frontend
 npm test
-# 5 passed
+# 6 passed
 ```
 
 ## Boundaries and roadmap
@@ -170,7 +201,8 @@ npm test
 - [API contract](docs/API.md)
 - [Iterative coding map](docs/ITERATIVE_CODING_MAP.md)
 
-**Portfolio status:** this repository now demonstrates the complete synthesis
+**Portfolio status:** this repository now demonstrates a measured synthesis
 vertical slice: Angular contract client, FastAPI orchestration, self-hosted
-open-weight inference, generated audio, and browser playback. Metrics and
-benchmarking remain explicit future stages—not implied features.
+open-weight inference, generated audio, browser playback, and mathematically
+verified performance instrumentation. Benchmarking remains an explicit future
+stage—not an implied feature.

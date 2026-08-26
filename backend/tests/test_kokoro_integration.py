@@ -54,9 +54,23 @@ def test_real_kokoro_audio_is_playable_reproducible_and_warm() -> None:
     second = request(app, "POST", "/api/synthesis", payload)
 
     assert first.status_code == second.status_code == 200
-    first_url = first.json()["audioUrl"]
-    assert first_url == second.json()["audioUrl"]
+    first_payload = first.json()
+    second_payload = second.json()
+    first_url = first_payload["audioUrl"]
+    assert first_url == second_payload["audioUrl"]
     assert app.state.model_loader.load_count("kokoro", "fp32") == 1
+    assert first_payload["metrics"]["warm"] is False
+    assert second_payload["metrics"]["warm"] is True
+    assert first_payload["metrics"]["modelVariant"] == "fp32"
+    assert second_payload["metrics"]["modelLoadMs"] == 0.0
+    for measured in (first_payload["metrics"], second_payload["metrics"]):
+        assert measured["inferenceMs"] > 0
+        assert measured["audioDurationMs"] > 0
+        assert measured["memoryMb"] > 0
+        assert measured["realTimeFactor"] == pytest.approx(
+            measured["inferenceMs"] / measured["audioDurationMs"],
+            abs=1e-6,
+        )
 
     first_audio = request(app, "GET", first_url)
     second_audio = request(app, "GET", first_url)

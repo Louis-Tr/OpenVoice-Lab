@@ -18,10 +18,23 @@ class SynthesisRequest(ApiSchema):
     variant: ModelVariant = "fp32"
 
 
+class SynthesisMetrics(ApiSchema):
+    """Model-level measurements for one successful inference operation."""
+
+    model_load_ms: float = Field(ge=0)
+    inference_ms: float = Field(ge=0)
+    audio_duration_ms: float = Field(gt=0)
+    real_time_factor: float = Field(ge=0)
+    memory_mb: float = Field(ge=0)
+    warm: bool
+    model_variant: ModelVariant
+
+
 class SynthesisResult(ApiSchema):
-    """Stable synthesis response for mock or real implementations."""
+    """Stable synthesis response with independent performance measurements."""
 
     status: Literal["mock", "ok"]
     model: str
     text: str
     audio_url: str | None = None
+    metrics: SynthesisMetrics

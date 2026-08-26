@@ -1,4 +1,4 @@
-"""Executable tests for the Stage 2 HTTP and service contract."""
+"""Executable tests for the synthesis HTTP and measurement contract."""
 
 import asyncio
 import wave
@@ -15,6 +15,7 @@ from app.audio.service import AudioService
 from app.config.settings import Settings
 from app.inference.base import AudioResult, TTSInferenceEngine, UnsupportedVoiceError
 from app.main import create_app
+from app.metrics.collector import MetricsCollector
 from app.models.loader import ModelLoader
 from app.models.registry import ModelDefinition, ModelRegistry
 
@@ -55,6 +56,19 @@ class ApiHarness:
     audio_dir: Path
 
 
+class StepClock:
+    """Deterministic monotonic clock for duration assertions."""
+
+    def __init__(self, step_seconds: float) -> None:
+        self._step_seconds = step_seconds
+        self._current = 0.0
+
+    def __call__(self) -> float:
+        current = self._current
+        self._current += self._step_seconds
+        return current
+
+
 @pytest.fixture
 def harness(tmp_path: Path) -> ApiHarness:
     model_path = tmp_path / "kokoro-v1.0.onnx"
@@ -74,6 +88,10 @@ def harness(tmp_path: Path) -> ApiHarness:
     registry = ModelRegistry((definition,))
     engine = FakeInferenceEngine()
     loader = ModelLoader(engine_factory=lambda _model: engine)
+    metrics = MetricsCollector(
+        clock=StepClock(0.025),
+        memory_reader=lambda: 384.0,
+    )
     audio_dir = tmp_path / "audio"
     audio = AudioService(audio_dir)
     app = create_app(
@@ -81,6 +99,7 @@ def harness(tmp_path: Path) -> ApiHarness:
         model_registry=registry,
         model_loader=loader,
         audio_service=audio,
+        metrics_collector=metrics,
     )
     return ApiHarness(app=app, loader=loader, engine=engine, audio_dir=audio_dir)
 
@@ -149,6 +168,20 @@ def test_valid_synthesis_request_returns_playable_wav(harness: ApiHarness) -> No
     assert payload["model"] == "kokoro-fp32"
     assert payload["text"] == "Hello world"
     assert payload["audioUrl"].startswith("/audio/kokoro-fp32-af_heart-")
+    assert payload["metrics"] == {
+        "modelLoadMs": 25.0,
+        "inferenceMs": 25.0,
+        "audioDurationMs": 100.0,
+        "realTimeFactor": 0.25,
+        "memoryMb": 384.0,
+        "warm": False,
+        "modelVariant": "fp32",
+    }
+    assert payload["metrics"]["realTimeFactor"] == pytest.approx(
+        payload["metrics"]["inferenceMs"]
+        / payload["metrics"]["audioDurationMs"],
+        abs=1e-6,
+    )
     assert (harness.audio_dir / Path(payload["audioUrl"]).name).is_file()
 
     audio_response = request(harness.app, "GET", payload["audioUrl"])
@@ -189,8 +222,12 @@ def test_warm_requests_reuse_loaded_model(harness: ApiHarness) -> None:
 
     assert first.status_code == second.status_code == 200
     assert first.json()["audioUrl"] == second.json()["audioUrl"]
+    assert first.json()["metrics"]["warm"] is False
+    assert second.json()["metrics"]["warm"] is True
+    assert first.json()["metrics"]["modelLoadMs"] == 25.0
+    assert second.json()["metrics"]["modelLoadMs"] == 0.0
     assert harness.loader.load_count("kokoro", "fp32") == 1
-    assert harness.engine.call_count == 1
+    assert harness.engine.call_count == 2
 
 
 def test_unknown_model_returns_useful_error(harness: ApiHarness) -> None:

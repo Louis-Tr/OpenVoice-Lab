@@ -31,16 +31,15 @@ its public contract, but it should not absorb the other module's responsibility.
 | `config` | Environment/model/deployment configuration. |
 | `health` | Liveness/readiness support. |
 
-## Stage 3 implementation status
+## Stage 4 implementation status
 
 The connected vertical slice is intentionally narrow:
 
 - Implemented frontend path: `synthesis` → `model-selector` → `api` →
-  `audio-player`.
+  `audio-player` + `metrics`.
 - Implemented backend path: `api` → `synthesis` → `models` → `inference` →
-  `audio`.
-- Still scaffolded: frontend metrics/benchmark features and backend metric/
-  benchmark execution.
+  `metrics` → `audio`.
+- Still scaffolded: frontend and backend benchmark execution.
 
 ## Boundary enforcement
 

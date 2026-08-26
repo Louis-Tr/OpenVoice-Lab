@@ -10,6 +10,7 @@ from app.api.errors import register_error_handlers
 from app.audio.service import AudioService
 from app.config.settings import Settings
 from app.health.service import HealthService
+from app.metrics.collector import MetricsCollector
 from app.models.loader import ModelLoader
 from app.models.registry import ModelDefinition, ModelRegistry
 from app.synthesis.service import SynthesisService
@@ -28,6 +29,7 @@ def create_app(
     model_registry: ModelRegistry | None = None,
     model_loader: ModelLoader | None = None,
     audio_service: AudioService | None = None,
+    metrics_collector: MetricsCollector | None = None,
 ) -> FastAPI:
     """Create the API and compose controllers with application services."""
     resolved_settings = settings or Settings()
@@ -54,16 +56,21 @@ def create_app(
         resolve_backend_path(resolved_settings.generated_audio_dir),
         resolved_settings.audio_url_prefix,
     )
+    resolved_metrics = metrics_collector or MetricsCollector()
     synthesis_service = SynthesisService(
         resolved_registry,
         resolved_loader,
         resolved_audio,
+        resolved_metrics,
     )
 
     application = FastAPI(
         title="OpenVoice Lab API",
-        version="0.2.0",
-        description="Self-hosted Kokoro ONNX synthesis behind a replaceable inference boundary.",
+        version="0.4.0",
+        description=(
+            "Measured self-hosted Kokoro ONNX synthesis behind a replaceable "
+            "inference boundary."
+        ),
     )
     application.include_router(synthesis.create_router(synthesis_service), prefix="/api")
     application.include_router(models.create_router(resolved_registry), prefix="/api")
@@ -77,6 +84,7 @@ def create_app(
     register_error_handlers(application)
     application.state.model_loader = resolved_loader
     application.state.model_registry = resolved_registry
+    application.state.metrics_collector = resolved_metrics
     return application
 
 

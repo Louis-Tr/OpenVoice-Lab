@@ -49,11 +49,15 @@ the README includes a screenshot from the running product.
 
 ## Stage 4 — Metrics
 
-Add inference latency, RTF, process memory, cold/warm classification, and a
-retention policy around the existing audio path. Define measurement conditions
-before publishing data.
+**Status:** complete.
 
-**Exit evidence:** verified audio metadata and repeatable metric tests.
+Measure model load time, inference latency, generated duration, RTF, process RSS
+memory, cold/warm state, and variant identity without coupling evaluation logic
+to the model adapter.
+
+**Exit evidence:** every successful synthesis response contains independently
+tested metrics, RTF matches inference time divided by audio duration, Angular
+displays the values, and the README records a real local measurement.
 
 ## Stage 5 — Benchmark engine
 
