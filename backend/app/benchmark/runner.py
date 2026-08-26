@@ -29,6 +29,7 @@ BACKEND_ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_CORPUS_PATH = Path(__file__).with_name("sentences.json")
 DEFAULT_RESULT_DIR = BACKEND_ROOT / "benchmark-results"
 UtcClock = Callable[[], datetime]
+ProgressCallback = Callable[[int, int], None]
 
 
 class SynthesisWorkflow(Protocol):
@@ -81,6 +82,25 @@ def write_benchmark_result(result: BenchmarkResult, path: Path) -> BenchmarkResu
     return persisted
 
 
+def resolve_models(
+    model_registry: ModelRegistry,
+    requested_ids: Sequence[str] | None,
+) -> list[ModelSummary]:
+    """Resolve requested IDs in order, defaulting to the complete registry."""
+    summaries = model_registry.list_available()
+    if requested_ids is None:
+        return summaries
+
+    if len(requested_ids) != len(set(requested_ids)):
+        raise ValueError("Benchmark model IDs must be unique.")
+    by_id = {model.id: model for model in summaries}
+    resolved: list[ModelSummary] = []
+    for model_id in requested_ids:
+        model_registry.get(model_id)
+        resolved.append(by_id[model_id])
+    return resolved
+
+
 class BenchmarkRunner:
     """Execute one corpus through the existing synthesis application service."""
 
@@ -111,7 +131,7 @@ class BenchmarkRunner:
         """Run every selected model against every case and persist all outcomes."""
         started_at = self._clock()
         corpus, corpus_hash = load_corpus(self._corpus_path)
-        models = self.resolve_models(request.model_ids)
+        models = resolve_models(self._model_registry, request.model_ids)
         raw_results: list[BenchmarkCaseResult] = []
 
         for model in models:
@@ -175,22 +195,6 @@ class BenchmarkRunner:
         destination = result_path or self._result_dir / f"{result.benchmark_id}.json"
         return write_benchmark_result(result, destination)
 
-    def resolve_models(self, requested_ids: Sequence[str] | None) -> list[ModelSummary]:
-        """Resolve requested IDs in order, defaulting to the complete registry."""
-        summaries = self._model_registry.list_available()
-        if requested_ids is None:
-            return summaries
-
-        if len(requested_ids) != len(set(requested_ids)):
-            raise ValueError("Benchmark model IDs must be unique.")
-        by_id = {model.id: model for model in summaries}
-        resolved: list[ModelSummary] = []
-        for model_id in requested_ids:
-            self._model_registry.get(model_id)
-            resolved.append(by_id[model_id])
-        return resolved
-
-
 async def run_worker(
     *,
     model_id: str,
@@ -222,6 +226,8 @@ def run_isolated_benchmark(
     corpus_path: Path,
     result_dir: Path,
     clock: UtcClock = utc_now,
+    run_id: str | None = None,
+    progress_callback: ProgressCallback | None = None,
 ) -> tuple[BenchmarkResult, Path]:
     """Coordinate one worker process per model and merge comparable evidence."""
     from app.main import create_app
@@ -230,17 +236,10 @@ def run_isolated_benchmark(
     application = create_app()
     registry: ModelRegistry = application.state.model_registry
     evaluator = BenchmarkEvaluator()
-    resolver = BenchmarkRunner(
-        application.state.synthesis_service,
-        registry,
-        evaluator=evaluator,
-        corpus_path=corpus_path,
-        result_dir=result_dir,
-        clock=clock,
-    )
-    models = resolver.resolve_models(model_ids)
+    models = resolve_models(registry, model_ids)
     corpus, corpus_hash = load_corpus(corpus_path)
     raw_results: list[BenchmarkCaseResult] = []
+    total_evaluations = len(models) * len(corpus.cases)
 
     with TemporaryDirectory(prefix="openvoice-benchmark-") as temporary:
         temporary_dir = Path(temporary)
@@ -266,10 +265,12 @@ def run_isolated_benchmark(
             if partial.corpus_sha256 != corpus_hash:
                 raise RuntimeError("Worker corpus hash does not match the coordinator.")
             raw_results.extend(partial.raw_results)
+            if progress_callback:
+                progress_callback(len(raw_results), total_evaluations)
 
     completed_at = clock()
     result = BenchmarkResult(
-        benchmark_id=benchmark_id(started_at),
+        benchmark_id=run_id or benchmark_id(started_at),
         status=(
             "completed_with_failures"
             if any(item.status == "failure" for item in raw_results)

@@ -83,7 +83,19 @@ processes so memory remains comparable.
 metadata, identical case IDs for FP32 and INT8, explicit failure counts, and a
 README deployment decision based on genuine local measurements.
 
-## Stage 7 — Packaging and operations
+## Stage 7 — Benchmark dashboard
+
+**Status:** complete.
+
+Expose the reproducible benchmark through a focused Angular workflow. Keep
+evaluation in the backend while the browser owns trigger, progress, recovery,
+failure feedback, and comparative presentation.
+
+**Exit evidence:** a visitor can run the real FP32/INT8 benchmark without a
+terminal, observe progress, and read the completed deployment metrics in an
+accessible table. The README contains a screenshot from the running product.
+
+## Stage 8 — Packaging and operations
 
 Add Docker packaging, artifact mounts, deployment configuration, observability,
 and distinct liveness/readiness behavior.

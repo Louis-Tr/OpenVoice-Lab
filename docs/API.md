@@ -1,9 +1,9 @@
 # API contract
 
-Stage 6 adds an executable CLI benchmark over the same synthesis service used by
-the API. The benchmark HTTP endpoint remains an explicit job-orchestration
-placeholder; no synchronous success response is claimed. Generated WAV files
-are served locally, and no external inference API is used.
+Stage 7 adds an asynchronous browser contract over the Stage 6 benchmark. The
+POST endpoint returns immediately, Angular polls job progress, and the completed
+response contains the same raw and aggregate evidence as the CLI. Generated WAV
+files are served locally, and no external inference API is used.
 
 ## `POST /api/synthesis`
 
@@ -100,10 +100,9 @@ TODO: define richer capabilities, readiness policy, and pagination.
 
 ## `POST /api/benchmarks`
 
-Planned asynchronous transport for the benchmark system. The current complete
-execution path is the CLI command documented below.
+Start the complete fixed-corpus benchmark in background model workers.
 
-Placeholder request:
+Request:
 
 ```json
 {
@@ -112,16 +111,53 @@ Placeholder request:
 }
 ```
 
-Current response:
+Current `202 Accepted` response:
 
 ```json
 {
-  "detail": "Benchmark HTTP job orchestration is not implemented yet."
+  "benchmarkId": "benchmark-2026-08-26T11-18-24-802081Z",
+  "status": "pending",
+  "testCaseCount": 8,
+  "modelCount": 2,
+  "totalEvaluations": 16,
+  "completedEvaluations": 0,
+  "progressPercent": 0.0,
+  "result": null,
+  "error": null
 }
 ```
 
-Current HTTP behavior: `501 Not Implemented`. This is not the Stage 6 execution
-surface and is not presented as working.
+Current behavior: validates model IDs and voice, creates an in-memory job, and
+returns before inference begins. The background job runs one isolated process
+per model and persists the merged Stage 6 JSON result.
+
+## `GET /api/benchmarks/config`
+
+Describe the fixed browser workload without loading a model.
+
+```json
+{
+  "corpusVersion": "1.0.0",
+  "corpusSha256": "eaf6215e4cf13e670e0b3cfb56f33b6a50939a61e30a2b3296ed7c44d1d9cb98",
+  "testCaseCount": 8,
+  "modelCount": 2,
+  "totalEvaluations": 16,
+  "modelIds": ["kokoro-fp32", "kokoro-q8"],
+  "defaultVoiceId": "af_heart"
+}
+```
+
+## `GET /api/benchmarks/{benchmarkId}`
+
+Poll one job. `pending` and `running` responses expose completed and total
+evaluation counts. `completed` includes the full `BenchmarkResult`; `failed`
+includes an error and no fabricated result.
+
+## `GET /api/benchmarks/latest`
+
+Return the newest in-memory job so navigation or a fresh browser session can
+recover progress or results. Returns `404` before any job has been started or
+after a backend process restart.
 
 The executable benchmark is:
 
@@ -133,8 +169,8 @@ cd backend
 It writes a timestamped JSON file containing corpus version/hash, environment,
 raw case outcomes, and per-model aggregates to `backend/benchmark-results/`.
 
-TODO: define job creation, progress, cancellation, result retention, and result
-retrieval for the HTTP transport.
+TODO: define cancellation, durable job storage, multi-process coordination,
+retention, and paginated raw-result retrieval for production.
 
 ## `GET /health`
 

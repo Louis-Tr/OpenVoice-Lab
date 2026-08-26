@@ -223,6 +223,29 @@ out of Git; the measured summary above remains the portfolio record.
 **Portfolio proof:** a deployment decision backed by identical workloads and
 recorded measurements—not intuition.
 
+## Stage 7 — Benchmark dashboard
+
+> “I exposed model-evaluation results through a lightweight product interface
+> instead of requiring engineers to inspect raw files.”
+
+**Responsibility:** turn engineering evidence into a product decision surface.
+
+The Angular dashboard loads the fixed workload contract, starts an asynchronous
+benchmark job, polls model-level progress, recovers the latest job in a fresh
+browser session, reports pipeline failures, and renders the completed FP32/INT8
+comparison. FastAPI controllers remain thin; the benchmark job service owns
+background execution and the Stage 6 runner still owns evaluation.
+
+![OpenVoice Lab benchmark dashboard](docs/images/benchmark-dashboard.png)
+
+The dashboard intentionally exposes only metrics needed for deployment
+decisions. Average latency, p95 latency, average RTF, peak process memory, and
+failure count remain visible; raw case data and environment metadata stay in the
+persisted benchmark result for engineering inspection.
+
+**Portfolio proof:** engineering evaluation and product presentation of the
+same evidence, connected through explicit API contracts.
+
 ## Run the full stack locally
 
 Once the one-time setup below is complete, start both servers from the repository
@@ -277,7 +300,7 @@ errors, stable output, warm reuse, and one load per configuration:
 
 ```powershell
 .\.venv\Scripts\pytest.exe -q
-# 15 passed
+# 18 passed
 ```
 
 The Angular suite covers dynamic variant discovery and selection, empty input,
@@ -287,7 +310,7 @@ successful audio delivery:
 ```powershell
 cd frontend
 npm test
-# 9 passed
+# 14 passed
 ```
 
 ## Boundaries and roadmap
@@ -298,7 +321,7 @@ npm test
 - [Iterative coding map](docs/ITERATIVE_CODING_MAP.md)
 
 **Portfolio status:** this repository now demonstrates a measured, multi-variant
-TTS product and evaluation system: Angular contract client, FastAPI
-orchestration, self-hosted open-weight inference, registry-owned lifecycle,
-generated audio, browser playback, mathematically verified instrumentation, and
-a reproducible benchmark that supports an explicit deployment decision.
+TTS product and evaluation system: Angular synthesis and benchmark interfaces,
+FastAPI orchestration, self-hosted open-weight inference, registry-owned
+lifecycle, generated audio, mathematically verified instrumentation, a
+reproducible benchmark, and a browser-visible deployment comparison.

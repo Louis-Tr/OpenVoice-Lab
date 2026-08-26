@@ -2,15 +2,27 @@
 
 import asyncio
 import json
+from collections.abc import Callable, Sequence
 from datetime import UTC, datetime
 from pathlib import Path
+from threading import Event
 
+import httpx
 import pytest
 
+from app.audio.service import AudioService
 from app.benchmark.evaluator import BenchmarkEvaluator
 from app.benchmark.runner import BenchmarkRunner, load_corpus
+from app.benchmark.service import BenchmarkJobNotFoundError, BenchmarkJobService
+from app.config.settings import Settings
+from app.main import create_app
 from app.models.registry import ModelDefinition, ModelRegistry
-from app.schemas.benchmark import BenchmarkCaseResult, BenchmarkRequest
+from app.schemas.benchmark import (
+    BenchmarkCaseResult,
+    BenchmarkEnvironment,
+    BenchmarkRequest,
+    BenchmarkResult,
+)
 from app.schemas.model import ModelSummary
 from app.schemas.synthesis import SynthesisMetrics, SynthesisRequest, SynthesisResult
 
@@ -116,6 +128,69 @@ def registry(tmp_path: Path) -> ModelRegistry:
             )
         )
     return ModelRegistry(definitions)
+
+
+def benchmark_coordinator(
+    models: Sequence[ModelSummary],
+    *,
+    pause_after_first_model: tuple[Event, Event] | None = None,
+) -> Callable[..., tuple[BenchmarkResult, Path]]:
+    """Return a fast coordinator double with the production keyword contract."""
+
+    def coordinate(
+        *,
+        model_ids: Sequence[str] | None,
+        voice_id: str,
+        corpus_path: Path,
+        result_dir: Path,
+        run_id: str | None,
+        progress_callback: Callable[[int, int], None] | None,
+    ) -> tuple[BenchmarkResult, Path]:
+        del corpus_path
+        selected = [model for model in models if model_ids is None or model.id in model_ids]
+        raw_results = [
+            case_result(
+                model=model,
+                case_id=case_id,
+                latency_ms=100 if model.precision == "FP32" else 80,
+                real_time_factor=0.1 if model.precision == "FP32" else 0.08,
+                memory_mb=400 if model.precision == "FP32" else 300,
+            )
+            for model in selected
+            for case_id in ("case-a", "case-b")
+        ]
+        if progress_callback:
+            progress_callback(2, 4)
+            if pause_after_first_model:
+                reported, release = pause_after_first_model
+                reported.set()
+                release.wait(timeout=2)
+            progress_callback(4, 4)
+
+        identifier = run_id or "benchmark-test"
+        result = BenchmarkResult(
+            benchmark_id=identifier,
+            status="completed",
+            started_at=datetime(2026, 8, 26, 12, 0, tzinfo=UTC),
+            completed_at=datetime(2026, 8, 26, 12, 1, tzinfo=UTC),
+            corpus_version="test-1",
+            corpus_sha256="a" * 64,
+            voice_id=voice_id,
+            model_ids=[model.id for model in selected],
+            environment=BenchmarkEnvironment(
+                python_version="3.13",
+                platform="test",
+                processor="test",
+                logical_cpu_count=4,
+                model_process_isolation=True,
+            ),
+            raw_results=raw_results,
+            aggregates=BenchmarkEvaluator().aggregate(raw_results, selected),
+            result_file=f"{identifier}.json",
+        )
+        return result, result_dir / f"{identifier}.json"
+
+    return coordinate
 
 
 def test_evaluator_calculates_latency_rtf_memory_and_failures() -> None:
@@ -249,3 +324,155 @@ def test_default_corpus_covers_required_evaluation_categories() -> None:
 def test_empty_model_selection_is_rejected() -> None:
     with pytest.raises(ValueError):
         BenchmarkRequest(model_ids=[])
+
+
+def test_job_service_reports_progress_and_completed_result(tmp_path: Path) -> None:
+    corpus_path = tmp_path / "job-corpus.json"
+    corpus_path.write_text(
+        json.dumps(
+            {
+                "version": "test-1",
+                "cases": [
+                    {"id": "case-a", "category": "short", "text": "Hello."},
+                    {"id": "case-b", "category": "question", "text": "Ready?"},
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+    model_registry = registry(tmp_path)
+    models = model_registry.list_available()
+    first_model_reported = Event()
+    release_worker = Event()
+    service = BenchmarkJobService(
+        model_registry,
+        corpus_path=corpus_path,
+        result_dir=tmp_path / "results",
+        coordinator=benchmark_coordinator(
+            models,
+            pause_after_first_model=(first_model_reported, release_worker),
+        ),
+    )
+
+    async def scenario() -> None:
+        job = await service.start(BenchmarkRequest())
+        assert job.status == "pending"
+        assert await asyncio.to_thread(first_model_reported.wait, 1)
+
+        progress = service.get(job.benchmark_id)
+        assert progress.status == "running"
+        assert progress.completed_evaluations == 2
+        assert progress.total_evaluations == 4
+        assert progress.progress_percent == 50
+
+        release_worker.set()
+        for _attempt in range(20):
+            completed = service.get(job.benchmark_id)
+            if completed.status == "completed":
+                break
+            await asyncio.sleep(0.01)
+        assert completed.status == "completed"
+        assert completed.completed_evaluations == 4
+        assert completed.progress_percent == 100
+        assert completed.result is not None
+        assert len(completed.result.aggregates) == 2
+        assert service.latest().benchmark_id == job.benchmark_id
+
+    asyncio.run(scenario())
+
+
+def test_job_service_preserves_failure_state(tmp_path: Path) -> None:
+    model_registry = registry(tmp_path)
+
+    def failing_coordinator(**_kwargs: object) -> tuple[BenchmarkResult, Path]:
+        raise RuntimeError("isolated worker failed")
+
+    service = BenchmarkJobService(
+        model_registry,
+        result_dir=tmp_path / "results",
+        coordinator=failing_coordinator,
+    )
+
+    async def scenario() -> None:
+        job = await service.start(BenchmarkRequest())
+        for _attempt in range(20):
+            failed = service.get(job.benchmark_id)
+            if failed.status == "failed":
+                break
+            await asyncio.sleep(0.01)
+        assert failed.status == "failed"
+        assert failed.error == "isolated worker failed"
+        assert failed.result is None
+
+        with pytest.raises(BenchmarkJobNotFoundError):
+            service.get("missing-job")
+
+    asyncio.run(scenario())
+
+
+def test_benchmark_http_contract_runs_and_polls_job(tmp_path: Path) -> None:
+    corpus_path = tmp_path / "api-corpus.json"
+    corpus_path.write_text(
+        json.dumps(
+            {
+                "version": "api-1",
+                "cases": [
+                    {"id": "case-a", "category": "short", "text": "Hello."},
+                    {"id": "case-b", "category": "question", "text": "Ready?"},
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+    model_registry = registry(tmp_path)
+    service = BenchmarkJobService(
+        model_registry,
+        corpus_path=corpus_path,
+        result_dir=tmp_path / "results",
+        coordinator=benchmark_coordinator(model_registry.list_available()),
+    )
+    app = create_app(
+        Settings(environment="test"),
+        model_registry=model_registry,
+        audio_service=AudioService(tmp_path / "audio"),
+        benchmark_job_service=service,
+    )
+
+    async def scenario() -> None:
+        transport = httpx.ASGITransport(app=app)
+        async with httpx.AsyncClient(
+            transport=transport,
+            base_url="http://testserver",
+        ) as client:
+            config = await client.get("/api/benchmarks/config")
+            assert config.status_code == 200
+            assert config.json()["testCaseCount"] == 2
+            assert config.json()["totalEvaluations"] == 4
+
+            started = await client.post(
+                "/api/benchmarks",
+                json={
+                    "modelIds": ["kokoro-fp32", "kokoro-q8"],
+                    "voiceId": "af_heart",
+                },
+            )
+            assert started.status_code == 202
+            identifier = started.json()["benchmarkId"]
+
+            for _attempt in range(20):
+                polled = await client.get(f"/api/benchmarks/{identifier}")
+                if polled.json()["status"] == "completed":
+                    break
+                await asyncio.sleep(0.01)
+            assert polled.status_code == 200
+            assert polled.json()["completedEvaluations"] == 4
+            assert len(polled.json()["result"]["aggregates"]) == 2
+
+            latest = await client.get("/api/benchmarks/latest")
+            assert latest.status_code == 200
+            assert latest.json()["benchmarkId"] == identifier
+
+            missing = await client.get("/api/benchmarks/missing-job")
+            assert missing.status_code == 404
+
+    asyncio.run(scenario())

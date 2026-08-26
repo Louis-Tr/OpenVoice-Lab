@@ -31,7 +31,7 @@ its public contract, but it should not absorb the other module's responsibility.
 | `config` | Environment/model/deployment configuration. |
 | `health` | Liveness/readiness support. |
 
-## Stage 6 implementation status
+## Stage 7 implementation status
 
 The connected vertical slice is intentionally narrow:
 
@@ -43,7 +43,9 @@ The connected vertical slice is intentionally narrow:
   configurations, each with independent lifecycle and measurements.
 - Implemented benchmark CLI: hashed corpus → isolated model workers →
   `SynthesisService` → raw outcomes → aggregates → timestamped JSON.
-- Still scaffolded: frontend benchmark UI and HTTP job orchestration.
+- Implemented benchmark product path: Angular trigger → FastAPI job service →
+  progress polling → failure recovery → comparison table.
+- Still deferred: durable/distributed job storage and advanced analytics.
 
 ## Boundary enforcement
 

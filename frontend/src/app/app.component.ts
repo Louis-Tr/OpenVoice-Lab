@@ -8,7 +8,7 @@ import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
   changeDetection: ChangeDetectionStrategy.OnPush,
   styleUrl: './app.component.css',
   template: `
-    <a class="skip-link" href="#main-content">Skip to synthesis</a>
+    <a class="skip-link" href="#main-content">Skip to main content</a>
     <header class="app-header">
       <a class="brand" routerLink="/" aria-label="OpenVoice Lab home">
         <span class="brand-mark" aria-hidden="true">OV</span>

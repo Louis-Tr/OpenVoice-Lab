@@ -8,6 +8,7 @@ from fastapi.staticfiles import StaticFiles
 from app.api import benchmarks, health, models, synthesis
 from app.api.errors import register_error_handlers
 from app.audio.service import AudioService
+from app.benchmark.service import BenchmarkJobService
 from app.config.settings import Settings
 from app.health.service import HealthService
 from app.metrics.collector import MetricsCollector
@@ -30,6 +31,7 @@ def create_app(
     model_loader: ModelLoader | None = None,
     audio_service: AudioService | None = None,
     metrics_collector: MetricsCollector | None = None,
+    benchmark_job_service: BenchmarkJobService | None = None,
 ) -> FastAPI:
     """Create the API and compose controllers with application services."""
     resolved_settings = settings or Settings()
@@ -78,18 +80,26 @@ def create_app(
         resolved_audio,
         resolved_metrics,
     )
+    resolved_benchmark_jobs = benchmark_job_service or BenchmarkJobService(
+        resolved_registry,
+        result_dir=resolve_backend_path(resolved_settings.benchmark_result_dir),
+        default_voice_id=resolved_settings.default_voice_id,
+    )
 
     application = FastAPI(
         title="OpenVoice Lab API",
-        version="0.6.0",
+        version="0.7.0",
         description=(
-            "Measured self-hosted Kokoro ONNX variants with a reproducible "
-            "benchmark boundary."
+            "Measured self-hosted Kokoro ONNX variants with browser-triggered "
+            "benchmark jobs."
         ),
     )
     application.include_router(synthesis.create_router(synthesis_service), prefix="/api")
     application.include_router(models.create_router(resolved_registry), prefix="/api")
-    application.include_router(benchmarks.router, prefix="/api")
+    application.include_router(
+        benchmarks.create_router(resolved_benchmark_jobs),
+        prefix="/api",
+    )
     application.include_router(health.create_router(health_service))
     application.mount(
         resolved_settings.audio_url_prefix,
@@ -101,6 +111,7 @@ def create_app(
     application.state.model_registry = resolved_registry
     application.state.metrics_collector = resolved_metrics
     application.state.synthesis_service = synthesis_service
+    application.state.benchmark_job_service = resolved_benchmark_jobs
     return application
 
 

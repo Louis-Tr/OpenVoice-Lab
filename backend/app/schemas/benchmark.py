@@ -91,3 +91,29 @@ class BenchmarkResult(ApiSchema):
     raw_results: list[BenchmarkCaseResult]
     aggregates: list[BenchmarkAggregate]
     result_file: str | None = None
+
+
+class BenchmarkConfig(ApiSchema):
+    """Public description of the fixed benchmark workload."""
+
+    corpus_version: str
+    corpus_sha256: str
+    test_case_count: int = Field(ge=1)
+    model_count: int = Field(ge=1)
+    total_evaluations: int = Field(ge=1)
+    model_ids: list[str]
+    default_voice_id: str
+
+
+class BenchmarkJobStatus(ApiSchema):
+    """Pollable state for one browser-triggered benchmark job."""
+
+    benchmark_id: str
+    status: Literal["pending", "running", "completed", "failed"]
+    test_case_count: int = Field(ge=1)
+    model_count: int = Field(ge=1)
+    total_evaluations: int = Field(ge=1)
+    completed_evaluations: int = Field(ge=0)
+    progress_percent: float = Field(ge=0, le=100)
+    result: BenchmarkResult | None = None
+    error: str | None = None

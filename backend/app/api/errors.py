@@ -4,6 +4,7 @@ from fastapi import FastAPI, Request, status
 from fastapi.responses import JSONResponse
 
 from app.audio.service import AudioStorageError
+from app.benchmark.service import BenchmarkJobNotFoundError
 from app.inference.base import InferenceError, UnsupportedVoiceError
 from app.metrics.collector import MetricsCollectionError
 from app.models.loader import ModelLoadError
@@ -17,6 +18,16 @@ def register_error_handlers(application: FastAPI) -> None:
     async def model_not_found(
         _request: Request,
         error: ModelNotFoundError,
+    ) -> JSONResponse:
+        return JSONResponse(
+            status_code=status.HTTP_404_NOT_FOUND,
+            content={"detail": str(error)},
+        )
+
+    @application.exception_handler(BenchmarkJobNotFoundError)
+    async def benchmark_job_not_found(
+        _request: Request,
+        error: BenchmarkJobNotFoundError,
     ) -> JSONResponse:
         return JSONResponse(
             status_code=status.HTTP_404_NOT_FOUND,

@@ -7,11 +7,11 @@ application boundary. The repository begins with stable component boundaries so
 that model runtimes and benchmarking mechanics can evolve without leaking into
 the browser or HTTP controllers.
 
-Stage 6 executes a versioned evaluation corpus through the same instrumented
-synthesis path used by the product. FP32 and INT8 receive identical inputs in
-separate worker processes, raw failures remain visible, and aggregation happens
-only after case execution. The browser-facing benchmark UI and job API remain
-future delivery concerns; the complete benchmark is executable from the CLI.
+Stage 7 exposes the Stage 6 evaluation system through a lightweight Angular
+dashboard and asynchronous FastAPI job contract. The browser starts a job,
+polls progress, recovers the latest in-process job after navigation, and renders
+deployment metrics. FP32 and INT8 still receive identical inputs in separate
+worker processes; no evaluation logic moves into Angular or API controllers.
 
 ## System spine
 
@@ -184,6 +184,32 @@ Aggregate semantics:
 - Memory includes average and peak process RSS from the isolated model worker.
 - Failure count includes every case without a synthesis result.
 
+### Benchmark product boundary
+
+The browser workflow is:
+
+```text
+Angular benchmark page
+  ↓ GET /api/benchmarks/config
+fixed corpus and model counts
+  ↓ POST /api/benchmarks
+BenchmarkJobService → background isolated coordinator
+  ↓ GET /api/benchmarks/{id}
+progress snapshots → completed BenchmarkResult
+  ↓
+Angular comparison table
+```
+
+`BenchmarkJobService` owns in-memory job identity, background task lifecycle,
+progress snapshots, failure state, and latest-job recovery. HTTP controllers
+only validate, call the service, and serialize responses. Angular displays
+public benchmark contracts and does not read result files, invoke Python, or
+know about worker processes beyond user-facing progress language.
+
+The table deliberately limits presentation to average and p95 latency, average
+RTF, peak RSS, and failure count. Detailed raw cases, environment data, corpus
+hash, and audio URLs remain in `BenchmarkResult` for engineering use.
+
 ## Primary synthesis request flow
 
 The required request path is:
@@ -235,11 +261,11 @@ WAV referenced by `SynthesisResult`.
 ## Composition and future work
 
 `backend/app/main.py` declaratively composes routers, services, both registry
-definitions, the cached model loader, the Kokoro engine factory, and local audio
-delivery. The CLI composes one fresh application per model worker and accesses
-the same `SynthesisService` through application state. Angular consumes the
-resulting contracts without backend imports. Benchmark HTTP job orchestration,
-production retention, and readiness policy remain deliberately deferred.
+definitions, the cached model loader, the Kokoro engine factory, local audio
+delivery, and the benchmark job service. The CLI and browser job coordinator
+both compose one fresh application per model worker and access the same
+`SynthesisService`. Production job persistence, multi-process coordination,
+retention, and readiness policy remain deliberately deferred.
 
 The implementation sequence and evidence gates are maintained in
 [`ITERATIVE_CODING_MAP.md`](ITERATIVE_CODING_MAP.md).

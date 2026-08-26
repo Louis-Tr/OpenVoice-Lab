@@ -18,6 +18,7 @@ class Settings(BaseSettings):
     environment: Literal["development", "test", "production"] = "development"
     model_artifact_dir: Path = Path("model-artifacts")
     generated_audio_dir: Path = Path("artifacts/audio")
+    benchmark_result_dir: Path = Path("benchmark-results")
     default_model_id: str = "kokoro-fp32"
     quantized_model_id: str = "kokoro-q8"
     default_model_display_name: str = "Kokoro"
