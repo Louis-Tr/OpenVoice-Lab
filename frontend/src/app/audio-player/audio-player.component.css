@@ -1,0 +1,125 @@
+.player-card {
+  min-width: 0;
+  padding: 28px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+}
+
+.card-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 20px;
+  color: var(--color-accent);
+  font: 700 11px/1.4 var(--font-mono);
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+}
+
+.ready-state {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  color: var(--color-foreground);
+}
+
+.ready-state i {
+  width: 7px;
+  height: 7px;
+  background: var(--color-accent);
+  border-radius: 50%;
+  box-shadow: 0 0 10px var(--color-accent);
+}
+
+h3 {
+  margin: 16px 0 26px;
+  font-size: clamp(22px, 3vw, 30px);
+  line-height: 1.15;
+  letter-spacing: -0.04em;
+}
+
+.empty-output {
+  display: grid;
+  min-height: 265px;
+  padding: 32px;
+  place-items: center;
+  align-content: center;
+  text-align: center;
+  background: var(--color-background);
+  border: 1px dashed var(--color-border);
+  border-radius: var(--radius-md);
+}
+
+.empty-output svg {
+  margin-bottom: 16px;
+  color: var(--color-accent);
+}
+
+.empty-output p {
+  margin: 0 0 6px;
+  color: var(--color-foreground);
+  font-weight: 700;
+}
+
+.empty-output span {
+  color: var(--color-muted-foreground);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.waveform {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 132px;
+  margin-bottom: 18px;
+  padding: 18px;
+  background: var(--color-background);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+}
+
+.waveform i {
+  width: 4px;
+  max-height: 60px;
+  background: var(--color-accent);
+  border-radius: 999px;
+  box-shadow: 0 0 10px rgb(67 224 125 / 20%);
+}
+
+audio {
+  width: 100%;
+  min-height: 54px;
+  color-scheme: dark;
+}
+
+.audio-meta {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: 12px;
+  color: var(--color-muted-foreground);
+  font: 400 11px/1.5 var(--font-mono);
+}
+
+.audio-meta span:first-child {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.playback-error {
+  margin: 14px 0 0;
+  color: var(--color-error);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+@media (max-width: 560px) {
+  .player-card {
+    padding: 22px;
+  }
+}

@@ -35,7 +35,19 @@ local WAV delivery, and useful domain errors.
 playable WAV; repeated warm requests reuse one model load; real and fake-engine
 tests pass without any external inference API.
 
-## Stage 3 — Metrics
+## Stage 3 — Complete synthesis vertical slice
+
+**Status:** complete.
+
+Connect Angular text input, API-provided model/voice selection, synthesis
+submission, local audio delivery, and browser playback. Keep all runtime and
+model implementation details behind the REST boundary.
+
+**Exit evidence:** a fresh browser completes the real synthesis path; UI state
+tests cover empty input, loading, backend unavailability, and inference failure;
+the README includes a screenshot from the running product.
+
+## Stage 4 — Metrics
 
 Add inference latency, RTF, process memory, cold/warm classification, and a
 retention policy around the existing audio path. Define measurement conditions
@@ -43,20 +55,13 @@ before publishing data.
 
 **Exit evidence:** verified audio metadata and repeatable metric tests.
 
-## Stage 4 — Benchmark engine
+## Stage 5 — Benchmark engine
 
 Version the sentence corpus, execute it through the same synthesis path, and
 aggregate comparable results. Add failure and cancellation policy.
 
 **Exit evidence:** reproducible benchmark output with corpus and environment
 metadata.
-
-## Stage 5 — Angular workflow
-
-Connect model selection, synthesis, playback, metrics, benchmark execution, and
-clear loading/error states strictly through REST contracts.
-
-**Exit evidence:** end-to-end user flow with no inference details in Angular.
 
 ## Stage 6 — Packaging and operations
 

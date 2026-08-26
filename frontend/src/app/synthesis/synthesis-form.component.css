@@ -1,0 +1,115 @@
+form {
+  display: grid;
+}
+
+label {
+  margin-bottom: 8px;
+  color: var(--color-muted-foreground);
+  font: 700 12px/1.3 var(--font-mono);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+label span {
+  color: var(--color-accent);
+}
+
+textarea {
+  width: 100%;
+  min-height: 156px;
+  padding: 16px;
+  resize: vertical;
+  color: var(--color-foreground);
+  font-size: 17px;
+  line-height: 1.65;
+  background: var(--color-background);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  transition:
+    border-color var(--motion-fast) ease-out,
+    background-color var(--motion-fast) ease-out;
+}
+
+textarea:hover:not(:disabled) {
+  border-color: var(--color-muted-foreground);
+}
+
+textarea::placeholder {
+  color: #6f7d91;
+}
+
+textarea[aria-invalid='true'] {
+  border-color: var(--color-error);
+}
+
+.text-meta {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: 8px;
+  color: var(--color-muted-foreground);
+  font: 400 12px/1.5 var(--font-mono);
+}
+
+.text-meta p,
+.field-error {
+  margin: 0;
+}
+
+.field-error {
+  margin-top: 8px;
+  color: var(--color-error);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-height: 54px;
+  margin-top: 24px;
+  padding: 0 24px;
+  color: var(--color-on-accent);
+  font: 800 14px/1 var(--font-mono);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  background: var(--color-accent);
+  border: 1px solid var(--color-accent);
+  border-radius: var(--radius-sm);
+  box-shadow: 0 10px 30px rgb(67 224 125 / 16%);
+  transition:
+    background-color var(--motion-fast) ease-out,
+    border-color var(--motion-fast) ease-out,
+    transform var(--motion-fast) ease-out;
+}
+
+button:hover:not(:disabled) {
+  background: var(--color-accent-strong);
+  border-color: var(--color-accent-strong);
+}
+
+button:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+button:disabled {
+  opacity: 0.48;
+  box-shadow: none;
+}
+
+.spinner {
+  width: 18px;
+  height: 18px;
+  border: 2px solid rgb(6 18 11 / 30%);
+  border-top-color: var(--color-on-accent);
+  border-radius: 50%;
+  animation: spin 700ms linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}

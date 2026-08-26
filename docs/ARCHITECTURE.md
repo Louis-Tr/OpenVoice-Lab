@@ -7,8 +7,9 @@ application boundary. The repository begins with stable component boundaries so
 that model runtimes and benchmarking mechanics can evolve without leaking into
 the browser or HTTP controllers.
 
-Stage 2 runs Kokoro v1.0 locally through ONNX Runtime. It loads the model once,
-generates and serves WAV artifacts, and keeps the Stage 1 API shape intact. The
+Stage 3 connects the Angular workflow to the Stage 2 locally hosted synthesis
+path. A fresh browser session discovers available models, submits validated
+contract data, receives a generated WAV URL, and plays the result. The
 repository does not yet collect performance measurements or execute benchmarks.
 
 ## System spine
@@ -25,10 +26,15 @@ SynthesisService
 Inference abstraction
   ↓
 Kokoro
+  ↓
+Audio
+  ↓
+Angular player
 ```
 
-This dependency direction is now executable through Kokoro and local WAV output.
-ONNX and Kokoro remain behind the backend inference abstraction.
+This dependency direction is executable end to end. ONNX and Kokoro remain
+behind the backend inference abstraction; Angular sees only model, synthesis,
+and audio URL contracts.
 
 ## Component boundaries
 
@@ -55,6 +61,12 @@ Angular owns user interaction, UI state, playback, metric presentation, and
 calls to documented backend contracts. It must not import, model, configure, or
 otherwise depend on Kokoro, ONNX, runtime sessions, tensor formats, model-file
 paths, or other inference implementation details.
+
+The current synthesis page owns text and selection state, model discovery,
+request lifecycle, and user-facing recovery messages. `model-selector` and
+`audio-player` are presentational boundaries. `api` is the only frontend module
+that performs HTTP calls. Local development proxies `/api` and `/audio` without
+changing those public contracts.
 
 ### API boundary
 
@@ -172,9 +184,9 @@ the audio service writes a stable request-addressed WAV referenced by
 ## Composition and future work
 
 `backend/app/main.py` composes routers, services, the registry, the cached model
-loader, the Kokoro engine factory, and local audio delivery. Metrics, benchmark
-execution, production retention, and readiness policy remain deliberately
-deferred.
+loader, the Kokoro engine factory, and local audio delivery. Angular consumes
+the resulting contracts without backend imports. Metrics, benchmark execution,
+production retention, and readiness policy remain deliberately deferred.
 
 The implementation sequence and evidence gates are maintained in
 [`ITERATIVE_CODING_MAP.md`](ITERATIVE_CODING_MAP.md).

@@ -1,8 +1,9 @@
 # API contract
 
-Stage 2 keeps the Stage 1 request/response shape and replaces its mock service
-with locally hosted Kokoro ONNX inference. Generated WAV files are served from
-the local `/audio` mount; no external inference API is used.
+Stage 3 keeps the established API shape and adds its Angular consumer. The
+browser discovers models through `GET /api/models`, submits the same synthesis
+contract, and plays the returned `/audio` URL. Generated WAV files are served
+locally; no external inference API is used.
 
 ## `POST /api/synthesis`
 

@@ -75,7 +75,31 @@ Controllers still know nothing about Kokoro or ONNX. `ModelLoader` owns the
 long-lived runtime session. Repeated identical requests reuse both the loaded
 model and a stable request-addressed artifact.
 
-## Run it locally
+## Stage 3 — Complete synthesis vertical slice
+
+> “I built the first complete user-facing path from Angular input to locally
+> hosted AI inference and audio playback.”
+
+**Responsibility:** connect the product path without leaking backend technology
+into the browser.
+
+```text
+Angular → FastAPI → Kokoro → Audio → Angular player
+```
+
+Stage 3 loads model and voice choices from the API, validates text, exposes a
+locked loading state, maps backend and inference failures to recovery steps,
+and plays the generated WAV in the browser. Angular depends only on the public
+request/response contracts—never ONNX sessions, model paths, or Python classes.
+
+![OpenVoice Lab synthesis UI](docs/images/synthesis-ui.png)
+
+**Portfolio proof:** a visitor can use a real full-stack, self-hosted AI product,
+not just inspect a backend experiment.
+
+## Run the full stack locally
+
+Backend:
 
 ```powershell
 cd backend
@@ -87,6 +111,17 @@ py -3 -m venv .venv
 
 Model binaries are downloaded from the upstream release, checksum-verified,
 and excluded from Git. See [artifact provenance](backend/model-artifacts/README.md).
+
+Frontend (second terminal):
+
+```powershell
+cd frontend
+npm ci
+npm start
+```
+
+Open `http://localhost:4200`. The development proxy keeps `/api` and generated
+`/audio` requests on the same documented browser contract.
 
 ## Verified request → audio
 
@@ -108,6 +143,15 @@ and two warm requests with exactly one model load:
 # 7 passed
 ```
 
+The Angular suite covers fresh model discovery, empty input, the locked loading
+state, backend unavailability, inference failure, and successful audio delivery:
+
+```powershell
+cd frontend
+npm test
+# 5 passed
+```
+
 ## Boundaries and roadmap
 
 - [Architecture](docs/ARCHITECTURE.md)
@@ -115,6 +159,7 @@ and two warm requests with exactly one model load:
 - [API contract](docs/API.md)
 - [Iterative coding map](docs/ITERATIVE_CODING_MAP.md)
 
-**Portfolio status:** this repository is now a legitimate self-hosted,
-open-weight TTS inference service. Metrics, benchmarking, and the connected
-Angular workflow remain separate stages—not implied features.
+**Portfolio status:** this repository now demonstrates the complete synthesis
+vertical slice: Angular contract client, FastAPI orchestration, self-hosted
+open-weight inference, generated audio, and browser playback. Metrics and
+benchmarking remain explicit future stages—not implied features.

@@ -1,23 +1,29 @@
 import { ChangeDetectionStrategy, Component } from '@angular/core';
-import { RouterLink, RouterOutlet } from '@angular/router';
+import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 
 @Component({
   selector: 'ovl-root',
   standalone: true,
-  imports: [RouterLink, RouterOutlet],
+  imports: [RouterLink, RouterLinkActive, RouterOutlet],
   changeDetection: ChangeDetectionStrategy.OnPush,
+  styleUrl: './app.component.css',
   template: `
-    <header>
-      <h1>OpenVoice Lab</h1>
+    <a class="skip-link" href="#main-content">Skip to synthesis</a>
+    <header class="app-header">
+      <a class="brand" routerLink="/" aria-label="OpenVoice Lab home">
+        <span class="brand-mark" aria-hidden="true">OV</span>
+        <h1>OpenVoice Lab</h1>
+      </a>
       <nav aria-label="Primary navigation">
-        <a routerLink="/">Synthesis</a>
-        <a routerLink="/benchmarks">Benchmarks</a>
+        <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">
+          Synthesis
+        </a>
+        <a routerLink="/benchmarks" routerLinkActive="active">Benchmarks</a>
       </nav>
     </header>
-    <main>
+    <main id="main-content">
       <router-outlet />
     </main>
   `,
 })
 export class AppComponent {}
-

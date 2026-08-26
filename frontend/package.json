@@ -5,7 +5,8 @@
   "scripts": {
     "start": "ng serve",
     "build": "ng build",
-    "typecheck": "ng build --configuration development"
+    "typecheck": "ng build --configuration development",
+    "test": "vitest run"
   },
   "dependencies": {
     "@angular/common": "^20.2.0",
@@ -22,7 +23,7 @@
     "@angular/build": "^20.2.0",
     "@angular/cli": "^20.2.0",
     "@angular/compiler-cli": "^20.2.0",
-    "typescript": "~5.9.2"
+    "typescript": "~5.9.2",
+    "vitest": "^3.2.4"
   }
 }
-

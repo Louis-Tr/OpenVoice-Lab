@@ -31,6 +31,17 @@ its public contract, but it should not absorb the other module's responsibility.
 | `config` | Environment/model/deployment configuration. |
 | `health` | Liveness/readiness support. |
 
+## Stage 3 implementation status
+
+The connected vertical slice is intentionally narrow:
+
+- Implemented frontend path: `synthesis` → `model-selector` → `api` →
+  `audio-player`.
+- Implemented backend path: `api` → `synthesis` → `models` → `inference` →
+  `audio`.
+- Still scaffolded: frontend metrics/benchmark features and backend metric/
+  benchmark execution.
+
 ## Boundary enforcement
 
 - Technology names such as Kokoro and ONNX stay below the backend inference
@@ -39,4 +50,3 @@ its public contract, but it should not absorb the other module's responsibility.
 - Cross-collaborator workflow order stays in `synthesis`.
 - Feature-specific frontend state stays in its owning feature; only genuinely
   reusable pieces move to `shared` or `core`.
-

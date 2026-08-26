@@ -34,3 +34,8 @@ export interface ModelSummary {
   readonly externalInferenceApis: readonly string[];
   readonly available: boolean;
 }
+
+export interface ModelSelection {
+  readonly modelId: string;
+  readonly variant: ModelVariant;
+}
