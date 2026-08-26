@@ -99,6 +99,17 @@ not just inspect a backend experiment.
 
 ## Run the full stack locally
 
+Once the one-time setup below is complete, start both servers from the repository
+root:
+
+```powershell
+.\start.ps1
+```
+
+The launcher checks the virtual environment, frontend dependencies, and local
+model artifacts before opening the backend and frontend server processes. Run
+`.\start.ps1 -CheckOnly` to validate prerequisites without starting anything.
+
 Backend:
 
 ```powershell
