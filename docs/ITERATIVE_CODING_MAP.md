@@ -15,10 +15,13 @@ API placeholders, clean Git history, and buildable application shells.
 
 ## Stage 1 — Contracts and composition
 
+**Status:** complete.
+
 Wire dependency construction without loading a real model. Define application
 errors, HTTP mappings, configuration validation, and contract tests.
 
-**Exit evidence:** deterministic API tests and no inference logic in controllers.
+**Exit evidence:** deterministic endpoint tests for health, model listing, valid
+and invalid synthesis requests, with no inference logic in controllers.
 
 ## Stage 2 — Model registry and lifecycle
 

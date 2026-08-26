@@ -1,21 +1,21 @@
-"""HTTP contract for synthesis requests."""
+"""Thin HTTP controller for synthesis requests."""
 
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, status
 
 from app.schemas.synthesis import SynthesisRequest, SynthesisResult
+from app.synthesis.service import SynthesisService
 
-router = APIRouter(tags=["synthesis"])
 
+def create_router(service: SynthesisService) -> APIRouter:
+    """Bind the HTTP contract to its application service."""
+    router = APIRouter(tags=["synthesis"])
 
-@router.post(
-    "/synthesis",
-    response_model=SynthesisResult,
-    status_code=status.HTTP_200_OK,
-)
-async def create_synthesis(_request: SynthesisRequest) -> SynthesisResult:
-    """Accept the contract while orchestration remains intentionally unimplemented."""
-    raise HTTPException(
-        status_code=status.HTTP_501_NOT_IMPLEMENTED,
-        detail="Synthesis orchestration is not implemented yet.",
+    @router.post(
+        "/synthesis",
+        response_model=SynthesisResult,
+        status_code=status.HTTP_200_OK,
     )
+    async def create_synthesis(request: SynthesisRequest) -> SynthesisResult:
+        return await service.synthesize(request)
 
+    return router

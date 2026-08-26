@@ -2,12 +2,14 @@
 
 from typing import Literal
 
-from pydantic import BaseModel, Field
+from pydantic import Field
+
+from app.schemas.base import ApiSchema
 
 ModelVariant = Literal["fp32", "quantized"]
 
 
-class SynthesisRequest(BaseModel):
+class SynthesisRequest(ApiSchema):
     """Technology-neutral synthesis request."""
 
     text: str = Field(min_length=1, max_length=5_000)
@@ -16,21 +18,10 @@ class SynthesisRequest(BaseModel):
     variant: ModelVariant = "fp32"
 
 
-class InferenceMetrics(BaseModel):
-    """Metrics returned with a completed synthesis."""
+class SynthesisResult(ApiSchema):
+    """Deterministic Stage 1 response without generated audio."""
 
-    latency_ms: float = Field(ge=0)
-    real_time_factor: float = Field(ge=0)
-    memory_mb: float = Field(ge=0)
-    cold_start: bool
-    model_id: str
-    variant: ModelVariant
-
-
-class SynthesisResult(BaseModel):
-    """Technology-neutral synthesis response."""
-
-    audio_url: str
-    duration_seconds: float = Field(ge=0)
-    metrics: InferenceMetrics
-
+    status: Literal["mock"] = "mock"
+    model: str
+    text: str
+    audio_url: str | None = None

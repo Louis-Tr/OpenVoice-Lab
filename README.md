@@ -5,68 +5,77 @@
 OpenVoice Lab is a modular platform for evaluating and serving open-weight TTS
 models.
 
-> “I designed a modular architecture for evaluating and deploying open-weight
-> TTS models before implementing the inference system.”
+> “I converted the architecture into a working FastAPI service while keeping
+> inference implementation replaceable.”
 
-## Stage 0 — Architecture-first repository
+## Stage 1 — Executable backend contract
 
 | | |
 | --- | --- |
 | **Problem** | Evaluate and serve open-weight TTS models. |
 | **Primary flow** | Text → model → audio + performance metrics. |
 | **Target stack** | Angular, FastAPI, Python, ONNX, Kokoro, Docker. |
-| **Current reality** | Boundaries, contracts, docs, and minimal bootstrapping only. No synthesis or benchmark engine yet. |
+| **Current reality** | The API contract runs and is tested. Synthesis is deterministic mock data; no model is loaded and no audio is generated. |
 
 ```text
-Angular
+HTTP request
   ↓
-REST
+FastAPI controller
   ↓
-FastAPI
+Pydantic validation
   ↓
-SynthesisService
+SynthesisService / ModelRegistry
   ↓
-Inference abstraction
-  ↓
-Kokoro
+Typed JSON response
 ```
 
-Stage 0 establishes frontend/backend separation, a replaceable inference port,
-stable API contracts, explicit model-lifecycle ownership, benchmark boundaries,
-and documentation conventions. Angular never depends on ONNX or Kokoro. API
-controllers stay thin. `SynthesisService` owns orchestration.
+Controllers only translate HTTP, accept validated schemas, call a service, and
+return its response. Inference remains behind `TTSInferenceAdapter`; ONNX and
+Kokoro do not appear in controller code.
+
+## Run the evidence
+
+```powershell
+cd backend
+py -3 -m venv .venv
+.\.venv\Scripts\python.exe -m pip install -e ".[dev]"
+.\.venv\Scripts\uvicorn.exe app.main:app --reload
+```
+
+```text
+curl http://localhost:8000/health
+  ↓
+{"status":"healthy"}
+
+curl http://localhost:8000/api/models
+  ↓
+[{"id":"kokoro","displayName":"Kokoro","voices":["af_heart"],"variants":["fp32","quantized"]}]
+```
+
+```text
+curl -X POST http://localhost:8000/api/synthesis \
+  -H "Content-Type: application/json" \
+  -d '{"text":"Hello world","modelId":"kokoro","voiceId":"af_heart","variant":"fp32"}'
+  ↓
+{"status":"mock","model":"kokoro-fp32","text":"Hello world","audioUrl":null}
+```
+
+Malformed synthesis bodies return FastAPI/Pydantic `422` validation responses.
+Run the contract suite with `.\.venv\Scripts\pytest.exe` from `backend/`.
 
 ## Repository
 
 ```text
 frontend/   Angular shell and feature boundaries
-backend/    FastAPI shell and backend domain boundaries
+backend/    FastAPI API, schemas, services, and runtime boundaries
 docs/       Architecture, ownership, API, and delivery roadmap
 ```
 
-Reserved contracts:
-
-- `POST /api/synthesis`
-- `GET /api/models`
-- `POST /api/benchmarks`
-- `GET /health`
-
-## Stage 0 acceptance
-
-- [x] Git repository and `main` branch initialized.
-- [x] Frontend and backend boundaries exist.
-- [x] Every planned module has documented ownership.
-- [x] Initial API surface is defined.
-- [x] Architecture and iterative delivery path are documented.
-- [ ] Real inference, model loading, metrics, and benchmarking.
-
-## Read next
-
 - [Architecture](docs/ARCHITECTURE.md)
 - [Module responsibilities](docs/MODULES.md)
-- [API surface](docs/API.md)
+- [API contract](docs/API.md)
 - [Iterative coding map](docs/ITERATIVE_CODING_MAP.md)
 
-**Portfolio status:** valid now as a software architecture and design
-repository. Runtime claims begin only after measured implementation evidence.
-
+**Portfolio status:** demonstrates API design, FastAPI, Pydantic validation,
+service separation, and automated contract tests. Real inference remains a
+later, separately evidenced stage.

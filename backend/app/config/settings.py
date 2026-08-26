@@ -18,4 +18,6 @@ class Settings(BaseSettings):
     environment: Literal["development", "test", "production"] = "development"
     model_artifact_dir: Path = Path("model-artifacts")
     generated_audio_dir: Path = Path("artifacts/audio")
-
+    default_model_id: str = "kokoro"
+    default_model_display_name: str = "Kokoro"
+    default_voice_id: str = "af_heart"

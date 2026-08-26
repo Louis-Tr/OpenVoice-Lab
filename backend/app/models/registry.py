@@ -1,29 +1,16 @@
 """Technology-neutral model catalog boundary."""
 
-from dataclasses import dataclass
+from collections.abc import Iterable
 
-from app.schemas.synthesis import ModelVariant
-
-
-@dataclass(frozen=True, slots=True)
-class ModelSpec:
-    """Registry metadata needed to locate a model artifact."""
-
-    model_id: str
-    display_name: str
-    artifact_path: str
-    voices: tuple[str, ...]
-    variant: ModelVariant
+from app.schemas.model import ModelSummary
 
 
 class ModelRegistry:
-    """Resolve model identifiers without loading inference artifacts."""
+    """Expose configured model metadata without loading artifacts."""
 
-    def get(self, _model_id: str, _variant: ModelVariant) -> ModelSpec:
-        """Resolve a registered model variant."""
-        raise NotImplementedError("Model registry is not configured yet.")
+    def __init__(self, models: Iterable[ModelSummary]) -> None:
+        self._models = tuple(models)
 
-    def list(self) -> tuple[ModelSpec, ...]:
-        """List configured model variants."""
-        return ()
-
+    def list_available(self) -> list[ModelSummary]:
+        """Return defensive copies of configured API metadata."""
+        return [model.model_copy(deep=True) for model in self._models]

@@ -7,9 +7,10 @@ application boundary. The repository begins with stable component boundaries so
 that model runtimes and benchmarking mechanics can evolve without leaking into
 the browser or HTTP controllers.
 
-This revision is scaffolding only. It defines ownership and replaceable
-interfaces; it does not synthesize audio, load weights, collect measurements,
-or execute benchmarks.
+Stage 1 exposes an executable FastAPI contract for health, model discovery, and
+synthesis. Synthesis returns a deterministic service-layer mock. The repository
+still does not load weights, generate audio, collect measurements, or execute
+benchmarks.
 
 ## System spine
 
@@ -63,6 +64,21 @@ contracts, invoke an application service, serialize its result, and map known
 application errors to HTTP responses. They must not choose or load models, run
 inference, encode audio, calculate RTF, inspect process memory, or aggregate
 benchmark results.
+
+The current executable path is deliberately smaller than the target inference
+path:
+
+```text
+HTTP request
+  ↓
+FastAPI controller
+  ↓
+Pydantic validation
+  ↓
+Application service
+  ↓
+Typed JSON response
+```
 
 ### Synthesis application boundary
 
@@ -146,11 +162,10 @@ turns returned audio into the final artifact referenced by `SynthesisResult`.
 
 ## Composition and future work
 
-`backend/app/main.py` is currently the FastAPI composition root for routers.
-Dependency construction for `SynthesisService`, runtime selection, persistence,
-background benchmark execution, and readiness policy are deliberately deferred
-until their requirements are defined.
+`backend/app/main.py` is the composition root for routers, `HealthService`,
+`SynthesisService`, and `ModelRegistry`. Concrete inference injection, runtime
+selection, persistence, background benchmark execution, and readiness policy
+remain deliberately deferred until their requirements are defined.
 
 The implementation sequence and evidence gates are maintained in
 [`ITERATIVE_CODING_MAP.md`](ITERATIVE_CODING_MAP.md).
-

@@ -1,44 +1,39 @@
-# API placeholders
+# API contract
 
-This document reserves the initial HTTP surface. Field names reflect the
-scaffolded Pydantic and TypeScript contracts, but compatibility guarantees,
-error taxonomy, artifact delivery, and asynchronous execution semantics remain
-to be defined before feature implementation.
+Stage 1 makes health, model listing, and synthesis executable. Synthesis returns
+deterministic mock data: it proves HTTP handling, Pydantic validation, and
+service separation without claiming that inference works.
 
 ## `POST /api/synthesis`
 
 Create an audio synthesis result from text and a technology-neutral model/voice
 selection.
 
-Placeholder request:
+Request:
 
 ```json
 {
   "text": "Text to synthesize",
-  "model_id": "model-id",
-  "voice_id": "voice-id",
+  "modelId": "kokoro",
+  "voiceId": "af_heart",
   "variant": "fp32"
 }
 ```
 
-Placeholder success response:
+Current success response:
 
 ```json
 {
-  "audio_url": "/artifacts/audio/example.wav",
-  "duration_seconds": 0,
-  "metrics": {
-    "latency_ms": 0,
-    "real_time_factor": 0,
-    "memory_mb": 0,
-    "cold_start": true,
-    "model_id": "model-id",
-    "variant": "fp32"
-  }
+  "status": "mock",
+  "model": "kokoro-fp32",
+  "text": "Text to synthesize",
+  "audioUrl": null
 }
 ```
 
-Current scaffold behavior: `501 Not Implemented`.
+Current behavior: `200 OK` for valid input. Missing fields, empty text, invalid
+variants, and other malformed inputs receive a Pydantic `422` response before
+the service is called.
 
 TODO: define artifact lifetime, error responses, request limits, cancellation,
 and cold/warm classification.
@@ -48,20 +43,21 @@ and cold/warm classification.
 List selectable models, voices, and FP32/quantized variants without exposing
 runtime or artifact implementation details.
 
-Placeholder response:
+Current response:
 
 ```json
 [
   {
-    "id": "model-id",
-    "display_name": "Model name",
-    "voices": ["voice-id"],
+    "id": "kokoro",
+    "displayName": "Kokoro",
+    "voices": ["af_heart"],
     "variants": ["fp32", "quantized"]
   }
 ]
 ```
 
-Current scaffold behavior: `200 OK` with an empty list.
+Current behavior: `200 OK` with the configured Stage 1 catalog. This is metadata
+only; it does not claim that a model artifact is loaded or ready.
 
 TODO: define capability metadata, model availability/readiness, pagination,
 and stable identifier policy.
@@ -80,7 +76,7 @@ Placeholder request:
 }
 ```
 
-Placeholder response:
+Response:
 
 ```json
 {
@@ -103,12 +99,11 @@ Placeholder response:
 
 ```json
 {
-  "status": "ok"
+  "status": "healthy"
 }
 ```
 
-Current scaffold behavior: `200 OK` when the FastAPI process is live.
+Current behavior: `200 OK` when the FastAPI process is live.
 
 TODO: decide whether readiness receives a separate endpoint and which model,
 storage, and runtime dependencies gate it.
-

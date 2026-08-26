@@ -2,11 +2,16 @@
 
 from fastapi import APIRouter
 
-router = APIRouter(tags=["health"])
+from app.health.service import HealthService
+from app.schemas.health import HealthResponse
 
 
-@router.get("/health")
-async def health() -> dict[str, str]:
-    """Report process liveness; dependency readiness checks will be added later."""
-    return {"status": "ok"}
+def create_router(service: HealthService) -> APIRouter:
+    """Bind the health contract to its application service."""
+    router = APIRouter(tags=["health"])
 
+    @router.get("/health", response_model=HealthResponse)
+    async def health() -> HealthResponse:
+        return service.status()
+
+    return router
