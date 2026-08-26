@@ -11,6 +11,25 @@ This revision is scaffolding only. It defines ownership and replaceable
 interfaces; it does not synthesize audio, load weights, collect measurements,
 or execute benchmarks.
 
+## System spine
+
+```text
+Angular
+  ↓
+REST
+  ↓
+FastAPI
+  ↓
+SynthesisService
+  ↓
+Inference abstraction
+  ↓
+Kokoro
+```
+
+This is a dependency direction, not a claim that runtime inference is already
+implemented. ONNX and Kokoro remain behind the backend inference abstraction.
+
 ## Component boundaries
 
 ```text
@@ -131,4 +150,7 @@ turns returned audio into the final artifact referenced by `SynthesisResult`.
 Dependency construction for `SynthesisService`, runtime selection, persistence,
 background benchmark execution, and readiness policy are deliberately deferred
 until their requirements are defined.
+
+The implementation sequence and evidence gates are maintained in
+[`ITERATIVE_CODING_MAP.md`](ITERATIVE_CODING_MAP.md).
 

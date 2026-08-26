@@ -1,51 +1,72 @@
 # OpenVoice Lab
 
-OpenVoice Lab is an architecture-first monorepo for an Angular frontend and a
-FastAPI/Python backend that will benchmark open-weight text-to-speech models.
+**Architecture first. Benchmarks before claims.**
 
-This initial revision intentionally contains only project scaffolding, API
-contracts, replaceable interfaces, documentation, and placeholders. It does
-not perform synthesis, load model weights, or run benchmarks yet.
+OpenVoice Lab is a modular platform for evaluating and serving open-weight TTS
+models.
 
-## Repository layout
+> “I designed a modular architecture for evaluating and deploying open-weight
+> TTS models before implementing the inference system.”
+
+## Stage 0 — Architecture-first repository
+
+| | |
+| --- | --- |
+| **Problem** | Evaluate and serve open-weight TTS models. |
+| **Primary flow** | Text → model → audio + performance metrics. |
+| **Target stack** | Angular, FastAPI, Python, ONNX, Kokoro, Docker. |
+| **Current reality** | Boundaries, contracts, docs, and minimal bootstrapping only. No synthesis or benchmark engine yet. |
 
 ```text
-frontend/  Angular application shell and feature boundaries
-backend/   FastAPI application shell and backend domain boundaries
-docs/      Architecture, module ownership, and API documentation
+Angular
+  ↓
+REST
+  ↓
+FastAPI
+  ↓
+SynthesisService
+  ↓
+Inference abstraction
+  ↓
+Kokoro
 ```
 
-The primary design constraint is that inference technology remains a backend
-implementation detail. Angular communicates only through HTTP contracts, API
-controllers stay thin, and `SynthesisService` owns workflow orchestration
-behind the replaceable `TTSInferenceAdapter` abstraction.
+Stage 0 establishes frontend/backend separation, a replaceable inference port,
+stable API contracts, explicit model-lifecycle ownership, benchmark boundaries,
+and documentation conventions. Angular never depends on ONNX or Kokoro. API
+controllers stay thin. `SynthesisService` owns orchestration.
 
-## Local scaffolding commands
+## Repository
 
-Frontend:
-
-```powershell
-cd frontend
-npm install
-npm start
+```text
+frontend/   Angular shell and feature boundaries
+backend/    FastAPI shell and backend domain boundaries
+docs/       Architecture, ownership, API, and delivery roadmap
 ```
 
-Backend:
+Reserved contracts:
 
-```powershell
-cd backend
-python -m venv .venv
-.\.venv\Scripts\Activate.ps1
-python -m pip install -e ".[dev]"
-uvicorn app.main:app --reload
-```
+- `POST /api/synthesis`
+- `GET /api/models`
+- `POST /api/benchmarks`
+- `GET /health`
 
-These commands prepare the development shells. Synthesis and benchmark routes
-return `501 Not Implemented` until their application services are implemented.
+## Stage 0 acceptance
 
-## Documentation
+- [x] Git repository and `main` branch initialized.
+- [x] Frontend and backend boundaries exist.
+- [x] Every planned module has documented ownership.
+- [x] Initial API surface is defined.
+- [x] Architecture and iterative delivery path are documented.
+- [ ] Real inference, model loading, metrics, and benchmarking.
+
+## Read next
 
 - [Architecture](docs/ARCHITECTURE.md)
 - [Module responsibilities](docs/MODULES.md)
 - [API surface](docs/API.md)
+- [Iterative coding map](docs/ITERATIVE_CODING_MAP.md)
+
+**Portfolio status:** valid now as a software architecture and design
+repository. Runtime claims begin only after measured implementation evidence.
 
