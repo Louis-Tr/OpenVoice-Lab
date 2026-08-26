@@ -1,0 +1,71 @@
+# Angular / Node.js
+frontend/node_modules/
+frontend/dist/
+frontend/.angular/
+frontend/coverage/
+frontend/.cache/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyd
+*.so
+.Python
+.venv/
+venv/
+env/
+backend/.venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+build/
+dist/
+*.egg-info/
+
+# Environment files and secrets
+.env
+.env.*
+!.env.example
+
+# IDEs and editors
+.idea/
+.vscode/
+*.code-workspace
+*.swp
+*.swo
+*~
+
+# OS metadata
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# Model weights, caches, and generated artifacts
+/model-artifacts/
+/backend/model-artifacts/
+/backend/model-cache/
+/artifacts/
+/outputs/
+*.onnx
+*.ort
+*.pt
+*.pth
+*.ckpt
+*.safetensors
+*.gguf
+*.tflite
+*.npy
+*.npz
+
+# Generated audio and benchmark output
+*.wav
+*.mp3
+*.flac
+*.ogg
+/backend/benchmark-results/
+

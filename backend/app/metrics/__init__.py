@@ -1,0 +1,2 @@
+"""Inference metrics collection boundary."""
+
