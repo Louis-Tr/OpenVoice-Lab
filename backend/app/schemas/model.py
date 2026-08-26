@@ -11,3 +11,8 @@ class ModelSummary(ApiSchema):
     display_name: str
     voices: list[str]
     variants: list[ModelVariant]
+    model_version: str
+    runtime: str
+    hosting: str
+    external_inference_apis: list[str]
+    available: bool

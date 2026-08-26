@@ -7,10 +7,9 @@ application boundary. The repository begins with stable component boundaries so
 that model runtimes and benchmarking mechanics can evolve without leaking into
 the browser or HTTP controllers.
 
-Stage 1 exposes an executable FastAPI contract for health, model discovery, and
-synthesis. Synthesis returns a deterministic service-layer mock. The repository
-still does not load weights, generate audio, collect measurements, or execute
-benchmarks.
+Stage 2 runs Kokoro v1.0 locally through ONNX Runtime. It loads the model once,
+generates and serves WAV artifacts, and keeps the Stage 1 API shape intact. The
+repository does not yet collect performance measurements or execute benchmarks.
 
 ## System spine
 
@@ -28,8 +27,8 @@ Inference abstraction
 Kokoro
 ```
 
-This is a dependency direction, not a claim that runtime inference is already
-implemented. ONNX and Kokoro remain behind the backend inference abstraction.
+This dependency direction is now executable through Kokoro and local WAV output.
+ONNX and Kokoro remain behind the backend inference abstraction.
 
 ## Component boundaries
 
@@ -65,8 +64,7 @@ application errors to HTTP responses. They must not choose or load models, run
 inference, encode audio, calculate RTF, inspect process memory, or aggregate
 benchmark results.
 
-The current executable path is deliberately smaller than the target inference
-path:
+The current executable path is:
 
 ```text
 HTTP request
@@ -77,28 +75,39 @@ Pydantic validation
   ↓
 Application service
   ↓
-Typed JSON response
+ModelRegistry
+  ↓
+ModelLoader (cached)
+  ↓
+TTSInferenceEngine
+  ↓
+KokoroONNXEngine
+  ↓
+AudioService
+  ↓
+Typed JSON response + local WAV
 ```
 
 ### Synthesis application boundary
 
-`SynthesisService` owns the complete synthesis workflow. It coordinates model
-resolution/lifecycle, an inference adapter, measurement, and audio artifact
-creation. This is the only layer that decides workflow order. It has no HTTP or
-Angular concerns and depends on inference through `TTSInferenceAdapter`.
+`SynthesisService` owns the complete synthesis workflow. It currently
+coordinates model resolution/lifecycle, an inference engine, result reuse, and
+audio artifact creation; metrics join this sequence next. This is the only layer
+that decides workflow order. It has no HTTP or Angular concerns and depends on
+inference through `TTSInferenceEngine`.
 
 ### Model boundary
 
 The model registry maps stable API identifiers to backend model metadata. The
-loader owns runtime lifecycle and future caching policy. Neither responsibility
+loader owns runtime lifecycle and the load-once cache. Neither responsibility
 belongs to an API controller or Angular component.
 
 ### Inference boundary
 
-`TTSInferenceAdapter` is the replaceable text-to-speech port. `KokoroOnnxAdapter`
-will be its first concrete implementation. A different runtime or model family
-must be adoptable by implementing the port and changing backend composition,
-without changing Angular or the public synthesis contract.
+`TTSInferenceEngine` is the replaceable text-to-speech port.
+`KokoroONNXEngine` is its first concrete implementation. A different runtime or
+model family must be adoptable by implementing the port and changing backend
+composition, without changing Angular or the public synthesis contract.
 
 ### Audio and metrics boundaries
 
@@ -141,10 +150,10 @@ Registry Adapter     Collector
   SynthesisResult
 ```
 
-In implementation terms, the registry and loader resolve lifecycle state,
-`SynthesisService` invokes the abstract inference adapter while the collector
-measures it, the initial adapter delegates to Kokoro ONNX, and the audio service
-turns returned audio into the final artifact referenced by `SynthesisResult`.
+In implementation terms, the registry resolves metadata, `ModelLoader` creates
+one cached engine, `SynthesisService` invokes the abstract inference port, and
+the audio service writes a stable request-addressed WAV referenced by
+`SynthesisResult`. Metrics will wrap this path in the next stage.
 
 ## Dependency rules
 
@@ -152,8 +161,8 @@ turns returned audio into the final artifact referenced by `SynthesisResult`.
    frontend contracts, never backend implementation modules.
 2. Backend API controllers depend on Pydantic contracts and application
    services, never concrete inference adapters.
-3. `SynthesisService` owns sequencing and depends on model, inference, metrics,
-   and audio boundaries.
+3. `SynthesisService` owns sequencing across the model, inference, and audio
+   boundaries; metrics will join that orchestration without entering controllers.
 4. Concrete inference adapters depend inward on the inference abstraction's
    contracts; no domain or controller depends on Kokoro ONNX directly.
 5. Benchmark execution reuses synthesis orchestration and metric semantics.
@@ -162,10 +171,10 @@ turns returned audio into the final artifact referenced by `SynthesisResult`.
 
 ## Composition and future work
 
-`backend/app/main.py` is the composition root for routers, `HealthService`,
-`SynthesisService`, and `ModelRegistry`. Concrete inference injection, runtime
-selection, persistence, background benchmark execution, and readiness policy
-remain deliberately deferred until their requirements are defined.
+`backend/app/main.py` composes routers, services, the registry, the cached model
+loader, the Kokoro engine factory, and local audio delivery. Metrics, benchmark
+execution, production retention, and readiness policy remain deliberately
+deferred.
 
 The implementation sequence and evidence gates are maintained in
 [`ITERATIVE_CODING_MAP.md`](ITERATIVE_CODING_MAP.md).

@@ -19,9 +19,9 @@ class SynthesisRequest(ApiSchema):
 
 
 class SynthesisResult(ApiSchema):
-    """Deterministic Stage 1 response without generated audio."""
+    """Stable synthesis response for mock or real implementations."""
 
-    status: Literal["mock"] = "mock"
+    status: Literal["mock", "ok"]
     model: str
     text: str
     audio_url: str | None = None

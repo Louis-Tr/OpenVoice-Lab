@@ -17,9 +17,10 @@ export interface InferenceMetrics {
 }
 
 export interface SynthesisResult {
-  readonly audioUrl: string;
-  readonly durationSeconds: number;
-  readonly metrics: InferenceMetrics;
+  readonly status: 'mock' | 'ok';
+  readonly model: string;
+  readonly text: string;
+  readonly audioUrl: string | null;
 }
 
 export interface ModelSummary {
@@ -27,5 +28,9 @@ export interface ModelSummary {
   readonly displayName: string;
   readonly voices: readonly string[];
   readonly variants: readonly ModelVariant[];
+  readonly modelVersion: string;
+  readonly runtime: string;
+  readonly hosting: string;
+  readonly externalInferenceApis: readonly string[];
+  readonly available: boolean;
 }
-

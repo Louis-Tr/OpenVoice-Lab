@@ -23,29 +23,27 @@ errors, HTTP mappings, configuration validation, and contract tests.
 **Exit evidence:** deterministic endpoint tests for health, model listing, valid
 and invalid synthesis requests, with no inference logic in controllers.
 
-## Stage 2 — Model registry and lifecycle
+## Stage 2 — First real open-weight synthesis
 
-Implement model metadata, artifact validation, loading policy, cache ownership,
-and readiness semantics. Keep runtime objects behind backend boundaries.
+**Status:** complete.
 
-**Exit evidence:** registry/lifecycle tests using fake artifacts and adapters.
+Implement model metadata, verified artifact provisioning, load-once lifecycle,
+the replaceable inference engine, Kokoro ONNX, deterministic artifact identity,
+local WAV delivery, and useful domain errors.
 
-## Stage 3 — First synthesis slice
+**Exit evidence:** the sentence “OpenVoice Lab is running locally.” produces a
+playable WAV; repeated warm requests reuse one model load; real and fake-engine
+tests pass without any external inference API.
 
-Integrate Kokoro ONNX through `TTSInferenceAdapter`. Run one text/voice/model
-request through `SynthesisService` and the audio service.
+## Stage 3 — Metrics
 
-**Exit evidence:** reproducible audio from a documented model artifact, with the
-adapter replaceable in tests.
-
-## Stage 4 — Audio and metrics
-
-Add encoding, duration, artifact retention, latency, RTF, process memory, and
-cold/warm classification. Define measurement conditions before publishing data.
+Add inference latency, RTF, process memory, cold/warm classification, and a
+retention policy around the existing audio path. Define measurement conditions
+before publishing data.
 
 **Exit evidence:** verified audio metadata and repeatable metric tests.
 
-## Stage 5 — Benchmark engine
+## Stage 4 — Benchmark engine
 
 Version the sentence corpus, execute it through the same synthesis path, and
 aggregate comparable results. Add failure and cancellation policy.
@@ -53,14 +51,14 @@ aggregate comparable results. Add failure and cancellation policy.
 **Exit evidence:** reproducible benchmark output with corpus and environment
 metadata.
 
-## Stage 6 — Angular workflow
+## Stage 5 — Angular workflow
 
 Connect model selection, synthesis, playback, metrics, benchmark execution, and
 clear loading/error states strictly through REST contracts.
 
 **Exit evidence:** end-to-end user flow with no inference details in Angular.
 
-## Stage 7 — Packaging and operations
+## Stage 6 — Packaging and operations
 
 Add Docker packaging, artifact mounts, deployment configuration, observability,
 and distinct liveness/readiness behavior.
@@ -71,3 +69,6 @@ and distinct liveness/readiness behavior.
 
 No stage advances on a placeholder success claim. A capability is complete only
 when its implementation, test evidence, and documentation agree.
+
+The README is cumulative: completing a new stage adds its portfolio story and
+evidence without removing any earlier stage.

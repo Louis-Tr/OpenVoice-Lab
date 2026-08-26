@@ -5,10 +5,12 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "openvoice-lab-backend"
 version = "0.1.0"
-description = "FastAPI backend scaffold for OpenVoice Lab"
+description = "Self-hosted open-weight TTS backend for OpenVoice Lab"
 requires-python = ">=3.11"
 dependencies = [
     "fastapi>=0.116,<1.0",
+    "kokoro-onnx==0.6.1",
+    "numpy>=2.0.2,<3.0",
     "pydantic-settings>=2.10,<3.0",
     "uvicorn[standard]>=0.35,<1.0",
 ]
@@ -30,4 +32,7 @@ target-version = "py311"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-
+addopts = "--basetemp=.pytest-tmp"
+markers = [
+    "integration: requires locally provisioned model artifacts",
+]

@@ -19,6 +19,7 @@ venv/
 env/
 backend/.venv/
 .pytest_cache/
+.pytest-tmp/
 .mypy_cache/
 .ruff_cache/
 .coverage
@@ -47,7 +48,8 @@ Desktop.ini
 
 # Model weights, caches, and generated artifacts
 /model-artifacts/
-/backend/model-artifacts/
+/backend/model-artifacts/*
+!/backend/model-artifacts/README.md
 /backend/model-cache/
 /artifacts/
 /outputs/
@@ -68,4 +70,3 @@ Desktop.ini
 *.flac
 *.ogg
 /backend/benchmark-results/
-

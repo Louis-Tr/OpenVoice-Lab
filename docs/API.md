@@ -1,8 +1,8 @@
 # API contract
 
-Stage 1 makes health, model listing, and synthesis executable. Synthesis returns
-deterministic mock data: it proves HTTP handling, Pydantic validation, and
-service separation without claiming that inference works.
+Stage 2 keeps the Stage 1 request/response shape and replaces its mock service
+with locally hosted Kokoro ONNX inference. Generated WAV files are served from
+the local `/audio` mount; no external inference API is used.
 
 ## `POST /api/synthesis`
 
@@ -13,7 +13,7 @@ Request:
 
 ```json
 {
-  "text": "Text to synthesize",
+  "text": "OpenVoice Lab is running locally.",
   "modelId": "kokoro",
   "voiceId": "af_heart",
   "variant": "fp32"
@@ -24,24 +24,25 @@ Current success response:
 
 ```json
 {
-  "status": "mock",
+  "status": "ok",
   "model": "kokoro-fp32",
-  "text": "Text to synthesize",
-  "audioUrl": null
+  "text": "OpenVoice Lab is running locally.",
+  "audioUrl": "/audio/kokoro-fp32-af_heart-27561063304ff41f.wav"
 }
 ```
 
-Current behavior: `200 OK` for valid input. Missing fields, empty text, invalid
-variants, and other malformed inputs receive a Pydantic `422` response before
-the service is called.
+Current behavior: `200 OK` with a playable local WAV for valid input. Missing
+fields and malformed values receive Pydantic `422` responses. Unsupported voices
+return `422`, unknown models return `404`, unavailable artifacts return `503`,
+and inference/storage failures return `500`.
 
-TODO: define artifact lifetime, error responses, request limits, cancellation,
-and cold/warm classification.
+TODO: define artifact retention, request limits, cancellation, and cold/warm
+metrics.
 
 ## `GET /api/models`
 
-List selectable models, voices, and FP32/quantized variants without exposing
-runtime or artifact implementation details.
+List selectable models, voices, deployed variants, and public runtime metadata
+without exposing local artifact paths.
 
 Current response:
 
@@ -51,16 +52,21 @@ Current response:
     "id": "kokoro",
     "displayName": "Kokoro",
     "voices": ["af_heart"],
-    "variants": ["fp32", "quantized"]
+    "variants": ["fp32"],
+    "modelVersion": "1.0",
+    "runtime": "ONNX",
+    "hosting": "self-hosted",
+    "externalInferenceApis": [],
+    "available": true
   }
 ]
 ```
 
-Current behavior: `200 OK` with the configured Stage 1 catalog. This is metadata
-only; it does not claim that a model artifact is loaded or ready.
+Current behavior: `200 OK` with public model/runtime metadata and local artifact
+availability. Listing metadata does not load the ONNX session.
 
-TODO: define capability metadata, model availability/readiness, pagination,
-and stable identifier policy.
+TODO: define richer capabilities, readiness policy, pagination, and stable
+identifier policy.
 
 ## `POST /api/benchmarks`
 
@@ -95,7 +101,7 @@ cancellation, version the sentence corpus, and specify aggregate statistics.
 
 Report service liveness and, later, dependency readiness.
 
-Placeholder response:
+Response:
 
 ```json
 {

@@ -21,3 +21,9 @@ class Settings(BaseSettings):
     default_model_id: str = "kokoro"
     default_model_display_name: str = "Kokoro"
     default_voice_id: str = "af_heart"
+    kokoro_model_filename: str = "kokoro-v1.0.onnx"
+    kokoro_voices_filename: str = "voices-v1.0.bin"
+    kokoro_model_version: str = "1.0"
+    kokoro_language: str = "en-us"
+    kokoro_speed: float = 1.0
+    audio_url_prefix: str = "/audio"
