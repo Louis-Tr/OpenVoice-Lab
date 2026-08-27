@@ -7,11 +7,11 @@ application boundary. The repository begins with stable component boundaries so
 that model runtimes and benchmarking mechanics can evolve without leaking into
 the browser or HTTP controllers.
 
-Stage 10 completes the deterministic text-processing boundary inside synthesis
-orchestration. Angular selects normalization and sanitization independently;
-the backend owns every transformation rule and returns the exact inference
-text. Controllers and inference adapters remain unaware of notation, Unicode,
-punctuation, and whitespace policy.
+Stage 12 adds an independently composed SpeechT5 experiment surface beside the
+Kokoro product. Angular still knows HTTP contracts only. Verified Stage 11
+artifacts drive the training report, while a replaceable CPU runtime owns live
+SpeechT5/Whisper execution. The experiment never enters `SynthesisService`, the
+Kokoro registry, or the existing benchmark path.
 
 ## System spine
 
@@ -245,6 +245,54 @@ The table deliberately limits presentation to average and p95 latency, average
 RTF, peak RSS, and failure count. Detailed raw cases, environment data, corpus
 hash, and audio URLs remain in `BenchmarkResult` for engineering use.
 
+### SpeechT5 experiment boundary
+
+Stage 11 training and Stage 12 presentation are separate responsibilities:
+
+```text
+verified Stage 11 artifacts ──> ExperimentReportService ──> read-only report API
+locked shared test manifest ──> ExperimentFixtureService ──> fixture API
+
+Angular Experiment tab
+  ↓ POST comparison
+ExperimentJobService (durable, bounded queue)
+  ↓ normalize → sanitize
+ExperimentModelRegistry
+  ↓ replaceable ExperimentInferenceRuntime
+SpeechT5 CPU + pinned speaker profile + pinned vocoder
+  ↓ progressive WAV
+pinned Whisper ASR → exact term scorer + WER
+  ↓
+atomic job/result/manifest files
+```
+
+`ExperimentReportService` fails closed if the final audit, dataset lock,
+selected model, source revision, configuration hash, or artifact manifest is
+inconsistent. Training statistics are never copied into Angular constants.
+Historical RTX 4090 results and live CPU results use distinct contracts and
+labels because they are not directly comparable.
+
+The experiment model registry is immutable and separate from the deployable
+Kokoro registry. It resolves public IDs for the pinned pretrained model and the
+three selected Stage 11 checkpoints without leaking paths to Angular. Live
+models execute sequentially against one final text and one speaker profile; an
+LRU cache bounds process memory while reporting cold/warm state honestly.
+The shared vocoder and ASR evaluator are loaded before per-model measurement.
+Live memory is labeled as a process RSS snapshot because it still includes the
+bounded model cache; the isolated Stage 11 evaluation remains the deployment
+comparison for model-specific memory.
+
+`ExperimentJobService` owns preprocessing order, progress, cancellation,
+partial failures, recovery after process restart, and durable output. Each job
+stores its request, latest status, generated WAVs, terminal result, provenance,
+and a SHA-256 manifest below the ignored Stage 12 artifact root. Controllers
+only validate, call the service, map errors, and stream snapshots over SSE.
+
+The ASR transcript is an evaluation proxy, not a ground-truth pronunciation
+claim. Domain-term accuracy checks complete normalized token sequences, WER is
+deterministic Levenshtein distance, and both remain visible beside the playable
+audio so a visitor can challenge the automated result.
+
 ### Deployment boundary
 
 ```text
@@ -256,7 +304,7 @@ model-artifacts named volume
   ↓ service_completed_successfully
 FastAPI backend ── health check ──> healthy
   ↓
-Angular/Nginx frontend ── /api + /audio proxy ──> FastAPI
+Angular/Nginx frontend ── /api + product/experiment audio proxy ──> FastAPI
 ```
 
 Model weights never enter Git, either image build context, or an image layer.
@@ -323,6 +371,11 @@ WAV referenced by `SynthesisResult`.
 8. Text transformation belongs to `text_processing`; Angular chooses policy,
    the synthesis service sequences normalization before sanitization, and
    inference adapters receive only the final text.
+9. The SpeechT5 experiment registry/runtime remain separate from the Kokoro
+   product registry/runtime; shared code is limited to technology-neutral text
+   processing and HTTP/error conventions.
+10. Training reports are projections of verified artifacts. Angular never owns
+    training metrics, model paths, hashes, or evaluation math.
 
 ## Composition and future work
 
@@ -330,9 +383,13 @@ WAV referenced by `SynthesisResult`.
 definitions, the cached model loader, the Kokoro engine factory, local audio
 delivery, and the benchmark job service. The CLI and browser job coordinator
 both compose one fresh application per model worker and access the same
-`SynthesisService`. Compose now reproduces that runtime on Linux. Durable job
-persistence, multi-replica coordination, retention, and a model-aware readiness
-policy remain deliberately deferred.
+`SynthesisService`. It also conditionally composes the artifact-backed Stage 12
+experiment service when optional CPU dependencies, pinned models, selected
+Stage 11 weights, and the speaker profile are present. Missing experiment assets
+do not break Kokoro startup; live experiment requests fail explicitly while
+read-only evidence remains available. Compose reproduces the Kokoro product
+runtime on Linux; Stage 12 CPU packaging, multi-replica experiment coordination,
+and retention remain deliberately deferred.
 
 The implementation sequence and evidence gates are maintained in
 [`ITERATIVE_CODING_MAP.md`](ITERATIVE_CODING_MAP.md).

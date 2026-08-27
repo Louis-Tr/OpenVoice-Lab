@@ -11,6 +11,7 @@ its public contract, but it should not absorb the other module's responsibility.
 | `audio-player` | Playback and audio duration. |
 | `metrics` | Display inference latency, RTF, memory and model metadata. |
 | `benchmark` | Trigger benchmark runs and display aggregate results. |
+| `experiment` | Present verified Stage 11 evidence and own fixture/custom live-comparison UI state. |
 | `model-selector` | Retrieve/select available voices and FP32/quantized variants. |
 | `api` | Angular HTTP abstraction around backend APIs. |
 | `shared` | Common components, types and UI states. |
@@ -29,6 +30,7 @@ its public contract, but it should not absorb the other module's responsibility.
 | `audio` | Encoding, duration and audio-file handling. |
 | `metrics` | Latency, process memory, RTF and cold/warm metrics. |
 | `benchmark` | Predefined test execution and result aggregation. |
+| `experiments` | Artifact verification/reporting, locked fixtures, experiment registry, scoring, durable comparison jobs, and orchestration. |
 | `config` | Environment/model/deployment configuration. |
 | `health` | Liveness/readiness support. |
 
@@ -38,12 +40,12 @@ its public contract, but it should not absorb the other module's responsibility.
 | --- | --- |
 | `backend/Dockerfile` | Digest-pinned, dependency-locked, non-root Python/ONNX runtime. |
 | `frontend/Dockerfile` | Reproducible Angular production build and Nginx runtime. |
-| `frontend/nginx.conf` | SPA delivery and same-origin proxy for API, audio, and health. |
+| `frontend/nginx.conf` | SPA delivery and same-origin proxy for API, Kokoro/experiment audio, and health. |
 | `model-init` | Download and checksum-verify external model dependencies. |
 | `docker-compose.yml` | Startup ordering, ports, health checks, and persistent volumes. |
 | `.dockerignore` | Keep local dependencies, secrets, weights, and outputs out of image contexts. |
 
-## Stage 10 implementation status
+## Stage 12 implementation status
 
 The connected vertical slice is intentionally narrow:
 
@@ -64,9 +66,18 @@ The connected vertical slice is intentionally narrow:
   `TextSanitizer` → exact inference text.
 - Implemented benchmark provenance: original text + final inference text +
   sanitizer/normalizer states in every raw case and the run configuration.
-- Still deferred: durable/distributed job storage, multi-replica coordination,
-  model-aware readiness, broader language-aware normalization, and advanced
-  analytics.
+- Implemented Stage 11 training evidence: locked V1/V2/V3 schedules, 125-step
+  recoverable checkpoints, final audit, selected-model hashes, validation
+  histories, shared-test evaluation, cost/timing, and incident provenance.
+- Implemented Stage 12 experiment path: lazy Angular tab → artifact-backed
+  report/fixture/model APIs → bounded durable job service → replaceable CPU
+  SpeechT5 runtime → progressive WAV → pinned Whisper → term/WER scoring.
+- Implemented live-job durability: atomic request/status/result storage,
+  cancellation, restart recovery, partial per-model failure, and terminal
+  SHA-256 manifest.
+- Still deferred: distributed experiment-job coordination, automated retention,
+  Stage 12 container packaging, broader language-aware normalization, and
+  statistically powered human evaluation.
 
 ## Boundary enforcement
 
@@ -78,3 +89,7 @@ The connected vertical slice is intentionally narrow:
   `text_processing`.
 - Feature-specific frontend state stays in its owning feature; only genuinely
   reusable pieces move to `shared` or `core`.
+- SpeechT5 experiment models stay in their own immutable registry and runtime;
+  they never enter the Kokoro product registry or `SynthesisService`.
+- Historical training claims must be parsed from verified artifacts, and live
+  CPU measurements must never be presented as historical RTX 4090 results.

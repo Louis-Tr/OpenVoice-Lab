@@ -19,6 +19,7 @@ import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
           Synthesis
         </a>
         <a routerLink="/benchmarks" routerLinkActive="active">Benchmarks</a>
+        <a routerLink="/experiments/stage11" routerLinkActive="active">Experiment</a>
       </nav>
     </header>
     <main id="main-content">

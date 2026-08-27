@@ -5,11 +5,13 @@ from pathlib import Path
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 
-from app.api import benchmarks, health, models, synthesis
+from app.api import benchmarks, experiments, health, models, synthesis
 from app.api.errors import register_error_handlers
 from app.audio.service import AudioService
 from app.benchmark.service import BenchmarkJobService
 from app.config.settings import Settings
+from app.experiments.common import ExperimentEvidenceError
+from app.experiments.service import ExperimentService, create_experiment_service
 from app.health.service import HealthService
 from app.metrics.collector import MetricsCollector
 from app.models.loader import ModelLoader
@@ -34,6 +36,7 @@ def create_app(
     metrics_collector: MetricsCollector | None = None,
     benchmark_job_service: BenchmarkJobService | None = None,
     text_processing_service: TextProcessingService | None = None,
+    experiment_service: ExperimentService | None = None,
 ) -> FastAPI:
     """Create the API and compose controllers with application services."""
     resolved_settings = settings or Settings()
@@ -89,14 +92,45 @@ def create_app(
         result_dir=resolve_backend_path(resolved_settings.benchmark_result_dir),
         default_voice_id=resolved_settings.default_voice_id,
     )
+    stage12_root = resolve_backend_path(resolved_settings.stage12_artifact_root).resolve()
+    stage12_root.mkdir(parents=True, exist_ok=True)
+    resolved_experiments = experiment_service
+    if resolved_experiments is None:
+        try:
+            resolved_experiments = create_experiment_service(
+                artifact_root=resolve_backend_path(
+                    resolved_settings.stage11_artifact_root
+                ).resolve(),
+                manifest_root=resolve_backend_path(
+                    resolved_settings.stage11_manifest_root
+                ).resolve(),
+                stage12_root=stage12_root,
+                model_cache_root=resolve_backend_path(
+                    resolved_settings.experiment_model_cache_dir
+                ).resolve(),
+                speaker_profile_root=resolve_backend_path(
+                    resolved_settings.experiment_speaker_profile_dir
+                ).resolve(),
+                text_processing=resolved_text_processing,
+                audio_url_prefix=resolved_settings.experiment_audio_url_prefix,
+                tts_revision=resolved_settings.speecht5_revision,
+                vocoder_revision=resolved_settings.speecht5_vocoder_revision,
+                maximum_queued_jobs=resolved_settings.experiment_maximum_queued_jobs,
+                maximum_cached_models=resolved_settings.experiment_maximum_cached_models,
+                cpu_threads=resolved_settings.experiment_cpu_threads,
+            )
+        except ExperimentEvidenceError:
+            # Test/partial deployments may intentionally omit the ignored Stage 11 artifacts.
+            # Existing synthesis and benchmark routes must remain available in that state.
+            resolved_experiments = None
 
     application = FastAPI(
         title="OpenVoice Lab API",
-        version="0.10.0",
+        version="0.12.0",
         description=(
             "Measured self-hosted Kokoro ONNX variants with deterministic "
-            "text normalization, sanitization, and browser-triggered "
-            "benchmark jobs."
+            "text processing and benchmarks, plus artifact-backed SpeechT5 "
+            "training evidence and local CPU comparisons."
         ),
     )
     application.include_router(synthesis.create_router(synthesis_service), prefix="/api")
@@ -106,10 +140,23 @@ def create_app(
         prefix="/api",
     )
     application.include_router(health.create_router(health_service))
+    if resolved_experiments is not None:
+        application.include_router(
+            experiments.create_router(resolved_experiments),
+            prefix="/api",
+        )
+        application.router.add_event_handler("startup", resolved_experiments.recover)
     application.mount(
         resolved_settings.audio_url_prefix,
         StaticFiles(directory=resolved_audio.output_dir),
         name="generated-audio",
+    )
+    experiment_audio_root = stage12_root / "comparisons"
+    experiment_audio_root.mkdir(parents=True, exist_ok=True)
+    application.mount(
+        resolved_settings.experiment_audio_url_prefix,
+        StaticFiles(directory=experiment_audio_root),
+        name="experiment-audio",
     )
     register_error_handlers(application)
     application.state.model_loader = resolved_loader
@@ -118,6 +165,7 @@ def create_app(
     application.state.synthesis_service = synthesis_service
     application.state.text_processing_service = resolved_text_processing
     application.state.benchmark_job_service = resolved_benchmark_jobs
+    application.state.experiment_service = resolved_experiments
     return application
 
 

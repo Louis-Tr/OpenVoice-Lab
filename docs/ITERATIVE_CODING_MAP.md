@@ -136,13 +136,36 @@ produces a playable WAV without sending raw supported notation to inference.
 Benchmark raw results preserve the original text, final text, and both option
 states.
 
-## Stage 11 — Production operations
+## Stage 11 — Controlled SpeechT5 adaptation
 
-Add durable benchmark jobs, multi-replica coordination, retention policy,
-structured observability, and model-aware readiness behavior.
+**Status:** complete.
 
-**Exit evidence:** operations remain correct across process replacement and
-horizontal scaling, with explicit readiness and artifact-retention policy.
+Prepare three locked training schedules, fine-tune them concurrently on separate
+secure RTX 4090 pods, checkpoint every 125 optimizer steps, and evaluate every
+selected model against one shared 662-case medical-speech test manifest.
+
+**Exit evidence:** the final audit verifies 24 downloaded checkpoints, dataset
+and configuration hashes, selected-model hashes, run/pod provenance, shared-test
+results, 1.9886 GPU hours, USD 1.47 estimated cost, no training resumptions, and
+termination of all three pods. V3 reaches the highest adapted domain-term
+accuracy (35.10%) but also the highest average RTF (0.1819).
+
+## Stage 12 — Interactive experiment interface
+
+**Status:** complete.
+
+Add a lazy third Angular tab that presents the verified Stage 11 pipeline,
+dataset schedules, configuration, loss curves, results, integrity, and incidents.
+Let visitors compare pretrained SpeechT5 with any adapted variant using locked
+fixtures or custom text/terms through real local CPU synthesis and ASR scoring.
+
+**Exit evidence:** four pinned models synthesize and transcribe real WAVs on CPU;
+durable comparison jobs expose progress, cancellation, progressive audio,
+term accuracy, WER, performance, and provenance. Browser acceptance covers both
+modes, independent text toggles, four responsive breakpoints, playable outputs,
+and no console errors. Backend tests (71 locally: 69 portable plus two
+local-artifact integrations), frontend tests (24), lint, and the
+production build pass.
 
 ## Working rule
 

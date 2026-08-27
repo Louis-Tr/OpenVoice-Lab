@@ -406,6 +406,118 @@ left for the independently selected sanitizer or the TTS engine.
 **Portfolio proof:** deterministic input semantics, auditable inference text,
 and reproducible evaluation—not opaque prompt rewriting.
 
+## Stage 11 — Controlled SpeechT5 adaptation
+
+> “I trained three controlled SpeechT5 variants against locked medical-speech
+> workloads, retained recoverable checkpoints, and evaluated deployment tradeoffs
+> with the same test set.”
+
+**Responsibility:** turn fine-tuning into a reproducible experiment. V1 preserves
+the source distribution, V2 increases medical-term exposure, and V3 uses locked
+eight-row replay blocks to balance term exposure against general speech.
+
+All three runs used the same pinned SpeechT5 revision, secure RTX 4090 class,
+BF16 precision, physical batch 16, accumulation 2, effective batch 32,
+`1e-5` learning rate, seed 42, and 1,000-step ceiling. Validation and recoverable
+checkpoints ran every 125 optimizer steps. The dataset lock, training
+configuration, checkpoints, selected models, and final artifacts were verified
+by SHA-256 before the pods were terminated.
+
+Genuine shared-test results from the completed 662-case experiment:
+
+| Variant | Best step | Best validation loss | Domain-term accuracy | WER | Avg RTF |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| V1 Baseline | 1,000 | 0.441642 | 33.41% | 70.84% | 0.1567 |
+| V2 Term Balance | 625 | 0.445358 | 26.20% | 72.88% | 0.1566 |
+| V3 Replay | 1,000 | 0.444507 | **35.10%** | **70.19%** | 0.1819 |
+
+V3 produced the strongest pronunciation proxy and lowest WER among the adapted
+variants, but it also had the highest average RTF. V1 reached the lowest
+validation loss, while V2's additional term exposure did not improve the shared
+test result. There is no fabricated universal winner: deployment depends on
+whether pronunciation or runtime is the harder constraint.
+
+The three runs produced 24 verified checkpoints, consumed 1.9886 total GPU
+hours, and recorded an estimated RunPod cost of USD 1.47. Two controller/
+monitoring interruptions were retained in provenance; neither restarted or
+altered a trainer. See [the completed training evidence](docs/STAGE11_TRAINING.md).
+
+**Portfolio proof:** controlled ML experimentation, immutable datasets,
+recoverable training, honest failure records, and evidence-based model
+selection.
+
+## Stage 12 — Interactive experiment interface
+
+> “I turned the training run into a public engineering surface where visitors
+> can inspect the evidence and test pretrained versus adapted models themselves.”
+
+**Responsibility:** add a third top-level **Experiment** tab without changing the
+Synthesis or Benchmarks products. The page reads verified Stage 11 artifacts,
+shows the full pipeline and training statistics, and runs real self-hosted
+SpeechT5 comparisons on CPU.
+
+![Stage 12 SpeechT5 experiment dashboard](docs/images/stage12-experiment.png)
+
+The live lab supports locked Stage 11 fixtures and custom text with explicit
+target terms. It runs two to four models sequentially against the same text and
+speaker profile, exposes each WAV as soon as it is complete, transcribes it with
+the pinned local Whisper evaluator, and reports exact term accuracy, WER,
+inference time, audio duration, RTF, process memory, cold/warm state, and model
+provenance. Sanitization and normalization remain independent backend-owned
+policies. No external inference API is used.
+
+One genuine four-model CPU fixture run on this development machine used:
+
+```text
+there is too much pain when i move my arm
+target term: arm
+```
+
+| Model | Term accuracy | WER | Inference | RTF | RSS |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| SpeechT5 pretrained | 100% | 0% | 2,390 ms | 0.6496 | 1,026 MB |
+| V1 Baseline | 0% | 100% | 3,316 ms | 0.6205 | 2,639 MB |
+| V2 Term Balance | 0% | 100% | 2,481 ms | 0.6152 | 2,698 MB |
+| V3 Replay | 0% | 100% | 3,570 ms | 0.6130 | 2,707 MB |
+
+This is a single smoke case, not an aggregate model ranking. It usefully caught
+a real limitation: every adapted checkpoint missed `arm` while the pretrained
+model transcribed it correctly. A second exercised custom comparison for
+`amlodipine` and `hypertension` also completed and preserved its contradictory
+result. Live RSS includes the bounded model cache and is not an isolated
+per-model memory benchmark. The interface exists to reveal results like these,
+not suppress them.
+
+### Enable the CPU experiment runtime
+
+Stage 12 is native-only for now and requires the completed Stage 11 selected
+models under `artifacts/stage11/full-training/`. Those weights and generated
+comparison files are intentionally excluded from Git.
+
+```powershell
+py -3.11 -m venv .runtime\stage12-venv
+.\.runtime\stage12-venv\Scripts\python.exe -m pip install `
+  torch==2.5.1+cpu torchaudio==2.5.1+cpu `
+  --index-url https://download.pytorch.org/whl/cpu
+.\.runtime\stage12-venv\Scripts\python.exe -m pip install -e "backend[experiment]"
+.\.runtime\stage12-venv\Scripts\python.exe backend\scripts\provision_experiment_models.py
+Push-Location backend
+..\.runtime\stage12-venv\Scripts\python.exe `
+  -m app.experiments.prepare_serving_profile `
+  --repo-root ..
+Pop-Location
+.\start.ps1
+```
+
+The provisioning command uses `hf download` with immutable revisions and writes
+per-model SHA-256 manifests. `start.ps1` automatically prefers the Stage 12
+environment when it exists; otherwise the original Kokoro application remains
+available, and locally retained Stage 11 artifacts can still back the read-only
+experiment report.
+
+**Portfolio proof:** ML experiment communication, artifact-backed reporting,
+durable local jobs, progressive audio, and direct public falsifiability.
+
 ## Run from a fresh clone with Docker
 
 Docker Desktop or Docker Engine with Compose is the only local prerequisite.
@@ -492,7 +604,7 @@ text normalization and sanitization:
 
 ```powershell
 .\.venv\Scripts\pytest.exe -q
-# 61 passed
+# 71 passed locally (69 portable + 2 local-artifact integrations)
 ```
 
 The Angular suite covers dynamic variant discovery and selection, empty input,
@@ -503,7 +615,7 @@ delivery:
 ```powershell
 cd frontend
 npm test
-# 22 passed
+# 24 passed
 ```
 
 ## Boundaries and roadmap
@@ -521,3 +633,5 @@ reproducible benchmark, a browser-visible deployment comparison, and a
 health-checked Docker deployment with verified external model provisioning.
 It also owns deterministic, user-controlled text normalization and sanitization
 before inference, with the exact evaluated text retained as evidence.
+The third tab adds a separately composed SpeechT5 experiment registry and CPU
+runtime, keeping research evaluation out of the Kokoro product path.

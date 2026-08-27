@@ -10,6 +10,13 @@ export const routes: Routes = [
     component: BenchmarkPageComponent,
     title: 'Benchmarks | OpenVoice Lab',
   },
+  {
+    path: 'experiments/stage11',
+    loadComponent: () =>
+      import('./experiment/stage11-experiment-page.component').then(
+        (module) => module.Stage11ExperimentPageComponent,
+      ),
+    title: 'Stage 11 Experiment | OpenVoice Lab',
+  },
   { path: '**', redirectTo: '' },
 ];
-

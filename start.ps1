@@ -9,12 +9,17 @@ $ErrorActionPreference = 'Stop'
 $repositoryPath = $PSScriptRoot
 $backendPath = Join-Path $repositoryPath 'backend'
 $frontendPath = Join-Path $repositoryPath 'frontend'
-$backendPython = Join-Path $backendPath '.venv\Scripts\python.exe'
+$baseBackendPython = Join-Path $backendPath '.venv\Scripts\python.exe'
+$experimentBackendPython = Join-Path $repositoryPath '.runtime\stage12-venv\Scripts\python.exe'
+$backendPython = if (Test-Path -LiteralPath $experimentBackendPython -PathType Leaf) {
+    $experimentBackendPython
+} else {
+    $baseBackendPython
+}
 $frontendCli = Join-Path $frontendPath 'node_modules\.bin\ng.cmd'
 $modelPath = Join-Path $backendPath 'model-artifacts\kokoro-v1.0.onnx'
 $quantizedModelPath = Join-Path $backendPath 'model-artifacts\kokoro-v1.0.int8.onnx'
 $voicesPath = Join-Path $backendPath 'model-artifacts\voices-v1.0.bin'
-$npmCommand = Get-Command 'npm.cmd' -ErrorAction SilentlyContinue
 
 function Assert-RequiredFile {
     param(
@@ -43,10 +48,6 @@ Install frontend dependencies:
   npm ci
 "@
 
-if (-not $npmCommand) {
-    throw 'npm.cmd is not available. Install Node.js and reopen PowerShell.'
-}
-
 Assert-RequiredFile -LiteralPath $modelPath -SetupHint @"
 Download the local model artifacts:
   cd $backendPath
@@ -66,6 +67,12 @@ Download the local voice artifacts:
 "@
 
 Write-Host 'OpenVoice Lab prerequisites are ready.' -ForegroundColor Green
+if ($backendPython -eq $experimentBackendPython) {
+    Write-Host 'Stage 12 CPU comparison runtime is enabled.' -ForegroundColor Green
+} else {
+    Write-Host 'Stage 12 CPU dependencies are not enabled; the Experiment tab remains available.' -ForegroundColor Yellow
+    Write-Host 'Follow the Stage 12 setup in README.md to enable local SpeechT5 comparisons.' -ForegroundColor Yellow
+}
 
 if ($CheckOnly) {
     Write-Host 'Check complete. No servers were started.'
@@ -83,8 +90,8 @@ try {
         -PassThru
 
     $frontendProcess = Start-Process `
-        -FilePath $npmCommand.Source `
-        -ArgumentList @('start', '--', '--host=127.0.0.1', '--port=4200') `
+        -FilePath $frontendCli `
+        -ArgumentList @('serve', '--host', '127.0.0.1', '--port', '4200', '--proxy-config', 'proxy.conf.json') `
         -WorkingDirectory $frontendPath `
         -PassThru
 } catch {

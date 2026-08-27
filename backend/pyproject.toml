@@ -17,6 +17,14 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+experiment = [
+    "sentencepiece==0.2.0",
+    "soundfile==0.12.1",
+    "speechbrain==1.0.1",
+    "torch==2.5.1",
+    "torchaudio==2.5.1",
+    "transformers==4.44.2",
+]
 dev = [
     "httpx>=0.28,<1.0",
     "pytest>=8.4,<9.0",

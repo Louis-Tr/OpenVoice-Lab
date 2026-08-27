@@ -1,0 +1,63 @@
+.result-card {
+  min-width: 0;
+  padding: 22px;
+  background: var(--color-background);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  transition: border-color var(--motion-fast) ease-out;
+}
+
+.result-card.state-success { border-color: rgb(67 224 125 / 55%); }
+.result-card.state-failure { border-color: rgb(255 123 123 / 65%); }
+
+header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 18px;
+}
+
+header span,
+.transcript span {
+  color: var(--color-muted-foreground);
+  font: 700 9px/1.4 var(--font-mono);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+h4 { margin: 5px 0 0; font-size: 18px; letter-spacing: -0.03em; }
+header strong { color: var(--color-accent); font: 700 10px/1.5 var(--font-mono); text-transform: uppercase; }
+audio { width: 100%; min-height: 44px; }
+
+.audio-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  height: 48px;
+  background: var(--color-surface);
+  border-radius: var(--radius-sm);
+}
+
+.audio-placeholder i { width: 3px; height: 12px; background: var(--color-muted-foreground); animation: pulse 900ms ease-in-out infinite alternate; }
+.audio-placeholder i:nth-child(2) { height: 22px; animation-delay: 100ms; }
+.audio-placeholder i:nth-child(3) { height: 17px; animation-delay: 200ms; }
+.audio-placeholder i:nth-child(4) { animation-delay: 300ms; }
+
+.transcript { margin-top: 18px; }
+.transcript p { margin: 7px 0 0; color: var(--color-foreground); font-size: 13px; line-height: 1.55; }
+.term-row { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 14px; }
+.term-row span { padding: 5px 8px; font: 700 9px/1.3 var(--font-mono); border-radius: 999px; }
+.correct { color: var(--color-accent-strong); background: var(--color-success-surface); }
+.missed { color: var(--color-error); background: var(--color-error-surface); }
+
+dl { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1px; margin: 18px 0 0; overflow: hidden; background: var(--color-border); border: 1px solid var(--color-border); border-radius: var(--radius-sm); }
+dl div { padding: 10px; background: var(--color-surface); }
+dt { color: var(--color-muted-foreground); font: 700 8px/1.4 var(--font-mono); text-transform: uppercase; letter-spacing: 0.06em; }
+dd { margin: 5px 0 0; font: 700 13px/1.2 var(--font-mono); font-variant-numeric: tabular-nums; }
+.error { color: var(--color-error); font-size: 13px; line-height: 1.5; }
+
+@keyframes pulse { from { transform: scaleY(0.45); opacity: 0.45; } to { transform: scaleY(1); opacity: 1; } }
+
+@media (prefers-reduced-motion: reduce) { .audio-placeholder i { animation: none; } }

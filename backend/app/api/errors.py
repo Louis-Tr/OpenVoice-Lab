@@ -5,6 +5,13 @@ from fastapi.responses import JSONResponse
 
 from app.audio.service import AudioStorageError
 from app.benchmark.service import BenchmarkJobNotFoundError
+from app.experiments.common import (
+    ExperimentEvidenceError,
+    ExperimentFixtureNotFoundError,
+    ExperimentJobNotFoundError,
+    ExperimentModelNotFoundError,
+    ExperimentQueueFullError,
+)
 from app.inference.base import InferenceError, UnsupportedVoiceError
 from app.metrics.collector import MetricsCollectionError
 from app.models.loader import ModelLoadError
@@ -26,12 +33,40 @@ def register_error_handlers(application: FastAPI) -> None:
         )
 
     @application.exception_handler(BenchmarkJobNotFoundError)
+    @application.exception_handler(ExperimentFixtureNotFoundError)
+    @application.exception_handler(ExperimentJobNotFoundError)
+    @application.exception_handler(ExperimentModelNotFoundError)
     async def benchmark_job_not_found(
         _request: Request,
-        error: BenchmarkJobNotFoundError,
+        error: (
+            BenchmarkJobNotFoundError
+            | ExperimentFixtureNotFoundError
+            | ExperimentJobNotFoundError
+            | ExperimentModelNotFoundError
+        ),
     ) -> JSONResponse:
         return JSONResponse(
             status_code=status.HTTP_404_NOT_FOUND,
+            content={"detail": str(error)},
+        )
+
+    @application.exception_handler(ExperimentQueueFullError)
+    async def experiment_queue_full(
+        _request: Request,
+        error: ExperimentQueueFullError,
+    ) -> JSONResponse:
+        return JSONResponse(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            content={"detail": str(error)},
+        )
+
+    @application.exception_handler(ExperimentEvidenceError)
+    async def experiment_unavailable(
+        _request: Request,
+        error: ExperimentEvidenceError,
+    ) -> JSONResponse:
+        return JSONResponse(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             content={"detail": str(error)},
         )
 

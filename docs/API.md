@@ -1,9 +1,9 @@
 # API contract
 
-Stage 10 exposes two independent preprocessing options. Deterministic English
-normalization runs before sanitization, the original request remains visible,
-and `normalizedText` records the exact string passed to inference. Generated
-WAV files remain local; no external inference or text-processing API is used.
+The Kokoro product and SpeechT5 experiment use separate API namespaces and
+registries. Both reuse backend-owned text processing, keep generated WAV files
+local, and use no external inference or text-processing API. Historical Stage
+11 evidence and live Stage 12 CPU measurements are distinct response fields.
 
 ## `POST /api/synthesis`
 
@@ -205,6 +205,86 @@ raw case outcomes, and per-model aggregates to `backend/benchmark-results/`.
 
 TODO: define cancellation, durable job storage, multi-process coordination,
 retention, and paginated raw-result retrieval for production.
+
+## Stage 12 experiment API
+
+### `GET /api/experiments/stage11/report`
+
+Return a verified projection of the completed Stage 11 artifacts: integrity
+state, frozen configuration, dataset strategies, exact validation histories,
+shared-test evaluation, checkpoint inventory, selected-model hashes, GPU time,
+cost, resumptions, and incidents. The endpoint fails closed with `503` if the
+dataset lock, final audit, revisions, model files, or artifact hashes disagree.
+
+### `GET /api/experiments/stage11/fixtures`
+
+List text-only rows from the locked shared test manifest. Query parameters are
+`query`, `term`, `category`, `offset` (default `0`), and `limit` (default `30`,
+maximum `100`). The response includes the locked manifest SHA-256. Audio source
+paths are never exposed to the browser.
+
+### `GET /api/experiments/stage11/models`
+
+Return the immutable live-comparison catalog for pretrained SpeechT5 and the
+three selected Stage 11 variants. Public metadata includes ID, role, revision,
+model SHA-256, CPU runtime label, self-hosted state, and availability; local
+paths are private.
+
+### `POST /api/experiments/stage11/comparisons`
+
+Start a durable, concurrency-limited CPU comparison. Fixture mode resolves text
+and terms from the locked manifest:
+
+```json
+{
+  "mode": "fixture",
+  "fixtureId": "medical-3ac812069e511fd83561",
+  "modelIds": ["speecht5-pretrained", "speecht5-v3-replay"],
+  "sanitizeText": true,
+  "normalizeText": true
+}
+```
+
+Custom mode requires every explicit target term to appear in the submitted
+text:
+
+```json
+{
+  "mode": "custom",
+  "text": "The patient was prescribed amlodipine for hypertension.",
+  "targetTerms": ["amlodipine", "hypertension"],
+  "modelIds": ["speecht5-pretrained", "speecht5-v3-replay"],
+  "sanitizeText": true,
+  "normalizeText": false
+}
+```
+
+At least two and at most four unique model IDs are required. Both text options
+default to `true` and remain independent. A successful start returns `202` with
+the durable job snapshot. Queue saturation returns `429`; missing optional CPU
+dependencies or pinned artifacts return `503`; malformed input returns `422`.
+
+Each successful per-model result contains the exact original/final text,
+progressive audio URL, local ASR transcript, correct/missed target terms, term
+accuracy, WER, CPU load/inference/ASR/duration/RTF/RSS/warm metrics, model hash,
+source revision, vocoder revision, and speaker-profile hash. Per-model failures
+remain in the final comparison rather than discarding successful outputs.
+
+### `GET /api/experiments/stage11/comparisons/{jobId}`
+
+Return the latest durable snapshot. Terminal stages are `completed`,
+`completed_with_failures`, `failed`, and `cancelled`.
+
+### `GET /api/experiments/stage11/comparisons/{jobId}/events`
+
+Stream the same snapshots as server-sent events. Angular falls back to polling
+if SSE disconnects; the contract is identical.
+
+### `DELETE /api/experiments/stage11/comparisons/{jobId}`
+
+Request cooperative cancellation. A currently executing CPU operation is not
+corrupted; the terminal cancellation is preserved atomically with its manifest.
+Completed jobs are returned unchanged.
 
 ## `GET /health`
 
