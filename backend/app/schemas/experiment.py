@@ -60,6 +60,21 @@ class ExperimentTrainingConfig(ApiSchema):
     seed: int
 
 
+class ExperimentDataAudit(ApiSchema):
+    """Verified source-cleaning and split-isolation evidence."""
+
+    status: Literal["passed"]
+    unique_audio_files: int = Field(ge=0)
+    audio_verification_failure_count: int = Field(ge=0)
+    leakage_intersection_count: int = Field(ge=0)
+    leakage_identity_fields: list[str]
+    shared_evaluation_manifests: bool
+    schedule_block_size: int = Field(ge=1)
+    source_manifest_sha256: dict[str, str]
+    builder_sha256: str
+    variant_config_sha256: str
+
+
 class ExperimentDatasetStats(ApiSchema):
     """Measured exposure distribution for one training schedule."""
 
@@ -70,7 +85,10 @@ class ExperimentDatasetStats(ApiSchema):
     rows_with_terms: int = Field(ge=0)
     duration_hours: float = Field(ge=0)
     unique_speakers: int = Field(ge=0)
+    maximum_speaker_share: float = Field(ge=0, le=1)
     source_pool_counts: dict[str, int]
+    term_category_occurrences: dict[str, int]
+    manifest_sha256: dict[str, str]
 
 
 class ExperimentLossPoint(ApiSchema):
@@ -138,6 +156,7 @@ class ExperimentReport(ApiSchema):
     runtime_label: str
     integrity: ExperimentIntegrity
     training: ExperimentTrainingConfig
+    data_audit: ExperimentDataAudit
     shared_splits: dict[str, int]
     dataset_lock_sha256: str
     configuration_sha256: str
@@ -276,6 +295,7 @@ class ExperimentModelResult(ApiSchema):
     metrics: ExperimentRuntimeMetrics | None = None
     provenance: ExperimentResultProvenance | None = None
     error: str | None = None
+
 
 class ExperimentComparisonJob(ApiSchema):
     """Durable browser-facing snapshot of a comparison job."""

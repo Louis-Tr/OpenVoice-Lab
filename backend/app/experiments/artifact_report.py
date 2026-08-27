@@ -6,6 +6,7 @@ from typing import Any
 
 from app.experiments.common import ExperimentEvidenceError, read_json, sha256_file
 from app.schemas.experiment import (
+    ExperimentDataAudit,
     ExperimentDatasetStats,
     ExperimentEvaluation,
     ExperimentIncident,
@@ -50,6 +51,29 @@ class ExperimentReportService:
             "test",
         }:
             raise ExperimentEvidenceError("The Stage 11 source split counts are incomplete.")
+        leakage_intersections = source_audit.get("leakage_intersections")
+        if not isinstance(leakage_intersections, dict) or not leakage_intersections:
+            raise ExperimentEvidenceError("The Stage 11 leakage audit is incomplete.")
+        if any(
+            not isinstance(field_checks, dict) or not field_checks
+            for field_checks in leakage_intersections.values()
+        ):
+            raise ExperimentEvidenceError("The Stage 11 leakage audit fields are incomplete.")
+        leakage_count = sum(
+            int(value)
+            for field_checks in leakage_intersections.values()
+            for value in field_checks.values()
+        )
+        audio_failures = source_audit.get("audio_verification_failures")
+        if not isinstance(audio_failures, list):
+            raise ExperimentEvidenceError("The Stage 11 audio verification audit is incomplete.")
+        source_manifest_sha256 = lock.get("source_manifest_sha256")
+        if not isinstance(source_manifest_sha256, dict) or set(source_manifest_sha256) != {
+            "train",
+            "validation",
+            "test",
+        }:
+            raise ExperimentEvidenceError("The Stage 11 source manifest hashes are incomplete.")
 
         variants: list[ExperimentVariantReport] = []
         shared_training: dict[str, Any] | None = None
@@ -73,7 +97,9 @@ class ExperimentReportService:
             shared_training = self._same_or_set(
                 shared_training, provenance["training"], "training configuration"
             )
-            shared_models = self._same_or_set(shared_models, provenance["models"], "model revisions")
+            shared_models = self._same_or_set(
+                shared_models, provenance["models"], "model revisions"
+            )
             configuration_sha256 = self._same_scalar(
                 configuration_sha256,
                 provenance["configuration_sha256"],
@@ -132,7 +158,10 @@ class ExperimentReportService:
                         rows_with_terms=int(distribution["rows_with_terms"]),
                         duration_hours=float(distribution["duration_hours"]),
                         unique_speakers=int(distribution["unique_speakers"]),
+                        maximum_speaker_share=float(distribution["maximum_speaker_share"]),
                         source_pool_counts=distribution["source_pool_counts"],
+                        term_category_occurrences=distribution["term_category_occurrences"],
+                        manifest_sha256=lock_variant["manifest_sha256"],
                     ),
                     validation_history=loss_history,
                     evaluation=ExperimentEvaluation(
@@ -157,12 +186,16 @@ class ExperimentReportService:
         assert configuration_sha256 is not None
         assert dataset_lock_sha256 is not None
         if dataset_lock_sha256 != sha256_file(self._manifest_root / "dataset-lock.json"):
-            raise ExperimentEvidenceError("Dataset-lock hash differs between run evidence and lock file.")
+            raise ExperimentEvidenceError(
+                "Dataset-lock hash differs between run evidence and lock file."
+            )
         self._validate_shared_test_manifest(lock)
         stopping = read_json(self._artifact_root / "v1-baseline" / "run_provenance.json")[
             "early_stopping"
         ]
-        incidents = [ExperimentIncident.model_validate(item) for item in audit["controller_incidents"]]
+        incidents = [
+            ExperimentIncident.model_validate(item) for item in audit["controller_incidents"]
+        ]
         return ExperimentReport(
             run_id=audit["run_id"],
             experiment_id="stage11-speecht5-full",
@@ -183,9 +216,7 @@ class ExperimentReportService:
             training=ExperimentTrainingConfig(
                 precision="BF16" if shared_training["bf16"] else "FP32",
                 physical_batch_size=int(shared_training["physical_batch_size"]),
-                gradient_accumulation_steps=int(
-                    shared_training["gradient_accumulation_steps"]
-                ),
+                gradient_accumulation_steps=int(shared_training["gradient_accumulation_steps"]),
                 effective_batch_size=int(shared_training["effective_batch_size"]),
                 maximum_steps=int(shared_training["max_steps"]),
                 nominal_epochs=int(shared_training["nominal_epochs"]),
@@ -198,9 +229,21 @@ class ExperimentReportService:
                 early_stopping_threshold=float(stopping["threshold"]),
                 seed=int(lock["seed"]),
             ),
-            shared_splits={
-                key: int(value) for key, value in split_counts.items()
-            },
+            data_audit=ExperimentDataAudit(
+                status="passed",
+                unique_audio_files=int(source_audit["unique_audio_files"]),
+                audio_verification_failure_count=len(audio_failures),
+                leakage_intersection_count=leakage_count,
+                leakage_identity_fields=sorted(leakage_intersections),
+                shared_evaluation_manifests=bool(lock["shared_evaluation_manifests"]),
+                schedule_block_size=int(lock["batch_size"]),
+                source_manifest_sha256={
+                    key: str(value) for key, value in source_manifest_sha256.items()
+                },
+                builder_sha256=str(lock["builder_sha256"]),
+                variant_config_sha256=str(lock["config_sha256"]),
+            ),
+            shared_splits={key: int(value) for key, value in split_counts.items()},
             dataset_lock_sha256=dataset_lock_sha256,
             configuration_sha256=configuration_sha256,
             source_model_revisions={
@@ -273,8 +316,6 @@ class ExperimentReportService:
 
     @staticmethod
     def _validate_shared_test_manifest(lock: dict[str, Any]) -> None:
-        values = {
-            item["manifest_sha256"]["test"] for item in lock["variants"].values()
-        }
+        values = {item["manifest_sha256"]["test"] for item in lock["variants"].values()}
         if len(values) != 1 or not lock.get("shared_evaluation_manifests"):
             raise ExperimentEvidenceError("The Stage 11 test manifest is not shared.")

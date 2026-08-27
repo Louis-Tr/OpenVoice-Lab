@@ -30,6 +30,19 @@ export interface ExperimentTrainingConfig {
   readonly seed: number;
 }
 
+export interface ExperimentDataAudit {
+  readonly status: 'passed';
+  readonly uniqueAudioFiles: number;
+  readonly audioVerificationFailureCount: number;
+  readonly leakageIntersectionCount: number;
+  readonly leakageIdentityFields: readonly string[];
+  readonly sharedEvaluationManifests: boolean;
+  readonly scheduleBlockSize: number;
+  readonly sourceManifestSha256: Readonly<Record<string, string>>;
+  readonly builderSha256: string;
+  readonly variantConfigSha256: string;
+}
+
 export interface ExperimentDatasetStats {
   readonly strategy: string;
   readonly scheduledRows: number;
@@ -38,7 +51,10 @@ export interface ExperimentDatasetStats {
   readonly rowsWithTerms: number;
   readonly durationHours: number;
   readonly uniqueSpeakers: number;
+  readonly maximumSpeakerShare: number;
   readonly sourcePoolCounts: Readonly<Record<string, number>>;
+  readonly termCategoryOccurrences: Readonly<Record<string, number>>;
+  readonly manifestSha256: Readonly<Record<string, string>>;
 }
 
 export interface ExperimentLossPoint {
@@ -96,6 +112,7 @@ export interface ExperimentReport {
   readonly runtimeLabel: string;
   readonly integrity: ExperimentIntegrity;
   readonly training: ExperimentTrainingConfig;
+  readonly dataAudit: ExperimentDataAudit;
   readonly sharedSplits: Readonly<Record<string, number>>;
   readonly datasetLockSha256: string;
   readonly configurationSha256: string;

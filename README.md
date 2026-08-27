@@ -454,7 +454,9 @@ selection.
 **Responsibility:** add a third top-level **Experiment** tab without changing the
 Synthesis or Benchmarks products. The page reads verified Stage 11 artifacts,
 shows the full pipeline and training statistics, and runs real self-hosted
-SpeechT5 comparisons on CPU.
+SpeechT5 comparisons on CPU. Its compact hiring walkthrough leads with the
+decision, pairs each variant's expectation with its actual result, and keeps
+the full data, training, recovery, and provenance detail one disclosure away.
 
 ![Stage 12 SpeechT5 experiment dashboard](docs/images/stage12-experiment.png)
 
@@ -465,6 +467,12 @@ the pinned local Whisper evaluator, and reports exact term accuracy, WER,
 inference time, audio duration, RTF, process memory, cold/warm state, and model
 provenance. Sanitization and normalization remain independent backend-owned
 policies. No external inference API is used.
+
+The pretrained SpeechT5 model is the explicit control in the interface. It is
+shown alongside V1, V2, and V3 in every live result table. Because the original
+662-case RTX 4090 evaluation did not include the pretrained model, that
+historical row is deliberately marked **live control** instead of displaying an
+invented aggregate.
 
 One genuine four-model CPU fixture run on this development machine used:
 

@@ -102,4 +102,13 @@ describe('LiveComparisonComponent', () => {
     expect(component.validationError()).toContain('must appear');
     expect(service.startComparison).not.toHaveBeenCalled();
   });
+
+  it('keeps the pretrained model identifiable as the live control', () => {
+    const component = new LiveComparisonComponent(api());
+    component.models = models;
+
+    expect(component.modelFor('speecht5-pretrained')?.role).toBe('pretrained');
+    expect(component.selectedModels()).toContain('speecht5-pretrained');
+    expect(component.hasScoredResults(queued)).toBe(false);
+  });
 });

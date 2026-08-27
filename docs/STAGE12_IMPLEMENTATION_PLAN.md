@@ -107,6 +107,8 @@ A fresh browser can open the third tab, inspect verified Stage 11 evidence, sele
 - [x] Run unit, integration, build, accessibility, and browser acceptance checks.
 - [x] Update project documentation with genuine evidence.
 - [x] Commit `feat(experiment): present Stage 11 evidence and live model comparisons`.
+- [x] Tailor the tab for hiring review with expectation-versus-result cards,
+  compact expandable method evidence, and an explicit pretrained live control.
 
 ## Verification ledger
 

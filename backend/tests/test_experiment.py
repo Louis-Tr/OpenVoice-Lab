@@ -67,9 +67,33 @@ def experiment_evidence(tmp_path: Path) -> dict[str, Path]:
     lock = {
         "status": "passed",
         "seed": 42,
+        "batch_size": 8,
+        "builder_sha256": "b" * 64,
+        "config_sha256": "d" * 64,
+        "source_manifest_sha256": {
+            "train": "1" * 64,
+            "validation": "2" * 64,
+            "test": fixture_sha,
+        },
         "shared_evaluation_manifests": True,
         "source_audit": {
-            "split_counts": {"train": 5303, "validation": 663, "test": 662}
+            "status": "passed",
+            "split_counts": {"train": 5303, "validation": 663, "test": 662},
+            "unique_audio_files": 6628,
+            "audio_verification_failures": [],
+            "leakage_intersections": {
+                field: {
+                    "train_validation": 0,
+                    "train_test": 0,
+                    "validation_test": 0,
+                }
+                for field in (
+                    "sample_id",
+                    "audio_sha256",
+                    "leakage_group_id",
+                    "normalized_transcript",
+                )
+            },
         },
         "variants": {
             variant: {
@@ -82,7 +106,9 @@ def experiment_evidence(tmp_path: Path) -> dict[str, Path]:
                     "rows_with_terms": 2500,
                     "duration_hours": 6.5,
                     "unique_speakers": 10,
+                    "maximum_speaker_share": 0.08,
                     "source_pool_counts": {"synthetic": 5304},
+                    "term_category_occurrences": {"anatomy": 2500},
                 },
             }
             for variant in VARIANTS
@@ -319,6 +345,9 @@ def test_report_is_derived_from_verified_stage11_artifacts(
     assert report.integrity.all_pods_terminated is True
     assert report.training.effective_batch_size == 32
     assert report.shared_splits == {"train": 5303, "validation": 663, "test": 662}
+    assert report.data_audit.unique_audio_files == 6628
+    assert report.data_audit.leakage_intersection_count == 0
+    assert report.data_audit.schedule_block_size == 8
     assert [item.best_step for item in report.variants] == [1000, 625, 1000]
     assert report.variants[2].evaluation.domain_terms_correct == 4
     assert report.variants[2].evaluation.domain_terms_total == 4

@@ -1,4 +1,5 @@
 .live-lab {
+  scroll-margin-top: 24px;
   padding: clamp(24px, 4vw, 34px);
   background: var(--color-surface);
   border: 1px solid var(--color-border);
@@ -44,6 +45,8 @@ legend { padding: 0 8px; }
 .model-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
 .model-grid label { display: flex; align-items: center; gap: 11px; min-height: 58px; padding: 10px 12px; cursor: pointer; background: var(--color-background); border: 1px solid var(--color-border); border-radius: var(--radius-sm); }
 .model-grid label:has(input:checked) { border-color: var(--color-accent); }
+.model-grid label.control { background: rgb(122 162 255 / 6%); }
+.model-grid label.control:has(input:checked) { border-color: #86a8ff; }
 .model-grid label.unavailable { cursor: not-allowed; opacity: 0.48; }
 .model-grid span { display: grid; gap: 3px; }
 .model-grid input { width: 18px; height: 18px; accent-color: var(--color-accent); }
@@ -62,7 +65,20 @@ legend { padding: 0 8px; }
 progress { width: 100%; height: 8px; margin-top: 11px; accent-color: var(--color-accent); }
 .job-progress p { margin: 10px 0 0; color: var(--color-muted-foreground); font-size: 12px; line-height: 1.5; }
 .job-panel > h4 { margin: 24px 0 14px; font-size: 22px; }
+.live-summary { overflow-x: auto; border: 1px solid var(--color-border); border-radius: var(--radius-sm); }
+.live-summary table { width: 100%; min-width: 680px; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+.live-summary caption { padding: 10px 11px; color: var(--color-muted-foreground); font: 700 9px/1.4 var(--font-mono); text-align: left; text-transform: uppercase; letter-spacing: 0.07em; background: var(--color-background); }
+.live-summary th, .live-summary td { padding: 11px; text-align: right; border-top: 1px solid var(--color-border); }
+.live-summary th:first-child { text-align: left; }
+.live-summary thead th { color: var(--color-muted-foreground); font: 700 8px/1.4 var(--font-mono); text-transform: uppercase; letter-spacing: 0.05em; }
+.live-summary tbody th, .live-summary tbody td { font: 700 10px/1.4 var(--font-mono); }
+.live-summary .control-result { background: rgb(122 162 255 / 6%); }
+.live-summary .control-result th { color: #b6c9ff; }
+.summary-note { margin: 9px 2px 15px; color: var(--color-muted-foreground); font-size: 11px; line-height: 1.5; }
 .result-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+
+button, label, select { touch-action: manipulation; }
+button:focus-visible, select:focus-visible, textarea:focus-visible, input:focus-visible, label:has(input:focus-visible) { outline: 3px solid var(--color-accent); outline-offset: 3px; }
 
 @media (max-width: 760px) {
   .heading-row, .action-row { align-items: stretch; flex-direction: column; }
@@ -73,4 +89,8 @@ progress { width: 100%; height: 8px; margin-top: 11px; accent-color: var(--color
 @media (max-width: 480px) {
   .mode-switch { grid-template-columns: 1fr; }
   .toggle-row { align-items: flex-start; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * { transition-duration: 0.01ms !important; }
 }

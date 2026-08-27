@@ -31,7 +31,7 @@ import {
       <div class="heading-row">
         <div>
           <h3 id="live-lab-title">Test the adaptation yourself.</h3>
-          <p>One text. Same speaker profile. Same CPU. Direct model comparison.</p>
+          <p>One text. Same speaker profile. Same CPU. Pretrained control versus every adapted model.</p>
         </div>
         <span class="runtime-badge"><i aria-hidden="true"></i> Self-hosted CPU</span>
       </div>
@@ -86,9 +86,9 @@ import {
           <legend>Models to compare</legend>
           <div class="model-grid">
             @for (model of models; track model.id) {
-              <label [class.unavailable]="!model.available">
+              <label [class.unavailable]="!model.available" [class.control]="model.role === 'pretrained'">
                 <input type="checkbox" [disabled]="isRunning() || !model.available" [checked]="isSelected(model.id)" (change)="toggleModel(model.id, $any($event.target).checked)" />
-                <span><strong>{{ model.name }}</strong><small>{{ model.role }} · {{ model.runtime }}</small></span>
+                <span><strong>{{ model.name }}</strong><small>{{ model.role === 'pretrained' ? 'unadapted control' : 'adapted candidate' }} · {{ model.runtime }}</small></span>
               </label>
             }
           </div>
@@ -118,6 +118,27 @@ import {
             }
           </div>
           <h4 id="job-results-title">Live comparison</h4>
+          @if (hasScoredResults(current)) {
+            <div class="live-summary" tabindex="0" aria-label="Live model performance comparison including pretrained control">
+              <table>
+                <caption>Current CPU run · measured together</caption>
+                <thead><tr><th scope="col">Model</th><th scope="col">Role</th><th scope="col">Term accuracy</th><th scope="col">WER</th><th scope="col">Inference</th><th scope="col">RTF</th></tr></thead>
+                <tbody>
+                  @for (result of current.results; track result.modelId) {
+                    <tr [class.control-result]="modelFor(result.modelId)?.role === 'pretrained'">
+                      <th scope="row">{{ modelFor(result.modelId)?.name ?? result.modelId }}</th>
+                      <td>{{ modelFor(result.modelId)?.role ?? 'unknown' }}</td>
+                      <td>{{ result.targetTerms ? percent(result.targetTerms.accuracy) : 'Pending' }}</td>
+                      <td>{{ result.wordErrorRate !== null ? percent(result.wordErrorRate) : 'Pending' }}</td>
+                      <td>{{ result.metrics ? integer(result.metrics.inferenceMs) + ' ms' : 'Pending' }}</td>
+                      <td>{{ result.metrics ? result.metrics.realTimeFactor.toFixed(3) : 'Pending' }}</td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+            <p class="summary-note">Use the table for the quick decision, then inspect transcripts, terms, provenance, and playable audio below.</p>
+          }
           <div class="result-grid">
             @for (result of current.results; track result.modelId) {
               <ovl-comparison-result-card [result]="result" [models]="models" />
@@ -214,6 +235,17 @@ export class LiveComparisonComponent implements OnDestroy {
   stageLabel(stage: ExperimentComparisonJob['stage']): string {
     return stage.replaceAll('_', ' ');
   }
+
+  modelFor(modelId: ExperimentModelId): ExperimentModelSummary | undefined {
+    return this.models.find((model) => model.id === modelId);
+  }
+
+  hasScoredResults(job: ExperimentComparisonJob): boolean {
+    return job.results.some((result) => result.targetTerms !== null || result.metrics !== null);
+  }
+
+  percent(value: number): string { return `${(value * 100).toFixed(1)}%`; }
+  integer(value: number): string { return new Intl.NumberFormat('en-US', { maximumFractionDigits: 0 }).format(value); }
 
   ngOnDestroy(): void {
     this.stopWatching();
