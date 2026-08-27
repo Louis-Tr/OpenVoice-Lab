@@ -24,17 +24,16 @@ The pipeline reads only the configured canonical upper-case root. It does not mo
 
 - Input records: 6661
 - Readable standardized 16 kHz mono PCM WAVs: 6661
-- Approved records: 4811
-- Rejected or pending review: 1850
-- Pending manual review: 1843
-- Split counts: `{"test": 480, "train": 3850, "validation": 481}`
+- Approved records: 6628
+- Rejected or pending review: 33
+- Pending manual review: 0
+- Split counts: `{"test": 662, "train": 5303, "validation": 663}`
 - Leakage assertions: `{"no_leakage_group_id_crosses_splits": true, "no_near_transcript_group_crosses_splits": true, "no_normalized_transcript_crosses_splits": true, "no_standardized_audio_sha256_crosses_splits": true}`
 
 ## Exclusion provenance
 
 - `DURATION_ABOVE_MAXIMUM`: 8
 - `DURATION_BELOW_MINIMUM`: 4
-- `MANUAL_REVIEW_PENDING`: 1843
 - `QUALITY_CLIPPING_EXCESSIVE`: 3
 - `QUALITY_RMS_TOO_LOW`: 18
 - `QUALITY_SILENCE_EXCESSIVE`: 18
@@ -47,15 +46,16 @@ Every non-approved row remains in `data-processing/manifests/medical_tts/rejecti
 - Pinned ASR revision: `e8727524f962ee844a7319d92be39ac1bd25655a`
 - ASR counts: `{"aligned": 0, "cache_entries": 0, "eligible": 6628, "failures": 0, "high_mismatch": 0, "not_run": 6628, "skipped_prior_exclusion": 33}`
 - Manual actions fabricated: `false`
+- Accepted without review: `1843`
 
-No ASR transcript or WER is populated when ASR did not execute. High WER is a review flag only. Pending high-risk records are excluded from approved manifests. Reviewer actions are append-only in the ignored review directory.
+No ASR transcript or WER is populated when ASR did not execute. High WER is a review flag only. Manual review was explicitly skipped for this run. 1843 flagged records were accepted without fabricated reviewer actions; hard validation and audio-quality exclusions remained active. Reviewer actions are append-only in the ignored review directory.
 
 ## SpeechT5 preparation status
 
 - Processor revision: `30fcde30f19b87502b8435427b5f5068e401d5f6`
 - Speaker encoder revision: `56895a2df401be4150a159f3a1c653f00051d477`
 - Processor audit: `blocked`
-- Speaker embedding statuses: `{"not_run_cache_miss": 4811}`
+- Speaker embedding statuses: `{"not_run_cache_miss": 6628}`
 - One-batch validation: `{"detail": "ModuleNotFoundError: No module named 'transformers'", "reason": "processor_unavailable", "status": "blocked"}`
 - Training-ready: `False`
 

@@ -30,6 +30,14 @@ def build_parser() -> argparse.ArgumentParser:
             "hard validation exclusions still apply"
         ),
     )
+    parser.add_argument(
+        "--skip-review",
+        action="store_true",
+        help=(
+            "Explicitly accept manual-review flags without reviewer decisions for a "
+            "full or limited run. Hard validation and audio-quality exclusions remain."
+        ),
+    )
     parser.add_argument("--list-stages", action="store_true")
     return parser
 
@@ -48,6 +56,10 @@ def main() -> None:
         parser.error("--accept-unreviewed-for-smoke requires --limit")
     if args.accept_unreviewed_for_smoke and not args.run_name:
         parser.error("--accept-unreviewed-for-smoke requires --run-name")
+    if args.accept_unreviewed_for_smoke and args.skip_review:
+        parser.error(
+            "--accept-unreviewed-for-smoke and --skip-review are mutually exclusive"
+        )
     config = with_run_name(load_config(args.config), args.run_name)
     result = run_pipeline(
         config,
@@ -56,6 +68,7 @@ def main() -> None:
         limit=args.limit,
         asr_mode=args.asr_mode,
         accept_unreviewed_for_smoke=args.accept_unreviewed_for_smoke,
+        skip_review=args.skip_review,
     )
     print(json.dumps(result, indent=2, sort_keys=True))
 

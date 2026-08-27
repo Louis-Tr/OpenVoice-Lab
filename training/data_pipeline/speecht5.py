@@ -265,6 +265,7 @@ def _manifest_row(record: dict[str, Any]) -> dict[str, Any]:
         "speaker_embedding_status": record.get("speaker_embedding_status"),
         "prompt": record["prompt"],
         "medical_terms": record.get("medical_terms", []),
+        "medical_term_config_sha256": record.get("medical_term_config_sha256"),
         "duration_seconds": record.get("standardized_audio", {}).get(
             "duration_seconds"
         ),
@@ -272,6 +273,10 @@ def _manifest_row(record: dict[str, Any]) -> dict[str, Any]:
         "split": record.get("split"),
         "audio_sha256": record.get("standardized_audio_sha256"),
         "leakage_group_id": record.get("leakage_group_id"),
+        "review_required": record.get("review_required", False),
+        "review_status": record.get("review_status"),
+        "review_flags": record.get("review_flags", []),
+        "review_policy_override": record.get("review_policy_override"),
     }
 
 

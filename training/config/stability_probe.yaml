@@ -1,0 +1,26 @@
+schema_version: 1
+seed: 42
+
+dataset:
+  manifest: data-processing/manifests/stage11/v1-baseline/train.jsonl
+  longest_examples: 4
+  sample_rate: 16000
+
+models:
+  tts_id: microsoft/speecht5_tts
+  tts_revision: 30fcde30f19b87502b8435427b5f5068e401d5f6
+  speaker_encoder_id: speechbrain/spkrec-xvect-voxceleb
+  speaker_encoder_revision: 56895a2df401be4150a159f3a1c653f00051d477
+
+training:
+  batch_size: 4
+  gradient_accumulation_steps: 2
+  optimizer_steps: 2
+  learning_rate: 0.00001
+  max_grad_norm: 1.0
+  bf16: true
+  fp16: false
+  gradient_checkpointing: true
+  maximum_peak_allocated_memory_mb: 22528
+
+output: artifacts/stage11/stability/probe-result.json

@@ -1,0 +1,112 @@
+schema_version: 1
+experiment_id: stage11-speecht5-full
+seed: 42
+
+dataset:
+  lock: data-processing/manifests/stage11/dataset-lock.json
+  expected_rows:
+    train: 5304
+    validation: 663
+    test: 662
+  schedule_block_size: 8
+  sampler: deterministic_block_shuffle
+  shuffle_seed_per_epoch: true
+
+variants:
+  - id: v1-baseline
+    manifest_root: data-processing/manifests/stage11/v1-baseline
+    output_root: artifacts/stage11/full-training/v1-baseline
+  - id: v2-term-balance
+    manifest_root: data-processing/manifests/stage11/v2-term-balance
+    output_root: artifacts/stage11/full-training/v2-term-balance
+  - id: v3-replay
+    manifest_root: data-processing/manifests/stage11/v3-replay
+    output_root: artifacts/stage11/full-training/v3-replay
+
+models:
+  tts_id: microsoft/speecht5_tts
+  tts_revision: 30fcde30f19b87502b8435427b5f5068e401d5f6
+  vocoder_id: microsoft/speecht5_hifigan
+  vocoder_revision: bb6f429406e86a9992357a972c0698b22043307d
+  speaker_encoder_id: speechbrain/spkrec-xvect-voxceleb
+  speaker_encoder_revision: 56895a2df401be4150a159f3a1c653f00051d477
+  asr_id: openai/whisper-small.en
+  asr_revision: e8727524f962ee844a7319d92be39ac1bd25655a
+
+runtime:
+  provider: runpod
+  cloud_type: SECURE
+  gpu_type: NVIDIA GeForce RTX 4090
+  gpu_count: 1
+  interruptible: false
+  image: runpod/pytorch:2.1.0-py3.10-cuda11.8.0-devel-ubuntu22.04
+
+training:
+  physical_batch_size: 16
+  per_device_eval_batch_size: 16
+  gradient_accumulation_steps: 2
+  effective_batch_size: 32
+  nominal_epochs: 6
+  max_steps: 1000
+  learning_rate: 0.00001
+  lr_scheduler_type: linear
+  warmup_steps: 100
+  weight_decay: 0.0
+  logging_steps: 10
+  evaluation_steps: 125
+  max_grad_norm: 1.0
+  bf16: true
+  fp16: false
+  gradient_checkpointing: true
+  model_use_cache: false
+  dataloader_num_workers: 4
+  fail_on_nonfinite: true
+
+early_stopping:
+  enabled: true
+  metric: eval_loss
+  greater_is_better: false
+  patience_evaluations: 3
+  threshold: 0.001
+  load_best_model_at_end: true
+
+checkpoints:
+  recovery_interval_steps: 125
+  durable_milestone_steps:
+    - 250
+    - 500
+    - 750
+    - 1000
+  rolling_recovery_limit: 8
+  preserve_best: true
+  export_final: true
+  save_optimizer_state: true
+  save_scheduler_state: true
+  save_rng_state: true
+  save_trainer_state: true
+  write_sha256_manifest: true
+  durable_storage_required: true
+  resume_policy: latest_valid_checkpoint
+
+stability_gate:
+  required: false
+  override: user_authorized_skip
+  override_reason: physical batch 16 probe explicitly waived before full training
+  result: artifacts/stage11/stability/probe-result.json
+  required_physical_batch_size: 16
+  required_gradient_accumulation_steps: 2
+  required_precision: bf16
+  longest_examples: 16
+  optimizer_steps: 2
+  maximum_peak_allocated_memory_mb: 22528
+
+evaluation:
+  run_test_split_after_model_selection: true
+  compare_all_variants_on_shared_test_manifest: true
+  primary_metric: domain_term_accuracy
+  secondary_metrics:
+    - word_error_rate
+    - inference_latency
+    - real_time_factor
+    - process_memory
+    - failure_rate

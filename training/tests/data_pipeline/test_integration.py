@@ -81,3 +81,28 @@ def test_review_bypass_cannot_run_without_a_limit(fixture_config) -> None:
         assert "restricted to limited smoke runs" in str(error)
     else:
         raise AssertionError("full-corpus review bypass unexpectedly succeeded")
+
+
+def test_explicit_skip_review_accepts_flags_but_keeps_hard_exclusions(
+    fixture_config,
+) -> None:
+    result = run_pipeline(fixture_config, skip_review=True)
+
+    assert result["skip_review"] is True
+    review_report = json.loads(
+        (
+            fixture_config.path("intermediate") / "08_review" / "stage_report.json"
+        ).read_text(encoding="utf-8")
+    )
+    assert review_report["skip_review"] is True
+    assert review_report["accepted_without_review_count"] > 0
+    assert review_report["pending_count"] == 0
+
+    report = json.loads(
+        (fixture_config.path("reports") / "cleaning_report.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    assert report["rejection_reason_counts"]["DURATION_BELOW_MINIMUM"] == 1
+    assert report["rejection_reason_counts"]["QUALITY_RMS_TOO_LOW"] == 1
+    assert "MANUAL_REVIEW_PENDING" not in report["rejection_reason_counts"]

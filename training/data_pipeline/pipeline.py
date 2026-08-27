@@ -153,6 +153,7 @@ def run_pipeline(
     limit: int | None = None,
     asr_mode: str | None = None,
     accept_unreviewed_for_smoke: bool = False,
+    skip_review: bool = False,
 ) -> dict[str, Any]:
     if start_stage not in STAGES or end_stage not in STAGES:
         raise ValueError(f"Stages must be one of: {', '.join(STAGES)}")
@@ -165,6 +166,10 @@ def run_pipeline(
     if accept_unreviewed_for_smoke and limit is None:
         raise ValueError(
             "accept_unreviewed_for_smoke is restricted to limited smoke runs"
+        )
+    if accept_unreviewed_for_smoke and skip_review:
+        raise ValueError(
+            "accept_unreviewed_for_smoke and skip_review are mutually exclusive"
         )
     records = [] if start_index == 0 else _load_previous(config, start_index)
     stage_reports = _load_stage_reports(config, start_index)
@@ -203,6 +208,7 @@ def run_pipeline(
                 records,
                 config,
                 accept_unreviewed_for_smoke=accept_unreviewed_for_smoke,
+                skip_review=skip_review,
             )
         elif name == "terms":
             records = annotate_medical_terms(records, config)
@@ -230,6 +236,7 @@ def run_pipeline(
         "end_stage": end_stage,
         "limit": limit,
         "accept_unreviewed_for_smoke": accept_unreviewed_for_smoke,
+        "skip_review": skip_review,
         "final": stage_reports[end_stage],
         "generated_paths": {
             key: str(config.path(key))

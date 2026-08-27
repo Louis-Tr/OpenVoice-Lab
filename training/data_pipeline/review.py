@@ -48,7 +48,12 @@ def apply_review(
     config: PipelineConfig,
     *,
     accept_unreviewed_for_smoke: bool = False,
+    skip_review: bool = False,
 ) -> tuple[list[dict[str, Any]], dict[str, Any]]:
+    if accept_unreviewed_for_smoke and skip_review:
+        raise ValueError(
+            "accept_unreviewed_for_smoke and skip_review are mutually exclusive"
+        )
     review_dir = config.path("review")
     review_dir.mkdir(parents=True, exist_ok=True)
     decisions_path = review_dir / str(config.section("review")["decisions_file"])
@@ -63,7 +68,10 @@ def apply_review(
             continue
         decision = latest.get(record["sample_id"])
         if decision is None:
-            if accept_unreviewed_for_smoke:
+            if skip_review:
+                record["review_status"] = "accepted_without_review"
+                record["review_policy_override"] = "skip_review"
+            elif accept_unreviewed_for_smoke:
                 record["review_status"] = "accepted_unreviewed_for_smoke"
                 record["review_policy_override"] = "accept_unreviewed_for_smoke"
             else:
@@ -98,7 +106,12 @@ def apply_review(
             record.get("review_status") == "accepted_unreviewed_for_smoke"
             for record in records
         ),
+        "accepted_without_review_count": sum(
+            record.get("review_status") == "accepted_without_review"
+            for record in records
+        ),
         "accept_unreviewed_for_smoke": accept_unreviewed_for_smoke,
+        "skip_review": skip_review,
         "decisions_file": str(decisions_path),
         "actions_fabricated": False,
     }

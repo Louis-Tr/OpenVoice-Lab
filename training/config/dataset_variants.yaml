@@ -1,0 +1,25 @@
+schema_version: 1
+seed: 42
+
+source_manifest_root: data-processing/manifests/medical_tts
+output_root: data-processing/manifests/stage11
+batch_size: 8
+
+term_balance:
+  minimum_term_utterances: 10
+  minimum_term_speakers: 3
+  maximum_row_weight: 4.0
+  maximum_sample_exposures: 8
+  maximum_speaker_share: 0.08
+
+replay:
+  term_examples_per_batch: 4
+  general_examples_per_batch: 4
+
+variants:
+  - id: v1-baseline
+    strategy: uniform
+  - id: v2-term-balance
+    strategy: term_balance
+  - id: v3-replay
+    strategy: replay

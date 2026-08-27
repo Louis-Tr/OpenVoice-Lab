@@ -266,6 +266,11 @@ def _limitations(stage_reports: dict[str, Any]) -> list[str]:
             "SpeechT5 model preprocessing is not training-ready; see the processor, embedding, and batch statuses."
         )
     review = stage_reports.get("review", {})
+    if review.get("accepted_without_review_count", 0):
+        limitations.append(
+            f"Manual review was explicitly skipped; {review['accepted_without_review_count']} "
+            "flagged records were accepted without reviewer decisions while hard exclusions remained active."
+        )
     if review.get("pending_count", 0):
         limitations.append(
             "Pending manual-review records are excluded from approved training manifests."
@@ -466,6 +471,18 @@ def _dataset_documentation(report: dict[str, Any], config: PipelineConfig) -> st
     split = report["stage_reports"].get("split", {})
     asr = report["stage_reports"].get("asr", {})
     speech = report["stage_reports"].get("speecht5", {})
+    review = report["stage_reports"].get("review", {})
+    if review.get("accepted_without_review_count", 0):
+        review_policy = (
+            f"Manual review was explicitly skipped for this run. "
+            f"{review['accepted_without_review_count']} flagged records were accepted "
+            "without fabricated reviewer actions; hard validation and audio-quality "
+            "exclusions remained active."
+        )
+    elif review.get("pending_count", 0):
+        review_policy = "Pending high-risk records are excluded from approved manifests."
+    else:
+        review_policy = "No unresolved manual-review records remain."
     rejection_lines = (
         "\n".join(
             f"- `{reason}`: {count}"
@@ -517,8 +534,9 @@ Every non-approved row remains in `data-processing/manifests/medical_tts/rejecti
 - Pinned ASR revision: `{asr.get("model_revision")}`
 - ASR counts: `{json.dumps(asr.get("counts", {}), sort_keys=True)}`
 - Manual actions fabricated: `false`
+- Accepted without review: `{review.get("accepted_without_review_count", 0)}`
 
-No ASR transcript or WER is populated when ASR did not execute. High WER is a review flag only. Pending high-risk records are excluded from approved manifests. Reviewer actions are append-only in the ignored review directory.
+No ASR transcript or WER is populated when ASR did not execute. High WER is a review flag only. {review_policy} Reviewer actions are append-only in the ignored review directory.
 
 ## SpeechT5 preparation status
 
