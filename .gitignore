@@ -70,3 +70,19 @@ Desktop.ini
 *.flac
 *.ogg
 /backend/benchmark-results/
+
+# Medical speech data pipeline intake and generated data
+/archive.zip
+/data-processing/archive.zip
+/data-processing/raw_data/
+/data-processing/intermediate/
+/data-processing/clean_audio/
+/data-processing/manifests/
+/data-processing/reports/
+/data-processing/review/
+/data-processing/cache/
+/data-processing/checkpoints/
+/data-processing/training_artifacts/
+/training/checkpoints/
+/training/artifacts/
+/training/model-cache/

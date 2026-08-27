@@ -1,0 +1,107 @@
+schema_version: 1
+case_sensitive: false
+
+# This lexicon is deliberately curated and reviewable. Exact phrase/word
+# matching is used; annotations never rewrite transcript text.
+lexicon:
+  symptom:
+    - abdominal pain
+    - acne
+    - back pain
+    - blurry vision
+    - body feels weak
+    - chest pain
+    - cough
+    - dizziness
+    - ear ache
+    - emotional pain
+    - fatigue
+    - feeling cold
+    - feeling dizzy
+    - foot ache
+    - hair falling out
+    - hard to breath
+    - head ache
+    - headache
+    - heart hurts
+    - infected wound
+    - insomnia
+    - internal pain
+    - joint pain
+    - knee pain
+    - muscle pain
+    - nausea
+    - neck pain
+    - open wound
+    - shoulder pain
+    - shortness of breath
+    - skin issue
+    - sore throat
+    - stomach ache
+    - swelling
+    - vomiting
+    - weakness
+  condition:
+    - asthma
+    - diabetes
+    - hypertension
+    - migraine
+    - pneumonia
+  anatomy:
+    - abdomen
+    - ankle
+    - arm
+    - back
+    - chest
+    - ear
+    - eye
+    - foot
+    - hand
+    - head
+    - heart
+    - knee
+    - leg
+    - neck
+    - shoulder
+    - stomach
+    - throat
+  medication:
+    - acetaminophen
+    - aspirin
+    - ibuprofen
+    - insulin
+  procedure:
+    - biopsy
+    - blood test
+    - CT scan
+    - MRI
+    - ultrasound
+    - x-ray
+  abbreviation:
+    - bpm
+    - BP
+    - CT
+    - ECG
+    - MRI
+    - SpO2
+  dosage:
+    - dose
+    - dosage
+  measurement:
+    - blood pressure
+    - heart rate
+    - temperature
+
+regex_rules:
+  - name: dosage_amount
+    category: dosage
+    pattern: '(?<!\w)\d+(?:\.\d+)?\s*(?:mcg|mg|g|ml|mL)(?!\w)'
+  - name: blood_pressure
+    category: measurement
+    pattern: '(?<!\d)\d{2,3}\s*/\s*\d{2,3}(?:\s*mmHg)?(?!\d)'
+  - name: temperature
+    category: measurement
+    pattern: '(?<!\w)\d+(?:\.\d+)?\s*°?\s*[CF](?!\w)'
+  - name: percentage
+    category: measurement
+    pattern: '(?<!\w)\d+(?:\.\d+)?\s*%'

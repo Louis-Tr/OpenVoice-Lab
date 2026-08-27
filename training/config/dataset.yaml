@@ -1,0 +1,84 @@
+schema_version: 1
+seed: 42
+
+paths:
+  raw_root: data-processing/raw_data/Medical Speech, Transcription, and Intent
+  duplicate_raw_root: data-processing/raw_data/medical speech transcription and intent/Medical Speech, Transcription, and Intent
+  archive: data-processing/archive.zip
+  clean_audio: data-processing/clean_audio/medical_16khz
+  intermediate: data-processing/intermediate/medical_tts
+  manifests: data-processing/manifests/medical_tts
+  reports: data-processing/reports/medical_tts
+  review: data-processing/review/medical_tts
+  cache: data-processing/cache/medical_tts
+  documentation: docs/DATASET_PREPARATION.md
+  medical_terms: training/config/medical_terms.yaml
+
+intake:
+  csv_name: overview-of-recordings.csv
+  recordings_directory: recordings
+  expected_rows: 6661
+  immutable: true
+  hash_archive: true
+  hash_duplicate_copy: true
+
+audio:
+  sample_rate: 16000
+  channels: 1
+  sample_width_bytes: 2
+  workers: 4
+  duration:
+    minimum_seconds: 1.0
+    maximum_seconds: 15.0
+
+quality:
+  silence_amplitude_dbfs: -40.0
+  hard_reject:
+    minimum_rms_dbfs: -50.0
+    minimum_peak_amplitude: 0.001
+    maximum_silence_ratio: 0.98
+    maximum_clipping_ratio: 0.05
+  manual_review:
+    minimum_rms_dbfs: -35.0
+    maximum_silence_ratio: 0.72
+    maximum_clipping_ratio: 0.005
+
+duplicates:
+  near_transcript_similarity: 0.92
+  reject_redundant_exact_audio: true
+
+asr:
+  mode: disabled
+  adapter: transformers_whisper
+  model_id: openai/whisper-small.en
+  model_revision: e8727524f962ee844a7319d92be39ac1bd25655a
+  high_wer_threshold: 0.35
+  device: cpu
+  batch_size: 4
+
+review:
+  unresolved_policy: exclude
+  decisions_file: review_decisions.jsonl
+
+splits:
+  train: 0.80
+  validation: 0.10
+  test: 0.10
+  group_fields:
+    - standardized_audio_sha256
+    - normalized_transcript
+    - near_transcript_group
+
+speecht5:
+  processor_model_id: microsoft/speecht5_tts
+  processor_revision: 30fcde30f19b87502b8435427b5f5068e401d5f6
+  speaker_encoder_model_id: speechbrain/spkrec-xvect-voxceleb
+  speaker_encoder_revision: 56895a2df401be4150a159f3a1c653f00051d477
+  speaker_embedding_size: 512
+  mode: cache_only
+  validation_batch_size: 4
+
+inspection:
+  accepted_sample_size: 30
+  rejection_examples_per_category: 5
+  duration_bins_seconds: [0, 2, 4, 6, 8, 10, 15, 999]

@@ -1,0 +1,17 @@
+# Core runtime used for the locally executed Stage 11 Part 1 pipeline.
+numpy==1.26.4
+PyYAML==6.0.2
+scipy==1.13.1
+
+# Test runner.
+pytest==7.4.4
+
+# Optional model-backed substages. The pipeline records a blocked status when
+# these packages or their pinned model revisions are unavailable; it never
+# fabricates ASR or speaker embeddings.
+datasets==2.21.0
+jiwer==3.0.4
+speechbrain==1.0.1
+torch==2.3.1
+torchaudio==2.3.1
+transformers==4.44.2
