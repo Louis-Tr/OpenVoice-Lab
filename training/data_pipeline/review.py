@@ -44,7 +44,10 @@ def load_decisions(path: Path) -> tuple[dict[str, dict[str, Any]], int]:
 
 
 def apply_review(
-    records: list[dict[str, Any]], config: PipelineConfig
+    records: list[dict[str, Any]],
+    config: PipelineConfig,
+    *,
+    accept_unreviewed_for_smoke: bool = False,
 ) -> tuple[list[dict[str, Any]], dict[str, Any]]:
     review_dir = config.path("review")
     review_dir.mkdir(parents=True, exist_ok=True)
@@ -60,9 +63,13 @@ def apply_review(
             continue
         decision = latest.get(record["sample_id"])
         if decision is None:
-            record["review_status"] = "pending"
-            if "MANUAL_REVIEW_PENDING" not in record["exclusion_reasons"]:
-                record["exclusion_reasons"].append("MANUAL_REVIEW_PENDING")
+            if accept_unreviewed_for_smoke:
+                record["review_status"] = "accepted_unreviewed_for_smoke"
+                record["review_policy_override"] = "accept_unreviewed_for_smoke"
+            else:
+                record["review_status"] = "pending"
+                if "MANUAL_REVIEW_PENDING" not in record["exclusion_reasons"]:
+                    record["exclusion_reasons"].append("MANUAL_REVIEW_PENDING")
         else:
             record["review_status"] = decision["decision"]
             record["review_latest_action"] = decision
@@ -87,6 +94,11 @@ def apply_review(
         "pending_count": sum(
             record.get("review_status") == "pending" for record in records
         ),
+        "accepted_unreviewed_for_smoke_count": sum(
+            record.get("review_status") == "accepted_unreviewed_for_smoke"
+            for record in records
+        ),
+        "accept_unreviewed_for_smoke": accept_unreviewed_for_smoke,
         "decisions_file": str(decisions_path),
         "actions_fabricated": False,
     }

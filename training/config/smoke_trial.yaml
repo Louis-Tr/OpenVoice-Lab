@@ -1,0 +1,37 @@
+schema_version: 1
+trial_id: first-smoke
+seed: 42
+label: pipeline_smoke_not_scientific_evidence
+
+dataset:
+  manifest_root: data-processing/manifests/medical_tts/first-smoke
+  sample_rate: 16000
+  maximum_evaluation_cases: 12
+
+models:
+  tts_id: microsoft/speecht5_tts
+  tts_revision: 30fcde30f19b87502b8435427b5f5068e401d5f6
+  vocoder_id: microsoft/speecht5_hifigan
+  vocoder_revision: bb6f429406e86a9992357a972c0698b22043307d
+  speaker_encoder_id: speechbrain/spkrec-xvect-voxceleb
+  speaker_encoder_revision: 56895a2df401be4150a159f3a1c653f00051d477
+  asr_id: openai/whisper-small.en
+  asr_revision: e8727524f962ee844a7319d92be39ac1bd25655a
+
+training:
+  max_steps: 20
+  batch_size: 2
+  gradient_accumulation_steps: 4
+  learning_rate: 0.00001
+  warmup_steps: 2
+  checkpoint_steps: 5
+  evaluation_steps: 5
+  logging_steps: 1
+  early_stopping_patience: 2
+  early_stopping_threshold: 0.0001
+  fp16: false
+  bf16: true
+  max_grad_norm: 1.0
+  gradient_checkpointing: true
+
+output_root: artifacts/stage11/first-smoke

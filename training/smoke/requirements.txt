@@ -1,0 +1,14 @@
+# The RunPod PyTorch image supplies CUDA-enabled torch and torchaudio.
+transformers==4.44.2
+datasets==2.21.0
+accelerate==0.34.2
+huggingface-hub==0.24.7
+tokenizers==0.19.1
+fsspec==2024.6.1
+multiprocess==0.70.16
+speechbrain==1.0.1
+sentencepiece==0.2.0
+soundfile==0.12.1
+numpy==1.26.4
+scipy==1.13.1
+PyYAML==6.0.2

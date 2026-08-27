@@ -22,6 +22,14 @@ def build_parser() -> argparse.ArgumentParser:
         help="Isolate generated output below a named subdirectory (required with --limit)",
     )
     parser.add_argument("--asr-mode", choices=("disabled", "cache_only", "full"))
+    parser.add_argument(
+        "--accept-unreviewed-for-smoke",
+        action="store_true",
+        help=(
+            "Accept manual-review flags only in an isolated limited smoke run; "
+            "hard validation exclusions still apply"
+        ),
+    )
     parser.add_argument("--list-stages", action="store_true")
     return parser
 
@@ -36,6 +44,10 @@ def main() -> None:
         parser.error("--limit must be positive")
     if args.limit is not None and not args.run_name:
         parser.error("--run-name is required with --limit to protect full-run outputs")
+    if args.accept_unreviewed_for_smoke and args.limit is None:
+        parser.error("--accept-unreviewed-for-smoke requires --limit")
+    if args.accept_unreviewed_for_smoke and not args.run_name:
+        parser.error("--accept-unreviewed-for-smoke requires --run-name")
     config = with_run_name(load_config(args.config), args.run_name)
     result = run_pipeline(
         config,
@@ -43,6 +55,7 @@ def main() -> None:
         end_stage=args.end_stage,
         limit=args.limit,
         asr_mode=args.asr_mode,
+        accept_unreviewed_for_smoke=args.accept_unreviewed_for_smoke,
     )
     print(json.dumps(result, indent=2, sort_keys=True))
 

@@ -54,3 +54,30 @@ def test_full_fixture_pipeline_is_immutable_idempotent_and_leak_free(
     assert cleaning_report_path.read_bytes() == first_report
     after = {path.relative_to(raw_root).as_posix(): sha256(path) for path in raw_files}
     assert before == after
+
+
+def test_review_bypass_is_explicit_and_limited_to_smoke_runs(fixture_config) -> None:
+    result = run_pipeline(
+        fixture_config,
+        limit=12,
+        accept_unreviewed_for_smoke=True,
+    )
+
+    assert result["accept_unreviewed_for_smoke"] is True
+    review_report = json.loads(
+        (
+            fixture_config.path("intermediate") / "08_review" / "stage_report.json"
+        ).read_text(encoding="utf-8")
+    )
+    assert review_report["accept_unreviewed_for_smoke"] is True
+    assert review_report["accepted_unreviewed_for_smoke_count"] > 0
+    assert review_report["pending_count"] == 0
+
+
+def test_review_bypass_cannot_run_without_a_limit(fixture_config) -> None:
+    try:
+        run_pipeline(fixture_config, accept_unreviewed_for_smoke=True)
+    except ValueError as error:
+        assert "restricted to limited smoke runs" in str(error)
+    else:
+        raise AssertionError("full-corpus review bypass unexpectedly succeeded")
