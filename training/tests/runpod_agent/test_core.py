@@ -37,12 +37,28 @@ def repository_root() -> Path:
 
 def test_profiles_are_configuration_driven_and_share_v1_dataset():
     root = repository_root()
-    for approach in core.PROFILES:
+    for approach in (
+        "v1a-conservative-full",
+        "v1b-lora",
+        "v1c-gradual-unfreeze",
+        "v1d-reduction-factor-1",
+    ):
         profile = core.load_profile(root, approach)
         assert profile["approach"] == approach
         assert profile["variant"]["manifest_root"].endswith("v1-baseline")
         assert profile["models"]["tts_revision"]
         assert profile["runtime"]["gpu_type"] == "NVIDIA GeForce RTX 4090"
+
+
+def test_toolkit_smoke_profile_uses_bounded_locked_fixture():
+    root = repository_root()
+    profile = core.load_profile(root, "v1-toolkit-smoke")
+    report = core.build_preflight_report(core.load_config(profile["config_path"]))
+    assert report["configuration_valid"] is True
+    assert report["launch_ready"] is True
+    assert report["derived"]["maximum_optimizer_steps"] == 4
+    assert report["derived"]["durable_checkpoint_steps"] == [2, 4]
+    assert report["manifests"]["v1-toolkit-smoke"]["train"]["rows"] == 64
 
 
 def test_create_pod_writes_pod_and_run_documents(tmp_path, monkeypatch):

@@ -41,6 +41,7 @@ into a working document, command line, training bundle, or remote pod.
 
 | Profile | Module | Training behavior |
 |---|---|---|
+| `v1-toolkit-smoke` | `training.v1_approaches.toolkit_smoke` | Four-step full-model integration run on a deterministic 64/16/16 fixture |
 | `v1a-conservative-full` | `training.v1_approaches.conservative_full` | Full model, low learning rate |
 | `v1b-lora` | `training.v1_approaches.lora` | Frozen base plus LoRA attention adapters |
 | `v1c-gradual-unfreeze` | `training.v1_approaches.gradual_unfreeze` | Modal heads first, then top two decoder blocks |
@@ -48,6 +49,11 @@ into a working document, command line, training bundle, or remote pod.
 
 All profiles point to the same locked V1 manifests. Model, vocoder, speaker
 encoder, and ASR revisions remain pinned in YAML.
+
+The bounded `v1-toolkit-smoke` profile is the only exception to the full-data
+rule: its tracked lock selects fixed prefixes of the locked V1 manifests. It is
+for exercising real pod creation, training, checkpoint transfer, evaluation,
+and teardown—not for reporting model-quality conclusions.
 
 ## Agent workflow
 

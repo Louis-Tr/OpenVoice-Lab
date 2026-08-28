@@ -280,7 +280,8 @@ def build_preflight_report(config: FullTrainingConfig) -> dict[str, Any]:
             )
         elif not matching:
             warnings.append(
-                "batch-16 stability evidence is absent; the recorded user-authorized "
+                f"batch-{training['physical_batch_size']} stability evidence for the "
+                "configured accumulation is absent; the recorded user-authorized "
                 "override permits launch"
             )
 

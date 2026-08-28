@@ -1,6 +1,10 @@
 """Reusable SpeechT5 V1 training approach entrypoints."""
 
 PROFILES = {
+    "v1-toolkit-smoke": (
+        "training.v1_approaches.toolkit_smoke",
+        "training/config/v1_toolkit_smoke.yaml",
+    ),
     "v1a-conservative-full": (
         "training.v1_approaches.conservative_full",
         "training/config/v1a_conservative_full.yaml",

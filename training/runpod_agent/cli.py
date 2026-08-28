@@ -36,6 +36,7 @@ def _parser() -> argparse.ArgumentParser:
         "--approach",
         required=True,
         choices=(
+            "v1-toolkit-smoke",
             "v1a-conservative-full",
             "v1b-lora",
             "v1c-gradual-unfreeze",

@@ -1,0 +1,32 @@
+{
+  "fixture_purpose": "real RunPod agent-toolkit smoke training",
+  "generation": {
+    "block_size": 4,
+    "row_counts": {
+      "test": 16,
+      "train": 64,
+      "validation": 16
+    },
+    "selection": "first_n_rows_in_locked_manifest_order",
+    "source_manifest_sha256": {
+      "test": "420aef4614578d0a451ad60c7734c4e83ae11771f8e195d9dff67fb8095d8e61",
+      "train": "6e610a77bbef8b462700cf5b08214b00c6eea5218dffbb42e1f87d92d281880e",
+      "validation": "1bb4abc967cd05230226b4a1db1458b92e1edee14f372dec9f731bff59a8d6ae"
+    },
+    "source_variant": "v1-baseline"
+  },
+  "generation_sha256": "778875a126c0bcf6c18bf018cc3421c0405818b3685ca55cde3e1a0bf0ebe012",
+  "schema_version": 1,
+  "status": "passed",
+  "variants": {
+    "v1-toolkit-smoke": {
+      "audit_status": "passed",
+      "manifest_sha256": {
+        "test": "e5ab5035310ef7ed8f3850e8f161a9165c85e48a182ca688dc50ac8a5203bc44",
+        "train": "0ed5b6c3d0f24111e68133fd23b37be79b7b05eabfa1a57de18f59c484293b76",
+        "validation": "de333c7b8c598b2bf178ca9029dc7a14cd8d4f9c92e7de1513568b94d234543f"
+      },
+      "strategy": "deterministic_v1_prefix_fixture"
+    }
+  }
+}
