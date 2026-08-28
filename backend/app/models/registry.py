@@ -34,7 +34,6 @@ class ModelDefinition:
     availability_markers: tuple[Path, ...] = ()
     enabled: bool = True
     unavailable_reason: str | None = None
-    benchmark_enabled: bool = True
     description: str = "Local open-weight text-to-speech model."
 
     @property
@@ -106,10 +105,10 @@ class ModelRegistry:
         ]
 
     def list_benchmark_models(self) -> list[ModelSummary]:
-        """Return deployed models whose voice contract matches the benchmark corpus."""
+        """Return every model currently available through the synthesis contract."""
         by_id = {summary.id: summary for summary in self.list_available()}
         return [
             by_id[model.model_id]
             for model in self._models.values()
-            if model.benchmark_enabled and model.artifacts_available
+            if model.artifacts_available
         ]

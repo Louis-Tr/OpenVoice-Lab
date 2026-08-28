@@ -31,7 +31,7 @@ import {
         <p class="eyebrow"><i aria-hidden="true"></i> Reproducible evaluation</p>
         <h2 id="benchmark-title">Benchmark <span>deployment choices.</span></h2>
         <p class="intro">
-          Run one fixed workload against every local model configuration. Compare only the numbers that change a deployment decision.
+          Run one fixed workload against every model available in synthesis. Compare only the numbers that change a deployment decision.
         </p>
       </header>
 
@@ -45,7 +45,7 @@ import {
         <div class="run-heading-row">
           <div>
             <h3 id="run-heading">Fixed benchmark corpus</h3>
-            <p>Every variant receives the same text, voice, and case order.</p>
+            <p>Every model receives the same text and case order, using its advertised default voice.</p>
           </div>
           <button
             type="button"
@@ -75,9 +75,20 @@ import {
           </div>
           <div>
             <dt>Voice</dt>
-            <dd class="voice">{{ config()?.defaultVoiceId ?? '—' }}</dd>
+            <dd class="voice">Per model</dd>
           </div>
         </dl>
+
+        @if (config(); as benchmarkConfig) {
+          <ul class="model-roster" aria-label="Models included in this benchmark">
+            @for (modelId of benchmarkConfig.modelIds; track modelId) {
+              <li>
+                <strong>{{ modelId }}</strong>
+                <span>{{ benchmarkConfig.modelVoiceIds[modelId] }}</span>
+              </li>
+            }
+          </ul>
+        }
 
         @if (configState() === 'loading') {
           <p class="inline-status" aria-live="polite">Loading benchmark contract…</p>
@@ -203,7 +214,6 @@ export class BenchmarkPageComponent implements OnInit, OnDestroy {
     this.subscriptions.add(
       this.benchmarkApi.runBenchmark({
         modelIds: config.modelIds,
-        voiceId: config.defaultVoiceId,
       })
       .subscribe({
         next: (job) => {

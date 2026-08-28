@@ -159,6 +159,34 @@ dd.voice {
   letter-spacing: 0;
 }
 
+.model-roster {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 14px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.model-roster li {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 10px;
+  background: var(--color-background);
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  font: 700 var(--font-size-xs)/1.3 var(--font-mono);
+}
+
+.model-roster strong {
+  color: var(--color-foreground);
+}
+
+.model-roster span {
+  color: var(--color-accent);
+}
+
 .inline-status {
   margin: 16px 0 0;
   color: var(--color-muted-foreground);

@@ -121,8 +121,13 @@ Request:
 
 ```json
 {
-  "modelIds": ["kokoro-fp32", "kokoro-q8"],
-  "voiceId": "af_heart",
+  "modelIds": [
+    "kokoro-fp32",
+    "kokoro-fp16",
+    "kokoro-q8",
+    "audio8-0.6b",
+    "speecht5-pretrained"
+  ],
   "sanitizeText": true,
   "normalizeText": true
 }
@@ -135,8 +140,8 @@ Current `202 Accepted` response:
   "benchmarkId": "benchmark-2026-08-26T11-18-24-802081Z",
   "status": "pending",
   "testCaseCount": 8,
-  "modelCount": 2,
-  "totalEvaluations": 16,
+  "modelCount": 5,
+  "totalEvaluations": 40,
   "completedEvaluations": 0,
   "progressPercent": 0.0,
   "result": null,
@@ -144,14 +149,17 @@ Current `202 Accepted` response:
 }
 ```
 
-Current behavior: validates model IDs, voice, and independent preprocessing
-flags, creates an in-memory job, and returns before inference begins. Both flags
+Current behavior: validates model IDs and independent preprocessing flags,
+creates an in-memory job, and returns before inference begins. Omitting
+`modelIds` selects every model currently available through `/api/models`. An
+optional `voiceId` is honored when the selected model supports it; otherwise
+each model uses its first advertised synthesis voice. Both preprocessing flags
 default to `true`. The background job runs one isolated process per model and
 persists the merged JSON result. Each raw result records original `text`, final
-`normalizedText`, `sanitizeText`, and `normalizeText`; the run-level result
-records the same processing configuration. Failed cases preserve exact final
-text when preprocessing completed and use `null` when no honest final value
-exists.
+`normalizedText`, exact `voiceId`, `sanitizeText`, and `normalizeText`; the
+run-level result records the same processing configuration and the resolved
+`modelVoiceIds`. Failed cases preserve exact final text when preprocessing
+completed and use `null` when no honest final value exists.
 
 ## `GET /api/benchmarks/config`
 
@@ -162,12 +170,29 @@ Describe the fixed browser workload without loading a model.
   "corpusVersion": "1.0.0",
   "corpusSha256": "eaf6215e4cf13e670e0b3cfb56f33b6a50939a61e30a2b3296ed7c44d1d9cb98",
   "testCaseCount": 8,
-  "modelCount": 2,
-  "totalEvaluations": 16,
-  "modelIds": ["kokoro-fp32", "kokoro-q8"],
-  "defaultVoiceId": "af_heart"
+  "modelCount": 5,
+  "totalEvaluations": 40,
+  "modelIds": [
+    "kokoro-fp32",
+    "kokoro-fp16",
+    "kokoro-q8",
+    "audio8-0.6b",
+    "speecht5-pretrained"
+  ],
+  "modelVoiceIds": {
+    "kokoro-fp32": "af_heart",
+    "kokoro-fp16": "af_heart",
+    "kokoro-q8": "af_heart",
+    "audio8-0.6b": "unconditioned",
+    "speecht5-pretrained": "cmu-slt"
+  },
+  "defaultVoiceId": null
 }
 ```
+
+The exact list is deployment-derived. Models missing required local artifacts
+remain visible through `/api/models` as unavailable but are not included in a
+benchmark run.
 
 ## `GET /api/benchmarks/{benchmarkId}`
 

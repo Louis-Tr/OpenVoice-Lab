@@ -10,6 +10,7 @@ from app.benchmark.runner import (
     DEFAULT_RESULT_DIR,
     benchmark_id,
     load_corpus,
+    resolve_benchmark_voice,
     resolve_models,
     run_isolated_benchmark,
     utc_now,
@@ -39,7 +40,7 @@ class BenchmarkJobService:
         corpus_path: Path = DEFAULT_CORPUS_PATH,
         result_dir: Path = DEFAULT_RESULT_DIR,
         coordinator: BenchmarkCoordinator = run_isolated_benchmark,
-        default_voice_id: str = "af_heart",
+        default_voice_id: str | None = None,
     ) -> None:
         self._model_registry = model_registry
         self._corpus_path = corpus_path
@@ -62,6 +63,10 @@ class BenchmarkJobService:
             model_count=len(models),
             total_evaluations=len(corpus.cases) * len(models),
             model_ids=[model.id for model in models],
+            model_voice_ids={
+                model.id: resolve_benchmark_voice(model, self._default_voice_id)
+                for model in models
+            },
             default_voice_id=self._default_voice_id,
         )
 

@@ -165,7 +165,7 @@ def benchmark_coordinator(
     def coordinate(
         *,
         model_ids: Sequence[str] | None,
-        voice_id: str,
+        voice_id: str | None,
         sanitize_text: bool,
         normalize_text: bool,
         corpus_path: Path,
@@ -205,6 +205,7 @@ def benchmark_coordinator(
             corpus_version="test-1",
             corpus_sha256="a" * 64,
             voice_id=voice_id,
+            model_voice_ids={model.id: model.voices[0] for model in selected},
             sanitize_text=sanitize_text,
             normalize_text=normalize_text,
             model_ids=[model.id for model in selected],
@@ -350,6 +351,61 @@ def test_runner_uses_identical_cases_and_persists_failures(tmp_path: Path) -> No
     assert persisted["rawResults"][0]["normalizeText"] is True
     assert persisted["aggregates"][1]["failureCount"] == 1
 
+
+def test_runner_includes_every_available_synthesis_model_with_valid_voice(
+    tmp_path: Path,
+) -> None:
+    corpus_path = tmp_path / "all-models-corpus.json"
+    corpus_path.write_text(
+        json.dumps(
+            {
+                "version": "all-models-1",
+                "cases": [
+                    {"id": "case-a", "category": "short", "text": "Hello."},
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+    model_registry = registry(tmp_path)
+    audio8_path = tmp_path / "audio8.onnx"
+    audio8_path.write_bytes(b"model")
+    definitions = [model_registry.get(model.id) for model in model_registry.list_available()]
+    definitions.append(
+        ModelDefinition(
+            model_id="audio8-0.6b",
+            display_name="Audio8 0.6B",
+            precision="INT4",
+            variant="audio8",
+            model_version="1.0",
+            model_path=audio8_path,
+            voices_path=None,
+            voices=("unconditioned",),
+            engine="audio8-onnx",
+        )
+    )
+    all_models_registry = ModelRegistry(definitions)
+    service = RecordingSynthesisService()
+    runner = BenchmarkRunner(
+        service,
+        all_models_registry,
+        corpus_path=corpus_path,
+        result_dir=tmp_path / "results",
+    )
+
+    result = asyncio.run(runner.run(BenchmarkRequest()))
+
+    assert result.model_ids == ["kokoro-fp32", "kokoro-q8", "audio8-0.6b"]
+    assert result.model_voice_ids == {
+        "kokoro-fp32": "af_heart",
+        "kokoro-q8": "af_heart",
+        "audio8-0.6b": "unconditioned",
+    }
+    assert [(request.model_id, request.voice_id) for request in service.requests] == [
+        ("kokoro-fp32", "af_heart"),
+        ("kokoro-q8", "af_heart"),
+        ("audio8-0.6b", "unconditioned"),
+    ]
 
 @pytest.mark.parametrize(
     ("sanitize_text", "normalize_text", "expected_text"),

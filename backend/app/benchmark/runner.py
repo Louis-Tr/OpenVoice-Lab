@@ -86,7 +86,7 @@ def resolve_models(
     model_registry: ModelRegistry,
     requested_ids: Sequence[str] | None,
 ) -> list[ModelSummary]:
-    """Resolve requested IDs in order, defaulting to the complete registry."""
+    """Resolve requested IDs in order, defaulting to all available synthesis models."""
     summaries = model_registry.list_benchmark_models()
     if requested_ids is None:
         return summaries
@@ -101,9 +101,21 @@ def resolve_models(
             resolved.append(by_id[model_id])
         except KeyError as error:
             raise ValueError(
-                f"Model '{model_id}' is not deployed for the shared-voice benchmark."
+                f"Model '{model_id}' is not currently available for synthesis."
             ) from error
     return resolved
+
+
+def resolve_benchmark_voice(
+    model: ModelSummary,
+    preferred_voice_id: str | None,
+) -> str:
+    """Choose a valid voice while preserving a caller preference when possible."""
+    if preferred_voice_id and preferred_voice_id in model.voices:
+        return preferred_voice_id
+    if model.voices:
+        return model.voices[0]
+    raise ValueError(f"Model '{model.id}' does not expose a synthesis voice.")
 
 
 class BenchmarkRunner:
@@ -140,13 +152,14 @@ class BenchmarkRunner:
         raw_results: list[BenchmarkCaseResult] = []
 
         for model in models:
+            model_voice_id = resolve_benchmark_voice(model, request.voice_id)
             for case in corpus.cases:
                 try:
                     synthesis = await self._synthesis_service.synthesize(
                         SynthesisRequest(
                             text=case.text,
                             model_id=model.id,
-                            voice_id=request.voice_id,
+                            voice_id=model_voice_id,
                             sanitize_text=request.sanitize_text,
                             normalize_text=request.normalize_text,
                         )
@@ -162,7 +175,7 @@ class BenchmarkRunner:
                             model_id=model.id,
                             precision=model.precision,
                             model_variant=model.variant,
-                            voice_id=request.voice_id,
+                            voice_id=model_voice_id,
                             status="success",
                             audio_url=synthesis.audio_url,
                             metrics=synthesis.metrics,
@@ -184,7 +197,7 @@ class BenchmarkRunner:
                             model_id=model.id,
                             precision=model.precision,
                             model_variant=model.variant,
-                            voice_id=request.voice_id,
+                            voice_id=model_voice_id,
                             status="failure",
                             error_type=type(error).__name__,
                             error_message=str(error),
@@ -204,6 +217,10 @@ class BenchmarkRunner:
             corpus_version=corpus.version,
             corpus_sha256=corpus_hash,
             voice_id=request.voice_id,
+            model_voice_ids={
+                model.id: resolve_benchmark_voice(model, request.voice_id)
+                for model in models
+            },
             sanitize_text=request.sanitize_text,
             normalize_text=request.normalize_text,
             model_ids=[model.id for model in models],
@@ -218,7 +235,7 @@ class BenchmarkRunner:
 async def run_worker(
     *,
     model_id: str,
-    voice_id: str,
+    voice_id: str | None,
     sanitize_text: bool,
     normalize_text: bool,
     corpus_path: Path,
@@ -249,7 +266,7 @@ async def run_worker(
 def run_isolated_benchmark(
     *,
     model_ids: Sequence[str] | None,
-    voice_id: str,
+    voice_id: str | None,
     sanitize_text: bool = True,
     normalize_text: bool = True,
     corpus_path: Path,
@@ -282,13 +299,13 @@ def run_isolated_benchmark(
                 model.id,
                 "--worker-result",
                 str(partial_path),
-                "--voice-id",
-                voice_id,
                 "--sanitize-text" if sanitize_text else "--no-sanitize-text",
                 "--normalize-text" if normalize_text else "--no-normalize-text",
                 "--corpus",
                 str(corpus_path),
             ]
+            if voice_id:
+                command.extend(("--voice-id", voice_id))
             subprocess.run(command, cwd=BACKEND_ROOT, check=True)
             partial = BenchmarkResult.model_validate_json(
                 partial_path.read_text(encoding="utf-8")
@@ -301,6 +318,11 @@ def run_isolated_benchmark(
             ):
                 raise RuntimeError(
                     "Worker text-processing configuration does not match the coordinator."
+                )
+            expected_voice = resolve_benchmark_voice(model, voice_id)
+            if partial.model_voice_ids != {model.id: expected_voice}:
+                raise RuntimeError(
+                    "Worker voice selection does not match the coordinator."
                 )
             raw_results.extend(partial.raw_results)
             if progress_callback:
@@ -319,6 +341,9 @@ def run_isolated_benchmark(
         corpus_version=corpus.version,
         corpus_sha256=corpus_hash,
         voice_id=voice_id,
+        model_voice_ids={
+            model.id: resolve_benchmark_voice(model, voice_id) for model in models
+        },
         sanitize_text=sanitize_text,
         normalize_text=normalize_text,
         model_ids=[model.id for model in models],
@@ -341,7 +366,14 @@ def build_parser() -> argparse.ArgumentParser:
         dest="model_ids",
         help="Registry ID to benchmark; repeat to select multiple. Defaults to all.",
     )
-    parser.add_argument("--voice-id", default="af_heart")
+    parser.add_argument(
+        "--voice-id",
+        default=None,
+        help=(
+            "Preferred voice when supported; otherwise each model uses its first "
+            "advertised synthesis voice."
+        ),
+    )
     parser.add_argument(
         "--sanitize-text",
         action=argparse.BooleanOptionalAction,

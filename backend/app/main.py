@@ -149,7 +149,6 @@ def create_app(
                     if audio8_dependencies_ready
                     else "Audio8 INT4 requires ONNX Runtime and the local tokenizer runtime."
                 ),
-                benchmark_enabled=False,
                 description=(
                     "Official INT4 Audio8 export using deterministic, unconditioned CPU inference."
                 ),
@@ -188,7 +187,6 @@ def create_app(
                     if speecht5_dependencies_ready
                     else "SpeechT5 CPU requires the pinned local PyTorch serving dependencies."
                 ),
-                benchmark_enabled=False,
                 description=(
                     "Pinned Microsoft SpeechT5 CPU baseline with a verified CMU speaker profile."
                 ),
@@ -215,7 +213,6 @@ def create_app(
     resolved_benchmark_jobs = benchmark_job_service or BenchmarkJobService(
         resolved_registry,
         result_dir=resolve_backend_path(resolved_settings.benchmark_result_dir),
-        default_voice_id=resolved_settings.default_voice_id,
     )
     stage12_root = resolve_backend_path(resolved_settings.stage12_artifact_root).resolve()
     stage12_root.mkdir(parents=True, exist_ok=True)

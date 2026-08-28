@@ -16,10 +16,23 @@ const config: BenchmarkConfig = {
   corpusVersion: '1.0.0',
   corpusSha256: 'a'.repeat(64),
   testCaseCount: 8,
-  modelCount: 2,
-  totalEvaluations: 16,
-  modelIds: ['kokoro-fp32', 'kokoro-q8'],
-  defaultVoiceId: 'af_heart',
+  modelCount: 5,
+  totalEvaluations: 40,
+  modelIds: [
+    'kokoro-fp32',
+    'kokoro-fp16',
+    'kokoro-q8',
+    'audio8-0.6b',
+    'speecht5-pretrained',
+  ],
+  modelVoiceIds: {
+    'kokoro-fp32': 'af_heart',
+    'kokoro-fp16': 'af_heart',
+    'kokoro-q8': 'af_heart',
+    'audio8-0.6b': 'unconditioned',
+    'speecht5-pretrained': 'cmu-slt',
+  },
+  defaultVoiceId: null,
 };
 
 const result: BenchmarkResult = {
@@ -27,6 +40,12 @@ const result: BenchmarkResult = {
   status: 'completed',
   corpusVersion: '1.0.0',
   corpusSha256: 'a'.repeat(64),
+  voiceId: null,
+  modelIds: ['kokoro-fp32', 'kokoro-q8'],
+  modelVoiceIds: {
+    'kokoro-fp32': 'af_heart',
+    'kokoro-q8': 'af_heart',
+  },
   aggregates: [
     {
       modelId: 'kokoro-fp32',
@@ -113,7 +132,7 @@ describe('BenchmarkPageComponent', () => {
 
     expect(component.configState()).toBe('ready');
     expect(component.config()?.testCaseCount).toBe(8);
-    expect(component.config()?.totalEvaluations).toBe(16);
+    expect(component.config()?.totalEvaluations).toBe(40);
   });
 
   it('triggers, tracks, and renders a completed comparison', async () => {
@@ -130,8 +149,13 @@ describe('BenchmarkPageComponent', () => {
     await vi.advanceTimersByTimeAsync(1);
 
     expect(api.runBenchmark).toHaveBeenCalledWith({
-      modelIds: ['kokoro-fp32', 'kokoro-q8'],
-      voiceId: 'af_heart',
+      modelIds: [
+        'kokoro-fp32',
+        'kokoro-fp16',
+        'kokoro-q8',
+        'audio8-0.6b',
+        'speecht5-pretrained',
+      ],
     });
     expect(component.job()?.completedEvaluations).toBe(8);
     expect(component.resultsState()).toBe('loading');

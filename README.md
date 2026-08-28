@@ -172,10 +172,11 @@ IDs; Angular renders that response and sends the chosen ID back. The registry
 resolves the artifact and metadata. Switching precision is request data—not a
 restart or code change.
 
-Both variants will be benchmarked with the same text, voice, runtime, and
-hardware. The comparison will cover load time, inference latency, RTF, process
-memory, generated duration, and output quality. Stage 5 does not claim a winner;
-it establishes the honest comparison boundary.
+Every synthesis-ready model is benchmarked with the same text, case order, and
+hardware. Each engine uses its own advertised voice because Kokoro, Audio8, and
+SpeechT5 expose different voice contracts. The comparison covers load time,
+inference latency, RTF, process memory, generated duration, and output quality.
+Stage 5 does not claim a winner; it establishes the honest comparison boundary.
 
 **Acceptance proof:** the real integration test synthesizes the same sentence
 through both local ONNX variants in one FastAPI process, verifies playable WAVs,

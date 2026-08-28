@@ -25,10 +25,10 @@ class BenchmarkCorpus(ApiSchema):
 
 
 class BenchmarkRequest(ApiSchema):
-    """Select model configurations and one shared voice for a benchmark run."""
+    """Select synthesis models and an optional preferred voice for a benchmark run."""
 
     model_ids: list[str] | None = Field(default=None, min_length=1)
-    voice_id: str = Field(default="af_heart", min_length=1)
+    voice_id: str | None = Field(default=None, min_length=1)
     sanitize_text: bool = True
     normalize_text: bool = True
 
@@ -90,7 +90,8 @@ class BenchmarkResult(ApiSchema):
     completed_at: datetime
     corpus_version: str
     corpus_sha256: str
-    voice_id: str
+    voice_id: str | None
+    model_voice_ids: dict[str, str]
     sanitize_text: bool
     normalize_text: bool
     model_ids: list[str]
@@ -109,7 +110,8 @@ class BenchmarkConfig(ApiSchema):
     model_count: int = Field(ge=1)
     total_evaluations: int = Field(ge=1)
     model_ids: list[str]
-    default_voice_id: str
+    model_voice_ids: dict[str, str]
+    default_voice_id: str | None = None
 
 
 class BenchmarkJobStatus(ApiSchema):

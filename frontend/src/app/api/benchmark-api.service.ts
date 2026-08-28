@@ -7,7 +7,7 @@ import { ModelVariant } from '../synthesis/synthesis.types';
 
 export interface BenchmarkRequest {
   readonly modelIds?: readonly string[];
-  readonly voiceId: string;
+  readonly voiceId?: string;
 }
 
 export interface BenchmarkAggregate {
@@ -31,6 +31,9 @@ export interface BenchmarkResult {
   readonly status: 'completed' | 'completed_with_failures';
   readonly corpusVersion: string;
   readonly corpusSha256: string;
+  readonly voiceId: string | null;
+  readonly modelIds: readonly string[];
+  readonly modelVoiceIds: Readonly<Record<string, string>>;
   readonly aggregates: readonly BenchmarkAggregate[];
   readonly resultFile: string | null;
 }
@@ -42,7 +45,8 @@ export interface BenchmarkConfig {
   readonly modelCount: number;
   readonly totalEvaluations: number;
   readonly modelIds: readonly string[];
-  readonly defaultVoiceId: string;
+  readonly modelVoiceIds: Readonly<Record<string, string>>;
+  readonly defaultVoiceId: string | null;
 }
 
 export interface BenchmarkJobStatus {
