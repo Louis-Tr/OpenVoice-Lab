@@ -109,13 +109,16 @@ A fresh browser can open the third tab, inspect verified Stage 11 evidence, sele
 - [x] Commit `feat(experiment): present Stage 11 evidence and live model comparisons`.
 - [x] Tailor the tab for hiring review with expectation-versus-result cards,
   compact expandable method evidence, and an explicit pretrained live control.
+- [x] Evaluate pretrained SpeechT5 on the locked 662-case RTX 4090 path, verify
+  and retain its evidence, expose all comparison statistics, and revise the
+  conclusion to reflect the measured adaptation regression.
 
 ## Verification ledger
 
-- Backend: 71 tests passed locally (69 portable plus two explicitly marked
-  local-artifact integrations); Ruff passed across `app`, `tests`, and `scripts`.
-- Frontend: 24 tests passed; Angular production build passed; the Experiment
-  feature remains a lazy route (82.84 kB raw at verification time).
+- Backend: 72 tests passed locally, including the provisioned local-artifact
+  integration; Ruff passed across `app`, `tests`, and `scripts`.
+- Frontend: 27 tests passed; Angular production build passed; the Experiment
+  feature remains a lazy route.
 - Runtime: pretrained, V1, V2, and V3 each produced a real mono 16 kHz WAV and a
   local Whisper transcript on CPU.
 - Browser: a four-model locked fixture and a two-model custom-term comparison

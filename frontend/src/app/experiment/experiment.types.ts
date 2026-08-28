@@ -97,6 +97,20 @@ export interface ExperimentVariantReport {
   readonly artifactManifestSha256: string;
 }
 
+export interface ExperimentPretrainedReport {
+  readonly id: 'speecht5-pretrained';
+  readonly name: string;
+  readonly modelId: string;
+  readonly revision: string;
+  readonly trainingSteps: 0;
+  readonly evaluatedAt: string;
+  readonly podId: string;
+  readonly hardware: string;
+  readonly testManifestSha256: string;
+  readonly artifactManifestSha256: string;
+  readonly evaluation: ExperimentEvaluation;
+}
+
 export interface ExperimentIncident {
   readonly id: string;
   readonly variants: readonly string[];
@@ -117,6 +131,7 @@ export interface ExperimentReport {
   readonly datasetLockSha256: string;
   readonly configurationSha256: string;
   readonly sourceModelRevisions: Readonly<Record<string, string>>;
+  readonly pretrainedControl: ExperimentPretrainedReport;
   readonly variants: readonly ExperimentVariantReport[];
   readonly incidents: readonly ExperimentIncident[];
   readonly trainingResumptions: readonly Readonly<Record<string, unknown>>[];

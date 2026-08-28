@@ -75,7 +75,7 @@ tbody td { font: 700 11px/1.4 var(--font-mono); }
 tr.winner { background: rgb(67 224 125 / 5%); }
 tr.winner td:nth-child(3), tr.winner td:nth-child(4) { color: var(--color-accent-strong); }
 .control-row { background: rgb(122 162 255 / 5%); }
-.control-row a { display: block; color: #a9c0ff; text-align: left; text-decoration-thickness: 1px; text-underline-offset: 3px; }
+.control-row.winner { background: rgb(67 224 125 / 7%); }
 .evidence-note { margin: 13px 2px 0; color: var(--color-muted-foreground); font-size: 11px; line-height: 1.55; }
 .evidence-note strong { color: var(--color-foreground); }
 

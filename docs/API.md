@@ -214,8 +214,10 @@ Return a verified projection of the completed Stage 11 artifacts: integrity
 state, frozen configuration, source audio/leakage audit, per-variant exposure
 strategies and manifest hashes, exact validation histories, shared-test
 evaluation, checkpoint inventory, selected-model hashes, GPU time, cost,
-resumptions, and incidents. The endpoint fails closed with `503` if the
-dataset lock, final audit, revisions, model files, or artifact hashes disagree.
+resumptions, incidents, and the zero-step pretrained control evaluated on the
+same locked 662-case manifest. The endpoint fails closed with `503` if the
+dataset lock, final audit, revisions, model files, pretrained evidence, or
+artifact hashes disagree.
 
 ### `GET /api/experiments/stage11/fixtures`
 

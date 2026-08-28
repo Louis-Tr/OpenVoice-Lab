@@ -1,8 +1,9 @@
 # Stage 11 full-training evidence
 
-This document records the frozen contract and the verified outcome of the three
-completed SpeechT5 experiments. Claims below are parsed from the retained local
-artifacts and final audit.
+This document records the frozen contract and verified outcome of the three
+completed SpeechT5 adaptations plus the directly comparable pretrained control.
+Claims below are parsed from retained local artifacts and their SHA-256
+manifests.
 
 ## Experiment matrix
 
@@ -60,11 +61,12 @@ The machine-readable report is written to
 
 Run ID: `stage11-speecht5-full-20260827-043116`
 
-| Variant | Pod | Final step | Best step | Best eval loss | Term accuracy | WER | Avg RTF |
-| --- | --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| V1 Baseline | `ja4erg2qtyd31z` | 1,000 | 1,000 | 0.441642 | 33.41% | 70.84% | 0.1567 |
-| V2 Term Balance | `efpo8hfkkg6yd2` | 1,000 | 625 | 0.445358 | 26.20% | 72.88% | 0.1566 |
-| V3 Replay | `gumimdul2kqefm` | 1,000 | 1,000 | 0.444507 | 35.10% | 70.19% | 0.1819 |
+| Model | Pod | Final / best step | Best eval loss | Term accuracy | WER | Avg inference | Avg RTF | Peak GPU | Failures |
+| --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| **SpeechT5 Pretrained** | `oxnfq72nezkgft` | 0 / — | — | **91.59%** | **11.10%** | **965 ms** | 0.1838 | **950 MB** | 0 |
+| V1 Baseline | `ja4erg2qtyd31z` | 1,000 / 1,000 | 0.441642 | 33.41% | 70.84% | 1,080 ms | 0.1567 | 1,114 MB | 0 |
+| V2 Term Balance | `efpo8hfkkg6yd2` | 1,000 / 625 | 0.445358 | 26.20% | 72.88% | 988 ms | **0.1566** | 1,050 MB | 0 |
+| V3 Replay | `gumimdul2kqefm` | 1,000 / 1,000 | 0.444507 | 35.10% | 70.19% | 1,233 ms | 0.1819 | 1,125 MB | 0 |
 
 All variants completed the 1,000-step ceiling; early stopping did not fire.
 Every 125-step checkpoint was downloaded and verified, producing 24 valid
@@ -72,10 +74,22 @@ checkpoints total. The shared test set contained 662 cases. The three pods used
 1.9886 total GPU hours at an estimated USD 1.47 and were terminated only after
 the required artifacts were stored and audited locally.
 
-V3 produced the strongest adapted domain-term accuracy and lowest WER, but at a
-higher runtime cost. V1 produced the lowest validation loss. V2's term-balanced
-schedule did not improve the shared-test pronunciation proxy, which is a useful
-negative result rather than evidence to hide.
+The pretrained control was evaluated on all 662 locked test rows using the same
+pinned speaker source, HiFi-GAN vocoder, Whisper ASR revision, and secure RTX
+4090 evaluation path. It recognized 381 of 416 tracked term occurrences,
+produced a playable verification WAV, and recorded no synthesis or ASR failures.
+Its evaluation manifest hash is
+`93a8bacdda70c4a682ec8421328f046114da2d24e5a0a9b4639433843e2eee04`.
+The downloaded archive and every manifest-listed file verified before pod
+`oxnfq72nezkgft` was terminated.
+
+The control outperformed every adapted model by a wide margin. V3 remained the
+strongest adapted result, but its domain-term accuracy was 56.49 percentage
+points lower than pretrained and its WER was 59.09 points higher. V1's lower
+validation loss did not predict a better speech-recognition proxy, and V2's
+term-balanced schedule regressed further. The correct engineering conclusion is
+to reject these checkpoints for deployment and investigate the adaptation
+boundary before another training run.
 
 Two operational incidents remain in provenance: the local controller was
 restarted with explicit UTF-8 replacement decoding, and the V3 monitor briefly

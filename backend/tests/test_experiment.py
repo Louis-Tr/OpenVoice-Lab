@@ -132,9 +132,13 @@ def experiment_evidence(tmp_path: Path) -> dict[str, Path]:
         "gradient_checkpointing": True,
     }
     shared_models = {
+        "tts_id": "microsoft/speecht5_tts",
         "tts_revision": "tts-revision",
+        "vocoder_id": "microsoft/speecht5_hifigan",
         "vocoder_revision": "vocoder-revision",
+        "speaker_encoder_id": "speechbrain/spkrec-xvect-voxceleb",
         "speaker_encoder_revision": "speaker-revision",
+        "asr_id": "openai/whisper-small.en",
         "asr_revision": "asr-revision",
     }
     audit_variants = {}
@@ -212,6 +216,60 @@ def experiment_evidence(tmp_path: Path) -> dict[str, Path]:
             "estimated_cost_usd": 0.5,
             "final_artifacts": {"manifest_sha256": sha256(artifact_manifest_path)},
         }
+
+    pretrained_root = artifact_root / "pretrained"
+    write_json(
+        pretrained_root / "run_provenance.json",
+        {
+            "role": "pretrained-control",
+            "dataset_lock_status": "passed",
+            "dataset_lock_sha256": lock_sha,
+            "test_manifest_sha256": fixture_sha,
+            "test_case_count": 662,
+            "models": shared_models,
+            "pod_id": "pod-pretrained",
+            "completed_utc": "2026-08-27T02:00:00Z",
+            "environment": {"gpu": "NVIDIA GeForce RTX 4090"},
+        },
+    )
+    write_json(
+        pretrained_root / "evaluation" / "summary.json",
+        {
+            "case_count": 662,
+            "failure_count": 0,
+            "domain_term_accuracy": {"correct": 3, "total": 4, "accuracy": 0.75},
+            "wer": 0.2,
+            "average_inference_ms": 240,
+            "average_rtf": 0.14,
+            "peak_gpu_memory_mb": 5900,
+            "synthesis_verification": {"status": "passed"},
+        },
+    )
+    pretrained_files = [
+        pretrained_root / "run_provenance.json",
+        pretrained_root / "evaluation" / "summary.json",
+    ]
+    pretrained_manifest = pretrained_root / "evaluation_artifact_manifest.json"
+    write_json(
+        pretrained_manifest,
+        {
+            "files": [
+                {
+                    "path": path.relative_to(pretrained_root).as_posix(),
+                    "bytes": path.stat().st_size,
+                    "sha256": sha256(path),
+                }
+                for path in pretrained_files
+            ]
+        },
+    )
+    write_json(
+        pretrained_root / "EVALUATION_COMPLETE.json",
+        {
+            "status": "completed",
+            "evaluation_artifact_manifest_sha256": sha256(pretrained_manifest),
+        },
+    )
 
     write_json(
         artifact_root / "final-audit.json",
@@ -348,6 +406,9 @@ def test_report_is_derived_from_verified_stage11_artifacts(
     assert report.data_audit.unique_audio_files == 6628
     assert report.data_audit.leakage_intersection_count == 0
     assert report.data_audit.schedule_block_size == 8
+    assert report.pretrained_control.evaluation.case_count == 662
+    assert report.pretrained_control.evaluation.domain_term_accuracy == 0.75
+    assert report.pretrained_control.hardware == "NVIDIA GeForce RTX 4090"
     assert [item.best_step for item in report.variants] == [1000, 625, 1000]
     assert report.variants[2].evaluation.domain_terms_correct == 4
     assert report.variants[2].evaluation.domain_terms_total == 4
@@ -372,16 +433,46 @@ def test_report_fails_closed_when_selected_model_is_tampered(
         ).get()
 
 
+def test_report_fails_closed_when_pretrained_evidence_is_tampered(
+    experiment_evidence: dict[str, Path],
+) -> None:
+    summary = (
+        experiment_evidence["artifacts"]
+        / "pretrained"
+        / "evaluation"
+        / "summary.json"
+    )
+    summary.write_text(
+        summary.read_text(encoding="utf-8").replace("240", "241", 1),
+        encoding="utf-8",
+    )
+
+    with pytest.raises(
+        ExperimentEvidenceError,
+        match="Pretrained evaluation artifact verification failed",
+    ):
+        ExperimentReportService(
+            experiment_evidence["artifacts"], experiment_evidence["manifests"]
+        ).get()
+
+
 @pytest.mark.integration
 @pytest.mark.skipif(
     not (ARTIFACT_ROOT / "final-audit.json").is_file()
-    or not (MANIFEST_ROOT / "dataset-lock.json").is_file(),
+    or not (MANIFEST_ROOT / "dataset-lock.json").is_file()
+    or not (ARTIFACT_ROOT / "pretrained" / "EVALUATION_COMPLETE.json").is_file(),
     reason="Local ignored Stage 11 evidence is not provisioned.",
 )
 def test_local_report_matches_completed_stage11_run() -> None:
     report = ExperimentReportService(ARTIFACT_ROOT, MANIFEST_ROOT).get()
 
     assert report.integrity.checkpoint_count == 24
+    assert report.pretrained_control.evaluation.case_count == 662
+    assert report.pretrained_control.evaluation.domain_terms_correct == 381
+    assert report.pretrained_control.evaluation.domain_terms_total == 416
+    assert report.pretrained_control.evaluation.failure_count == 0
+    assert report.pretrained_control.evaluation.synthesis_verified is True
+    assert report.headline.startswith("SpeechT5 Pretrained led both")
     assert [item.best_step for item in report.variants] == [1000, 625, 1000]
     assert report.variants[2].evaluation.domain_terms_correct == 146
     assert report.variants[2].evaluation.domain_terms_total == 416

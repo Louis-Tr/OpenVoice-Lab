@@ -12,6 +12,7 @@ from app.schemas.experiment import (
     ExperimentIncident,
     ExperimentIntegrity,
     ExperimentLossPoint,
+    ExperimentPretrainedReport,
     ExperimentReport,
     ExperimentTrainingConfig,
     ExperimentVariantReport,
@@ -190,20 +191,41 @@ class ExperimentReportService:
                 "Dataset-lock hash differs between run evidence and lock file."
             )
         self._validate_shared_test_manifest(lock)
+        pretrained = self._pretrained_report(
+            lock=lock,
+            dataset_lock_sha256=dataset_lock_sha256,
+            shared_models=shared_models,
+        )
         stopping = read_json(self._artifact_root / "v1-baseline" / "run_provenance.json")[
             "early_stopping"
         ]
         incidents = [
             ExperimentIncident.model_validate(item) for item in audit["controller_incidents"]
         ]
+        compared_models = [pretrained, *variants]
+        term_winner = max(
+            compared_models,
+            key=lambda item: item.evaluation.domain_term_accuracy,
+        )
+        wer_winner = min(
+            compared_models,
+            key=lambda item: item.evaluation.word_error_rate,
+        )
+        if term_winner.id == wer_winner.id:
+            headline = (
+                f"{term_winner.name} led both domain-term accuracy and WER; "
+                "none of the adapted checkpoints beat the control."
+            )
+        else:
+            headline = (
+                f"{term_winner.name} led domain-term accuracy while "
+                f"{wer_winner.name} recorded the lowest WER."
+            )
         return ExperimentReport(
             run_id=audit["run_id"],
             experiment_id="stage11-speecht5-full",
-            headline=(
-                "V3 Replay delivered the strongest domain-term accuracy and lowest WER, "
-                "with a measurable runtime tradeoff."
-            ),
-            runtime_label="Historical secure RTX 4090 evaluation",
+            headline=headline,
+            runtime_label="Verified secure RTX 4090 shared-test evaluation",
             integrity=ExperimentIntegrity(
                 status="passed",
                 dataset_lock_verified=True,
@@ -252,6 +274,7 @@ class ExperimentReportService:
                 "speakerEncoder": shared_models["speaker_encoder_revision"],
                 "asr": shared_models["asr_revision"],
             },
+            pretrained_control=pretrained,
             variants=variants,
             incidents=incidents,
             training_resumptions=audit["training_resumptions"],
@@ -319,3 +342,100 @@ class ExperimentReportService:
         values = {item["manifest_sha256"]["test"] for item in lock["variants"].values()}
         if len(values) != 1 or not lock.get("shared_evaluation_manifests"):
             raise ExperimentEvidenceError("The Stage 11 test manifest is not shared.")
+
+    def _pretrained_report(
+        self,
+        *,
+        lock: dict[str, Any],
+        dataset_lock_sha256: str,
+        shared_models: dict[str, Any],
+    ) -> ExperimentPretrainedReport:
+        root = self._artifact_root / "pretrained"
+        marker = read_json(root / "EVALUATION_COMPLETE.json")
+        provenance = read_json(root / "run_provenance.json")
+        summary = read_json(root / "evaluation" / "summary.json")
+        manifest_path = root / "evaluation_artifact_manifest.json"
+        manifest = read_json(manifest_path)
+        manifest_sha256 = sha256_file(manifest_path)
+        if marker.get("status") not in {"completed", "completed_with_failures"}:
+            raise ExperimentEvidenceError("The pretrained evaluation is not complete.")
+        if marker.get("evaluation_artifact_manifest_sha256") != manifest_sha256:
+            raise ExperimentEvidenceError("The pretrained evaluation manifest hash differs.")
+        self._verify_artifact_manifest(root, manifest)
+
+        test_sha256 = next(
+            iter(
+                {
+                    item["manifest_sha256"]["test"]
+                    for item in lock["variants"].values()
+                }
+            )
+        )
+        models = provenance.get("models")
+        environment = provenance.get("environment")
+        if (
+            provenance.get("role") != "pretrained-control"
+            or provenance.get("dataset_lock_status") != "passed"
+            or provenance.get("dataset_lock_sha256") != dataset_lock_sha256
+            or provenance.get("test_manifest_sha256") != test_sha256
+            or not isinstance(models, dict)
+            or models != shared_models
+            or not isinstance(environment, dict)
+            or not provenance.get("pod_id")
+        ):
+            raise ExperimentEvidenceError("The pretrained evaluation provenance differs.")
+        expected_cases = int(lock["source_audit"]["split_counts"]["test"])
+        if (
+            int(provenance.get("test_case_count", -1)) != expected_cases
+            or int(summary.get("case_count", -1)) != expected_cases
+        ):
+            raise ExperimentEvidenceError("The pretrained evaluation case count differs.")
+
+        accuracy = summary["domain_term_accuracy"]
+        synthesis = summary["synthesis_verification"]
+        return ExperimentPretrainedReport(
+            name="SpeechT5 Pretrained",
+            model_id=str(models["tts_id"]),
+            revision=str(models["tts_revision"]),
+            evaluated_at=provenance["completed_utc"],
+            pod_id=str(provenance["pod_id"]),
+            hardware=str(environment["gpu"]),
+            test_manifest_sha256=str(test_sha256),
+            artifact_manifest_sha256=manifest_sha256,
+            evaluation=ExperimentEvaluation(
+                case_count=int(summary["case_count"]),
+                failure_count=int(summary["failure_count"]),
+                domain_terms_correct=int(accuracy["correct"]),
+                domain_terms_total=int(accuracy["total"]),
+                domain_term_accuracy=float(accuracy["accuracy"]),
+                word_error_rate=float(summary["wer"]),
+                average_inference_ms=float(summary["average_inference_ms"]),
+                average_real_time_factor=float(summary["average_rtf"]),
+                peak_gpu_memory_mb=float(summary["peak_gpu_memory_mb"]),
+                synthesis_verified=synthesis.get("status") == "passed",
+            ),
+        )
+
+    @staticmethod
+    def _verify_artifact_manifest(root: Path, manifest: dict[str, Any]) -> None:
+        files = manifest.get("files")
+        if not isinstance(files, list) or not files:
+            raise ExperimentEvidenceError("The pretrained evaluation manifest is empty.")
+        for entry in files:
+            if not isinstance(entry, dict) or not isinstance(entry.get("path"), str):
+                raise ExperimentEvidenceError("The pretrained evaluation manifest is invalid.")
+            path = (root / entry["path"]).resolve()
+            try:
+                path.relative_to(root.resolve())
+            except ValueError as error:
+                raise ExperimentEvidenceError(
+                    "The pretrained evaluation manifest escapes its artifact root."
+                ) from error
+            if (
+                not path.is_file()
+                or path.stat().st_size != int(entry.get("bytes", -1))
+                or sha256_file(path) != entry.get("sha256")
+            ):
+                raise ExperimentEvidenceError(
+                    f"Pretrained evaluation artifact verification failed: {path}"
+                )

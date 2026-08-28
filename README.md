@@ -423,22 +423,24 @@ checkpoints ran every 125 optimizer steps. The dataset lock, training
 configuration, checkpoints, selected models, and final artifacts were verified
 by SHA-256 before the pods were terminated.
 
-Genuine shared-test results from the completed 662-case experiment:
+Genuine results from the locked 662-case shared-test comparison:
 
-| Variant | Best step | Best validation loss | Domain-term accuracy | WER | Avg RTF |
-| --- | ---: | ---: | ---: | ---: | ---: |
-| V1 Baseline | 1,000 | 0.441642 | 33.41% | 70.84% | 0.1567 |
-| V2 Term Balance | 625 | 0.445358 | 26.20% | 72.88% | 0.1566 |
-| V3 Replay | 1,000 | 0.444507 | **35.10%** | **70.19%** | 0.1819 |
+| Model | Training / best step | Best validation loss | Domain-term accuracy | WER | Avg inference | Avg RTF | Peak GPU | Failures |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| **SpeechT5 pretrained** | 0 steps | — | **91.59%** | **11.10%** | **965 ms** | 0.1838 | **950 MB** | 0 |
+| V1 Baseline | 1,000 | 0.441642 | 33.41% | 70.84% | 1,080 ms | 0.1567 | 1,114 MB | 0 |
+| V2 Term Balance | 625 | 0.445358 | 26.20% | 72.88% | 988 ms | **0.1566** | 1,050 MB | 0 |
+| V3 Replay | 1,000 | 0.444507 | 35.10% | 70.19% | 1,233 ms | 0.1819 | 1,125 MB | 0 |
 
-V3 produced the strongest pronunciation proxy and lowest WER among the adapted
-variants, but it also had the highest average RTF. V1 reached the lowest
-validation loss, while V2's additional term exposure did not improve the shared
-test result. There is no fabricated universal winner: deployment depends on
-whether pronunciation or runtime is the harder constraint.
+The pretrained control won decisively. V3 was the strongest adapted checkpoint,
+but it remained 56.49 percentage points behind pretrained term accuracy and its
+WER was 59.09 points higher. The result rejects the current fine-tuning setup as
+a deployment improvement and points the next iteration toward diagnosing data,
+speaker-conditioning, and catastrophic-forgetting risks—not hiding the
+regression behind validation loss.
 
-The three runs produced 24 verified checkpoints, consumed 1.9886 total GPU
-hours, and recorded an estimated RunPod cost of USD 1.47. Two controller/
+The three training runs produced 24 verified checkpoints, consumed 1.9886 total
+GPU hours, and recorded an estimated RunPod cost of USD 1.47. Two controller/
 monitoring interruptions were retained in provenance; neither restarted or
 altered a trainer. See [the completed training evidence](docs/STAGE11_TRAINING.md).
 
@@ -469,10 +471,12 @@ provenance. Sanitization and normalization remain independent backend-owned
 policies. No external inference API is used.
 
 The pretrained SpeechT5 model is the explicit control in the interface. It is
-shown alongside V1, V2, and V3 in every live result table. Because the original
-662-case RTX 4090 evaluation did not include the pretrained model, that
-historical row is deliberately marked **live control** instead of displaying an
-invented aggregate.
+shown alongside V1, V2, and V3 in both the locked aggregate and every live
+result. Its aggregate was produced separately on secure RTX 4090 pod
+`oxnfq72nezkgft`, using the same test-manifest hash, speaker source, vocoder,
+Whisper revision, and evaluation code path. All 662 cases completed with zero
+failures; the evidence manifest and representative WAV passed SHA-256
+verification before the pod was terminated.
 
 One genuine four-model CPU fixture run on this development machine used:
 

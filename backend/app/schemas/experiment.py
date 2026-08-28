@@ -137,6 +137,22 @@ class ExperimentVariantReport(ApiSchema):
     artifact_manifest_sha256: str
 
 
+class ExperimentPretrainedReport(ApiSchema):
+    """Comparable shared-test evidence for the unadapted control."""
+
+    id: Literal["speecht5-pretrained"] = "speecht5-pretrained"
+    name: str
+    model_id: str
+    revision: str
+    training_steps: Literal[0] = 0
+    evaluated_at: datetime
+    pod_id: str
+    hardware: str
+    test_manifest_sha256: str
+    artifact_manifest_sha256: str
+    evaluation: ExperimentEvaluation
+
+
 class ExperimentIncident(ApiSchema):
     """Transparent record of controller interruptions during Stage 11."""
 
@@ -161,6 +177,7 @@ class ExperimentReport(ApiSchema):
     dataset_lock_sha256: str
     configuration_sha256: str
     source_model_revisions: dict[str, str]
+    pretrained_control: ExperimentPretrainedReport
     variants: list[ExperimentVariantReport]
     incidents: list[ExperimentIncident]
     training_resumptions: list[dict[str, object]]

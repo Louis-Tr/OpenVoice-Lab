@@ -60,8 +60,8 @@ import { TrainingLossChartComponent } from './training-loss-chart.component';
         <section class="outcome surface" aria-labelledby="measured-results-title">
           <div class="section-label">Expectation → measurement → decision</div>
           <div class="section-heading">
-            <h3 id="measured-results-title">V3 improved the target.<br />V2 rejected the hypothesis.</h3>
-            <p>{{ evidence.headline }} The experiment keeps the negative V2 result because it changes the engineering decision.</p>
+            <h3 id="measured-results-title">The control won.<br />Adaptation regressed.</h3>
+            <p>{{ evidence.headline }} The experiment keeps every negative result because it changes the engineering decision.</p>
           </div>
 
           <div class="hypothesis-grid">
@@ -76,19 +76,23 @@ import { TrainingLossChartComponent } from './training-loss-chart.component';
 
           <div class="table-scroll" tabindex="0" aria-label="Historical Stage 11 evaluation results including the pretrained control">
             <table>
-              <caption>{{ evidence.runtimeLabel }} · common 662-case test set</caption>
+              <caption>{{ evidence.runtimeLabel }} · common {{ evidence.pretrainedControl.evaluation.caseCount }}-case test set</caption>
               <thead>
                 <tr><th scope="col">Model</th><th scope="col">Training</th><th scope="col">Term accuracy</th><th scope="col">WER</th><th scope="col">Avg inference</th><th scope="col">RTF</th><th scope="col">Peak GPU</th><th scope="col">Failures</th></tr>
               </thead>
               <tbody>
-                @if (pretrainedModel(); as control) {
-                  <tr class="control-row">
-                    <th scope="row"><strong>{{ control.name }}</strong><span>unadapted control · pinned {{ shortHash(control.revision) }}</span></th>
-                    <td>0 steps</td><td colspan="6"><a href="#live-lab">Live CPU control — run below</a></td>
-                  </tr>
-                }
+                <tr class="control-row" [class.winner]="primaryWinnerId(evidence) === evidence.pretrainedControl.id">
+                  <th scope="row"><strong>{{ evidence.pretrainedControl.name }}</strong><span>unadapted control · {{ evidence.pretrainedControl.hardware }} · pinned {{ shortHash(evidence.pretrainedControl.revision) }}</span></th>
+                  <td>{{ evidence.pretrainedControl.trainingSteps }} steps</td>
+                  <td>{{ percent(evidence.pretrainedControl.evaluation.domainTermAccuracy) }}</td>
+                  <td>{{ percent(evidence.pretrainedControl.evaluation.wordErrorRate) }}</td>
+                  <td>{{ integer(evidence.pretrainedControl.evaluation.averageInferenceMs) }} ms</td>
+                  <td>{{ fixed(evidence.pretrainedControl.evaluation.averageRealTimeFactor, 4) }}</td>
+                  <td>{{ integer(evidence.pretrainedControl.evaluation.peakGpuMemoryMb) }} MB</td>
+                  <td>{{ evidence.pretrainedControl.evaluation.failureCount }}</td>
+                </tr>
                 @for (variant of evidence.variants; track variant.id) {
-                  <tr [class.winner]="variant.id === 'v3-replay'">
+                  <tr [class.winner]="primaryWinnerId(evidence) === variant.id">
                     <th scope="row"><strong>{{ variant.name }}</strong><span>{{ variant.dataset.strategy }} · best step {{ variant.bestStep }}</span></th>
                     <td>{{ fixed(variant.trainingSeconds / 60, 1) }} min</td>
                     <td>{{ percent(variant.evaluation.domainTermAccuracy) }}</td>
@@ -102,7 +106,7 @@ import { TrainingLossChartComponent } from './training-loss-chart.component';
               </tbody>
             </table>
           </div>
-          <p class="evidence-note"><strong>Measurement boundary:</strong> adapted rows are historical RTX 4090 results from the shared locked test set. The pretrained model was not run in that historical aggregate, so no number is invented; it is included as the live control below.</p>
+          <p class="evidence-note"><strong>Measurement boundary:</strong> all four rows use the same locked {{ evidence.pretrainedControl.evaluation.caseCount }}-case test manifest, pinned speaker source, vocoder, ASR revision, and secure RTX 4090 evaluation path. The pretrained control was evaluated without training; live CPU measurements below remain separate.</p>
         </section>
 
         <ovl-live-comparison [models]="models()" [fixtures]="fixtures()" />
@@ -226,6 +230,7 @@ import { TrainingLossChartComponent } from './training-loss-chart.component';
               <dl class="hash-list">
                 <div><dt>Run ID</dt><dd>{{ evidence.runId }}</dd></div>
                 <div><dt>Dataset lock</dt><dd>{{ evidence.datasetLockSha256 }}</dd></div>
+                <div><dt>Pretrained control pod</dt><dd>{{ evidence.pretrainedControl.podId }} · {{ evidence.pretrainedControl.evaluation.caseCount }} cases · artifact {{ shortHash(evidence.pretrainedControl.artifactManifestSha256) }}</dd></div>
                 @for (variant of evidence.variants; track variant.id) {
                   <div><dt>{{ variant.name }} pod</dt><dd>{{ variant.podId }} · best step {{ variant.bestStep }} · {{ variant.stoppedEarly ? 'early stopped' : 'completed max steps' }}</dd></div>
                 }
@@ -272,14 +277,13 @@ export class Stage11ExperimentPageComponent implements OnInit {
     });
   }
 
-  pretrainedModel(): ExperimentModelSummary | undefined { return this.models().find((model) => model.role === 'pretrained'); }
   fixed(value: number, digits: number): string { return value.toFixed(digits); }
   percent(value: number): string { return `${(value * 100).toFixed(2)}%`; }
   integer(value: number): string { return new Intl.NumberFormat('en-US', { maximumFractionDigits: 0 }).format(value); }
   shortHash(value: string): string { return `${value.slice(0, 12)}…`; }
 
   outcomeLabel(variant: ExperimentVariantReport): string {
-    return { 'v1-baseline': 'Reference', 'v2-term-balance': 'Hypothesis rejected', 'v3-replay': 'Best target metric' }[variant.id];
+    return { 'v1-baseline': 'Adapted reference', 'v2-term-balance': 'Hypothesis rejected', 'v3-replay': 'Best adapted' }[variant.id];
   }
 
   expectation(variant: ExperimentVariantReport): string {
@@ -292,11 +296,12 @@ export class Stage11ExperimentPageComponent implements OnInit {
 
   measuredOutcome(variant: ExperimentVariantReport, report: ExperimentReport): string {
     const baseline = report.variants[0];
-    if (variant.id === 'v1-baseline') return `${this.percent(variant.evaluation.domainTermAccuracy)} term accuracy established the adapted reference.`;
+    const controlGap = (variant.evaluation.domainTermAccuracy - report.pretrainedControl.evaluation.domainTermAccuracy) * 100;
+    if (variant.id === 'v1-baseline') return `${this.percent(variant.evaluation.domainTermAccuracy)} term accuracy, ${this.signed(controlGap)} points versus pretrained.`;
     const points = (variant.evaluation.domainTermAccuracy - baseline.evaluation.domainTermAccuracy) * 100;
-    if (variant.id === 'v2-term-balance') return `${this.signed(points)} points versus V1 despite ${this.integer(variant.dataset.repeatedExposures)} repeated exposures.`;
+    if (variant.id === 'v2-term-balance') return `${this.signed(points)} points versus V1 and ${this.signed(controlGap)} versus pretrained despite ${this.integer(variant.dataset.repeatedExposures)} repeats.`;
     const rtf = ((variant.evaluation.averageRealTimeFactor / baseline.evaluation.averageRealTimeFactor) - 1) * 100;
-    return `${this.signed(points)} points versus V1, with RTF ${this.signed(rtf)}%.`;
+    return `${this.signed(points)} points versus V1, ${this.signed(controlGap)} versus pretrained, with RTF ${this.signed(rtf)}%.`;
   }
 
   strategyTitle(variant: ExperimentVariantReport): string {
@@ -326,11 +331,18 @@ export class Stage11ExperimentPageComponent implements OnInit {
   }
 
   conclusion(variant: ExperimentVariantReport, report: ExperimentReport): string {
-    if (variant.id === 'v1-baseline') return 'Keep as the adaptation control: it achieved the lowest validation loss, but not the best target accuracy.';
+    if (variant.id === 'v1-baseline') return 'Keep as the adapted reference, not a deployment candidate: it reached the lowest validation loss but regressed sharply against pretrained.';
     if (variant.id === 'v2-term-balance') return 'Do not deploy this sampling policy. More target exposure reduced both term accuracy and overall WER performance.';
     const baseline = report.variants[0];
     const points = (variant.evaluation.domainTermAccuracy - baseline.evaluation.domainTermAccuracy) * 100;
-    return `Prefer for the pronunciation objective: ${this.signed(points)} percentage points over V1 and the lowest WER, accepting a slower RTF.`;
+    const controlGap = (variant.evaluation.domainTermAccuracy - report.pretrainedControl.evaluation.domainTermAccuracy) * 100;
+    return `Best adapted result at ${this.signed(points)} points over V1, but do not prefer it over pretrained: the control remains ${Math.abs(controlGap).toFixed(2)} points ahead.`;
+  }
+
+  primaryWinnerId(report: ExperimentReport): string {
+    return [report.pretrainedControl, ...report.variants].reduce((winner, candidate) =>
+      candidate.evaluation.domainTermAccuracy > winner.evaluation.domainTermAccuracy ? candidate : winner,
+    ).id;
   }
 
   termExposureRate(variant: ExperimentVariantReport): number { return variant.dataset.rowsWithTerms / variant.dataset.scheduledRows; }
