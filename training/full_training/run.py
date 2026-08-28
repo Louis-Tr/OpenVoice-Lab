@@ -29,6 +29,7 @@ from transformers import (
     EarlyStoppingCallback,
     Seq2SeqTrainer,
     Seq2SeqTrainingArguments,
+    SpeechT5Config,
     SpeechT5ForTextToSpeech,
     SpeechT5HifiGan,
     SpeechT5Processor,
@@ -43,6 +44,22 @@ from training.full_training.checkpoint import (
     verify_checkpoint,
 )
 from training.full_training.config import validate_values
+from training.full_training.gradual_unfreeze import (
+    GradualUnfreezeCallback,
+    GradualUnfreezeController,
+    GradualUnfreezeTrainer,
+    parameter_inventory,
+)
+from training.full_training.lora import (
+    apply_lora,
+    load_adapter,
+    merge_adapter,
+    parameter_inventory as lora_parameter_inventory,
+)
+from training.full_training.reduction_factor import (
+    assert_loaded_reduction_factor,
+    assert_saved_reduction_factor,
+)
 from training.smoke.metrics import comparison_metrics
 from training.smoke.safety import (
     non_finite_training_values,
@@ -88,9 +105,13 @@ def _artifact_manifest(output: Path) -> dict[str, Any]:
         output / "selected-model",
         output / "evaluation",
         output / "run_provenance.json",
+        output / "approach_runtime.json",
         output / "training_metadata.json",
         output / "pip-freeze.txt",
         output / "run_result.json",
+        output / "initial_parameter_inventory.json",
+        output / "parameter_inventory.json",
+        output / "checkpoint-probes",
     ]
     files: list[Path] = []
     for root in included_roots:
@@ -239,14 +260,18 @@ class CompleteCheckpointCallback(TrainerCallback):
         output: Path,
         processor: SpeechT5Processor,
         provenance: dict[str, Any],
+        expected_reduction_factor: int | None = None,
     ):
         self.output = output
         self.processor = processor
         self.provenance = provenance
+        self.expected_reduction_factor = expected_reduction_factor
 
     def on_save(self, args, state, control, **kwargs):
         checkpoint = Path(args.output_dir) / f"checkpoint-{state.global_step}"
         self.processor.save_pretrained(checkpoint)
+        if self.expected_reduction_factor is not None:
+            assert_saved_reduction_factor(checkpoint, self.expected_reduction_factor)
         metadata = {
             **self.provenance,
             "checkpoint_step": state.global_step,
@@ -421,6 +446,66 @@ def _training_arguments(config: dict[str, Any], checkpoint_root: Path):
     )
 
 
+def _dataset_variant_id(variant: dict[str, Any]) -> str:
+    return str(
+        variant.get(
+            "dataset_source_variant",
+            variant.get(
+                "dataset_lock_variant", variant.get("dataset_variant_id", variant["id"])
+            ),
+        )
+    )
+
+
+def _approach_type(config: dict[str, Any]) -> str:
+    approach = config.get("approach") or {}
+    if approach:
+        return str(approach["type"])
+    if int(config["training"].get("reduction_factor", 2)) != 2:
+        return "reduction_factor"
+    return str(config["training"].get("approach", "conservative_full_model"))
+
+
+def _load_training_model(
+    config: dict[str, Any], cache: Path
+) -> tuple[torch.nn.Module, dict[str, Any]]:
+    models = config["models"]
+    expected_reduction = int(config["training"].get("reduction_factor", 2))
+    base_config = SpeechT5Config.from_pretrained(
+        models["tts_id"], revision=models["tts_revision"], cache_dir=cache
+    )
+    source_reduction = int(base_config.reduction_factor)
+    metadata: dict[str, Any] = {
+        "type": _approach_type(config),
+        "source_reduction_factor": source_reduction,
+        "configured_reduction_factor": expected_reduction,
+    }
+    if expected_reduction != source_reduction:
+        base_config.reduction_factor = expected_reduction
+        model = SpeechT5ForTextToSpeech.from_pretrained(
+            models["tts_id"],
+            revision=models["tts_revision"],
+            cache_dir=cache,
+            config=base_config,
+            ignore_mismatched_sizes=True,
+        )
+        metadata["reinitialized_output_layers"] = [
+            "speech_decoder_postnet.feat_out",
+            "speech_decoder_postnet.prob_out",
+        ]
+    else:
+        model = SpeechT5ForTextToSpeech.from_pretrained(
+            models["tts_id"], revision=models["tts_revision"], cache_dir=cache
+        )
+        metadata["reinitialized_output_layers"] = []
+    assert_loaded_reduction_factor(model, expected_reduction, Path(models["tts_id"]))
+    model.config.use_cache = bool(config["training"]["model_use_cache"])
+    if _approach_type(config) == "peft_lora":
+        model, lora_metadata = apply_lora(model, config)
+        metadata["lora"] = lora_metadata
+    return model, metadata
+
+
 def _train(
     config: dict[str, Any],
     variant: dict[str, Any],
@@ -434,10 +519,29 @@ def _train(
     processor = SpeechT5Processor.from_pretrained(
         models["tts_id"], revision=models["tts_revision"], cache_dir=cache
     )
-    model = SpeechT5ForTextToSpeech.from_pretrained(
-        models["tts_id"], revision=models["tts_revision"], cache_dir=cache
-    )
-    model.config.use_cache = bool(config["training"]["model_use_cache"])
+    model, approach_runtime = _load_training_model(config, cache)
+    provenance["approach_runtime"] = approach_runtime
+    _atomic_json(output / "approach_runtime.json", approach_runtime)
+    checkpoint_root = output / "checkpoints"
+    checkpoint_root.mkdir(parents=True, exist_ok=True)
+    resume = latest_valid_checkpoint(checkpoint_root)
+    resume_step = int(resume.name.rsplit("-", 1)[1]) if resume else 0
+    approach = config.get("approach")
+    unfreeze_controller = None
+    if approach and approach.get("type") == "gradual_unfreeze":
+        unfreeze_controller = GradualUnfreezeController(approach)
+        initial_phase = unfreeze_controller.apply(model, global_step=resume_step)
+        _atomic_json(
+            output / "initial_parameter_inventory.json",
+            {
+                "schema_version": 1,
+                "recorded_utc": _utc(),
+                "resume_step": resume_step,
+                "phase": initial_phase,
+                "approach": approach,
+                "parameter_inventory": parameter_inventory(model),
+            },
+        )
     encoder = _speaker_encoder(config, cache)
     features, fixed_embedding = _prepare_features(
         rows, root, processor, encoder, output
@@ -446,13 +550,30 @@ def _train(
     gc.collect()
     torch.cuda.empty_cache()
 
-    checkpoint_root = output / "checkpoints"
-    checkpoint_root.mkdir(parents=True, exist_ok=True)
-    resume = latest_valid_checkpoint(checkpoint_root)
     callbacks: list[TrainerCallback] = [
         FiniteAndProgressCallback(output),
-        CompleteCheckpointCallback(output, processor, provenance),
     ]
+    if unfreeze_controller is not None:
+        callbacks.append(
+            GradualUnfreezeCallback(
+                output,
+                unfreeze_controller,
+                head_learning_rate=float(approach["head_learning_rate"]),
+                decoder_learning_rate=float(approach["decoder_learning_rate"]),
+            )
+        )
+    callbacks.append(
+        CompleteCheckpointCallback(
+            output,
+            processor,
+            provenance,
+            expected_reduction_factor=(
+                None
+                if _approach_type(config) == "peft_lora"
+                else int(config["training"].get("reduction_factor", 2))
+            ),
+        )
+    )
     if config["early_stopping"]["enabled"]:
         callbacks.append(
             EarlyStoppingCallback(
@@ -462,23 +583,36 @@ def _train(
                 early_stopping_threshold=float(config["early_stopping"]["threshold"]),
             )
         )
-    trainer = BlockShuffleTrainer(
-        model=model,
-        args=_training_arguments(config, checkpoint_root),
-        train_dataset=ManifestDataset(features["train"]),
-        eval_dataset=ManifestDataset(features["validation"]),
-        data_collator=SpeechT5Collator(processor, model.config.reduction_factor),
-        tokenizer=processor,
-        callbacks=callbacks,
-        block_size=int(config["dataset"]["schedule_block_size"]),
-        sampler_seed=int(config["seed"]),
-    )
+    common_trainer_arguments = {
+        "model": model,
+        "args": _training_arguments(config, checkpoint_root),
+        "train_dataset": ManifestDataset(features["train"]),
+        "eval_dataset": ManifestDataset(features["validation"]),
+        "data_collator": SpeechT5Collator(processor, model.config.reduction_factor),
+        "tokenizer": processor,
+        "callbacks": callbacks,
+    }
+    if unfreeze_controller is not None:
+        block_size = int(config["dataset"]["schedule_block_size"])
+        sampler_seed = int(config["seed"])
+        trainer = GradualUnfreezeTrainer(
+            **common_trainer_arguments,
+            unfreeze_controller=unfreeze_controller,
+            head_learning_rate=float(approach["head_learning_rate"]),
+            decoder_learning_rate=float(approach["decoder_learning_rate"]),
+            train_sampler_factory=lambda size: DeterministicBlockShuffleSampler(
+                size, block_size, sampler_seed
+            ),
+        )
+    else:
+        trainer = BlockShuffleTrainer(
+            **common_trainer_arguments,
+            block_size=int(config["dataset"]["schedule_block_size"]),
+            sampler_seed=int(config["seed"]),
+        )
     started = time.perf_counter()
     result = trainer.train(resume_from_checkpoint=str(resume) if resume else None)
     elapsed = time.perf_counter() - started
-    selected = output / "selected-model"
-    trainer.save_model(selected)
-    processor.save_pretrained(selected)
     metadata = {
         "schema_version": 1,
         "variant": variant["id"],
@@ -493,26 +627,76 @@ def _train(
         "stopped_early": trainer.state.global_step
         < int(config["training"]["max_steps"]),
         "log_history": trainer.state.log_history,
-        "selected_model": str(selected),
+        "approach": approach_runtime,
+        "final_parameter_inventory": (
+            lora_parameter_inventory(trainer.model)
+            if _approach_type(config) == "peft_lora"
+            else parameter_inventory(trainer.model)
+        ),
     }
     _atomic_json(output / "training_metadata.json", metadata)
     del trainer, model, features
     gc.collect()
     torch.cuda.empty_cache()
-    return selected, metadata, fixed_embedding
+    return checkpoint_root, metadata, fixed_embedding
+
+
+def _load_evaluation_model(
+    config: dict[str, Any],
+    model_path: Path | str,
+    cache: Path,
+    *,
+    expected_reduction_factor: int | None = None,
+) -> tuple[SpeechT5Processor, torch.nn.Module]:
+    models = config["models"]
+    path = Path(model_path)
+    is_local = path.is_dir()
+    is_adapter = is_local and (path / "adapter_config.json").is_file()
+    if is_adapter:
+        processor = SpeechT5Processor.from_pretrained(path)
+        base = SpeechT5ForTextToSpeech.from_pretrained(
+            models["tts_id"], revision=models["tts_revision"], cache_dir=cache
+        )
+        model = merge_adapter(load_adapter(base, path, trainable=False))
+    else:
+        kwargs = (
+            {}
+            if is_local
+            else {"revision": models["tts_revision"], "cache_dir": cache}
+        )
+        processor = SpeechT5Processor.from_pretrained(model_path, **kwargs)
+        model = SpeechT5ForTextToSpeech.from_pretrained(model_path, **kwargs)
+    assert_loaded_reduction_factor(
+        model,
+        (
+            int(config["training"].get("reduction_factor", 2))
+            if expected_reduction_factor is None
+            else int(expected_reduction_factor)
+        ),
+        path,
+    )
+    return processor, model
 
 
 def _evaluate(
     config: dict[str, Any],
-    model_path: Path,
+    model_path: Path | str,
     rows: list[dict[str, Any]],
     embedding: np.ndarray,
     output: Path,
+    *,
+    evaluation_name: str = "evaluation",
+    expected_reduction_factor: int | None = None,
 ) -> dict[str, Any]:
     models = config["models"]
     cache = output / "model-cache"
-    processor = SpeechT5Processor.from_pretrained(model_path)
-    model = SpeechT5ForTextToSpeech.from_pretrained(model_path).to("cuda").eval()
+    processor, model = _load_evaluation_model(
+        config,
+        model_path,
+        cache,
+        expected_reduction_factor=expected_reduction_factor,
+    )
+    model = model.to("cuda").eval()
     vocoder = (
         SpeechT5HifiGan.from_pretrained(
             models["vocoder_id"], revision=models["vocoder_revision"], cache_dir=cache
@@ -521,7 +705,8 @@ def _evaluate(
         .eval()
     )
     speaker = torch.tensor(embedding, dtype=torch.float32, device="cuda").unsqueeze(0)
-    audio_root = output / "evaluation" / "audio"
+    evaluation_root = output / evaluation_name
+    audio_root = evaluation_root / "audio"
     audio_root.mkdir(parents=True, exist_ok=True)
     results = []
     for index, row in enumerate(rows, start=1):
@@ -560,7 +745,7 @@ def _evaluate(
         results.append(result)
         if index == 1 or index % 10 == 0 or index == len(rows):
             _atomic_json(
-                output / "evaluation" / "progress.json",
+                evaluation_root / "progress.json",
                 {
                     "stage": "synthesis",
                     "completed": index,
@@ -594,7 +779,7 @@ def _evaluate(
                 row.update(error=f"ASR {type(exc).__name__}: {exc}", transcript="")
         if index == 1 or index % 10 == 0 or index == len(results):
             _atomic_json(
-                output / "evaluation" / "progress.json",
+                evaluation_root / "progress.json",
                 {
                     "stage": "asr",
                     "completed": index,
@@ -607,7 +792,6 @@ def _evaluate(
     gc.collect()
     torch.cuda.empty_cache()
 
-    evaluation_root = output / "evaluation"
     with (evaluation_root / "raw_results.jsonl").open("w", encoding="utf-8") as handle:
         for row in results:
             handle.write(json.dumps(row, ensure_ascii=False, sort_keys=True) + "\n")
@@ -649,13 +833,214 @@ def _evaluate(
     return summary
 
 
+def _fixed_quality_probe_rows(
+    rows: list[dict[str, Any]], case_count: int
+) -> list[dict[str, Any]]:
+    if case_count <= 0:
+        raise ValueError("quality probe case count must be positive")
+    annotated = [row for row in rows if row.get("medical_terms")]
+    unannotated = [row for row in rows if not row.get("medical_terms")]
+    selected = (annotated + unannotated)[:case_count]
+    if len(selected) != min(case_count, len(rows)):
+        raise RuntimeError("could not create deterministic quality probe")
+    return selected
+
+
+def _probe_guardrails(
+    metrics: dict[str, Any],
+    pretrained: dict[str, Any],
+    probe_config: dict[str, Any],
+) -> dict[str, Any]:
+    checks: dict[str, bool] = {
+        "zero_failures": int(metrics["failure_count"]) == 0,
+        "wer_regression_within_limit": (
+            metrics["wer"] is not None
+            and pretrained["wer"] is not None
+            and float(metrics["wer"])
+            <= float(pretrained["wer"])
+            + float(probe_config["maximum_wer_regression"])
+        ),
+        "short_output_rate_within_limit": (
+            metrics["short_output_rate"] is not None
+            and float(metrics["short_output_rate"])
+            <= float(probe_config["maximum_short_output_rate"])
+        ),
+        "median_length_ratio_within_limit": (
+            metrics["median_transcript_reference_length_ratio"] is not None
+            and float(probe_config["minimum_median_length_ratio"])
+            <= float(metrics["median_transcript_reference_length_ratio"])
+            <= float(probe_config["maximum_median_length_ratio"])
+        ),
+    }
+    current_term = metrics["domain_term_accuracy"]["accuracy"]
+    pretrained_term = pretrained["domain_term_accuracy"]["accuracy"]
+    checks["term_accuracy_regression_within_limit"] = (
+        current_term is not None
+        and pretrained_term is not None
+        and float(current_term)
+        >= float(pretrained_term)
+        - float(probe_config["maximum_term_accuracy_regression"])
+    )
+    return {"eligible": all(checks.values()), "checks": checks}
+
+
+def _checkpoint_step(path: Path) -> int:
+    return int(path.name.rsplit("-", 1)[1])
+
+
+def _quality_probe_and_select(
+    config: dict[str, Any],
+    checkpoint_root: Path,
+    test_rows: list[dict[str, Any]],
+    embedding: np.ndarray,
+    output: Path,
+) -> tuple[Path, dict[str, Any]]:
+    probe_config = config["quality_probe"]
+    probe_rows = _fixed_quality_probe_rows(
+        test_rows, int(probe_config["case_count"])
+    )
+    probe_manifest = output / "checkpoint-probes" / "probe_manifest.jsonl"
+    probe_manifest.parent.mkdir(parents=True, exist_ok=True)
+    with probe_manifest.open("w", encoding="utf-8") as handle:
+        for row in probe_rows:
+            handle.write(json.dumps(row, ensure_ascii=False, sort_keys=True) + "\n")
+
+    pretrained = _evaluate(
+        config,
+        config["models"]["tts_id"],
+        probe_rows,
+        embedding,
+        output,
+        evaluation_name="checkpoint-probes/pretrained",
+        expected_reduction_factor=2,
+    )
+    checkpoints = []
+    for checkpoint in sorted(checkpoint_root.glob("checkpoint-*"), key=_checkpoint_step):
+        valid, reason = verify_checkpoint(checkpoint)
+        if not valid:
+            raise RuntimeError(f"cannot quality-probe invalid {checkpoint.name}: {reason}")
+        metrics = _evaluate(
+            config,
+            checkpoint,
+            probe_rows,
+            embedding,
+            output,
+            evaluation_name=f"checkpoint-probes/{checkpoint.name}",
+        )
+        guardrails = _probe_guardrails(metrics, pretrained, probe_config)
+        checkpoints.append(
+            {
+                "checkpoint": checkpoint.name,
+                "step": _checkpoint_step(checkpoint),
+                "path": str(checkpoint),
+                "metrics": metrics,
+                "guardrails": guardrails,
+            }
+        )
+        _atomic_json(
+            output / "checkpoint-probes" / "selection-progress.json",
+            {
+                "schema_version": 1,
+                "updated_utc": _utc(),
+                "pretrained": pretrained,
+                "completed_checkpoints": checkpoints,
+            },
+        )
+    if not checkpoints:
+        raise RuntimeError("training produced no valid checkpoint to select")
+
+    eligible = [item for item in checkpoints if item["guardrails"]["eligible"]]
+
+    def ranking(item: dict[str, Any]) -> tuple[float, float, float, int]:
+        metrics = item["metrics"]
+        term = metrics["domain_term_accuracy"]["accuracy"]
+        return (
+            -(float(term) if term is not None else -1.0),
+            float(metrics["wer"]) if metrics["wer"] is not None else float("inf"),
+            float(metrics["short_output_rate"])
+            if metrics["short_output_rate"] is not None
+            else float("inf"),
+            int(item["step"]),
+        )
+
+    selection_pool = eligible if eligible else checkpoints
+    chosen = min(selection_pool, key=ranking)
+    selection = {
+        "schema_version": 1,
+        "completed_utc": _utc(),
+        "status": "eligible_checkpoint_selected"
+        if eligible
+        else "best_available_no_checkpoint_met_all_guardrails",
+        "selection_policy": (
+            "highest domain-term accuracy, then lowest WER, then lowest short-output "
+            "rate, then earliest step; eligible checkpoints are preferred"
+        ),
+        "probe_manifest": str(probe_manifest),
+        "probe_manifest_sha256": _sha256(probe_manifest),
+        "pretrained": pretrained,
+        "checkpoints": checkpoints,
+        "selected_checkpoint": chosen,
+    }
+    _atomic_json(output / "checkpoint-probes" / "selection.json", selection)
+
+    selected = output / "selected-model"
+    temporary = output / ".selected-model.exporting"
+    if temporary.exists():
+        shutil.rmtree(temporary)
+    if selected.exists():
+        existing_selection = selected / "selection.json"
+        if not existing_selection.is_file():
+            raise RuntimeError("existing selected-model is incomplete; refusing overwrite")
+        recorded = json.loads(existing_selection.read_text(encoding="utf-8"))
+        if recorded.get("selected_checkpoint") != chosen["checkpoint"]:
+            raise RuntimeError("existing selected-model disagrees with checkpoint selection")
+        return selected, selection
+    chosen_path = Path(chosen["path"])
+    processor, model = _load_evaluation_model(
+        config, chosen_path, output / "model-cache"
+    )
+    temporary.mkdir(parents=True)
+    model.save_pretrained(temporary, safe_serialization=True)
+    processor.save_pretrained(temporary)
+    assert_saved_reduction_factor(
+        temporary, int(config["training"].get("reduction_factor", 2))
+    )
+    reloaded = SpeechT5ForTextToSpeech.from_pretrained(
+        temporary, local_files_only=True
+    )
+    assert_loaded_reduction_factor(
+        reloaded,
+        int(config["training"].get("reduction_factor", 2)),
+        temporary,
+    )
+    _atomic_json(
+        temporary / "selection.json",
+        {
+            "schema_version": 1,
+            "selected_checkpoint": chosen["checkpoint"],
+            "selected_step": chosen["step"],
+            "selection_status": selection["status"],
+            "source_checkpoint_manifest_sha256": _sha256(
+                Path(chosen["path"]) / CHECKPOINT_MANIFEST
+            ),
+        },
+    )
+    os.replace(temporary, selected)
+    del model, processor, reloaded
+    gc.collect()
+    torch.cuda.empty_cache()
+    return selected, selection
+
+
 def _load_and_validate_inputs(
     root: Path, config: dict[str, Any], variant_id: str
 ) -> tuple[dict[str, Any], dict[str, list[dict[str, Any]]], dict[str, Any]]:
     errors = validate_values(config)
     if errors:
         raise ValueError("invalid training configuration: " + "; ".join(errors))
-    if config["stability_gate"].get("override") != "user_authorized_skip":
+    if not str(config["stability_gate"].get("override", "")).startswith(
+        "user_authorized"
+    ):
         raise ValueError(
             "full training requires the recorded user-authorized stability override"
         )
@@ -663,6 +1048,7 @@ def _load_and_validate_inputs(
     if variant_id not in variants:
         raise ValueError(f"unknown variant: {variant_id}")
     variant = variants[variant_id]
+    dataset_lock_variant = _dataset_variant_id(variant)
     lock_path = root / config["dataset"]["lock"]
     lock = json.loads(lock_path.read_text(encoding="utf-8"))
     if lock.get("status") != "passed":
@@ -672,7 +1058,7 @@ def _load_and_validate_inputs(
     for split in ("train", "validation", "test"):
         path = manifest_root / f"{split}.jsonl"
         digest = _sha256(path)
-        expected = lock["variants"][variant_id]["manifest_sha256"][split]
+        expected = lock["variants"][dataset_lock_variant]["manifest_sha256"][split]
         if digest != expected:
             raise ValueError(
                 f"{variant_id} {split} manifest does not match dataset lock"
@@ -684,7 +1070,7 @@ def _load_and_validate_inputs(
     block_size = int(config["dataset"]["schedule_block_size"])
     if len(rows["train"]) % block_size:
         raise ValueError("training schedule is not composed of complete locked blocks")
-    if variant_id == "v3-replay":
+    if dataset_lock_variant == "v3-replay":
         for start in range(0, len(rows["train"]), block_size):
             pools = [
                 row["source_pool"] for row in rows["train"][start : start + block_size]
@@ -717,16 +1103,20 @@ def run(config_path: Path, variant_id: str) -> dict[str, Any]:
         "variant": variant_id,
         "run_id": os.environ.get("OPENVOICE_RUN_ID", f"local-{variant_id}"),
         "pod_id": os.environ.get("RUNPOD_POD_ID"),
+        "source_commit": os.environ.get("OPENVOICE_SOURCE_COMMIT"),
         "created_utc": _utc(),
         "configuration_sha256": config_sha,
         "dataset_lock_sha256": _sha256(lock_path),
         "dataset_lock_status": lock["status"],
-        "manifest_sha256": lock["variants"][variant_id]["manifest_sha256"],
+        "dataset_lock_variant": _dataset_variant_id(variant),
+        "manifest_sha256": lock["variants"][_dataset_variant_id(variant)][
+            "manifest_sha256"
+        ],
         "models": config["models"],
         "training": config["training"],
         "early_stopping": config["early_stopping"],
         "stability_gate": config["stability_gate"],
-        "stability_gate_decision": "user_authorized_skip",
+        "stability_gate_decision": config["stability_gate"]["override"],
         "environment": {
             "python": sys.version,
             "platform": platform.platform(),
@@ -743,9 +1133,15 @@ def run(config_path: Path, variant_id: str) -> dict[str, Any]:
         subprocess.run(
             [sys.executable, "-m", "pip", "freeze"], check=True, stdout=handle
         )
-    selected, training, embedding = _train(
+    checkpoint_root, training, embedding = _train(
         config, variant, root, output, rows, provenance
     )
+    selected, checkpoint_selection = _quality_probe_and_select(
+        config, checkpoint_root, rows["test"], embedding, output
+    )
+    training["checkpoint_selection"] = checkpoint_selection
+    training["selected_model"] = str(selected)
+    _atomic_json(output / "training_metadata.json", training)
     evaluation = _evaluate(config, selected, rows["test"], embedding, output)
     result = {
         "schema_version": 1,
@@ -755,6 +1151,7 @@ def run(config_path: Path, variant_id: str) -> dict[str, Any]:
         "variant": variant_id,
         "completed_utc": _utc(),
         "training": training,
+        "checkpoint_selection": checkpoint_selection,
         "evaluation": evaluation,
         "selected_model": str(selected),
     }
@@ -787,10 +1184,16 @@ def main() -> None:
     try:
         run(args.config, args.variant)
     except Exception as exc:
-        variant = (
-            args.variant if re.fullmatch(r"v[123]-[a-z-]+", args.variant) else "unknown"
-        )
+        variant = args.variant if re.fullmatch(r"[a-z0-9-]+", args.variant) else "unknown"
         output = Path("artifacts/stage11/full-training") / variant
+        try:
+            values = yaml.safe_load(args.config.read_text(encoding="utf-8"))
+            match = next(
+                value for value in values.get("variants", []) if value.get("id") == variant
+            )
+            output = Path(match["output_root"])
+        except Exception:
+            pass
         _atomic_json(
             output / "RUN_FAILED.json",
             {

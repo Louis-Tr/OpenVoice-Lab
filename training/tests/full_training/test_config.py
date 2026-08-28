@@ -13,6 +13,9 @@ from training.full_training.config import (
 
 REPOSITORY_ROOT = Path(__file__).resolve().parents[3]
 CONFIG_PATH = REPOSITORY_ROOT / "training" / "config" / "full_training.yaml"
+V1C_CONFIG_PATH = (
+    REPOSITORY_ROOT / "training" / "config" / "v1c_gradual_unfreeze.yaml"
+)
 
 
 def _values() -> dict:
@@ -62,3 +65,26 @@ def test_user_authorized_override_allows_launch_without_batch_sixteen_probe() ->
     assert report["stability_gate"]["matching"] is False
     assert config.values["stability_gate"]["override"] == "user_authorized_skip"
     assert report["launch_ready"] is True
+
+
+def test_gradual_unfreeze_recipe_is_locked_to_v1_data_and_twenty_five_step_saves() -> None:
+    config = load_config(V1C_CONFIG_PATH)
+    report = build_preflight_report(config)
+    values = config.values
+
+    assert report["configuration_valid"] is True
+    assert report["launch_ready"] is True
+    assert list(report["manifests"]) == ["v1c-gradual-unfreeze"]
+    assert values["variants"][0]["dataset_source_variant"] == "v1-baseline"
+    assert values["approach"]["transition_after_step"] == 50
+    assert values["approach"]["head_learning_rate"] == 1e-6
+    assert values["approach"]["decoder_learning_rate"] == 5e-7
+    assert values["training"]["max_steps"] == 250
+    assert values["training"]["evaluation_steps"] == 25
+    assert values["checkpoints"]["recovery_interval_steps"] == 25
+    assert values["checkpoints"]["durable_milestone_steps"] == list(
+        range(25, 251, 25)
+    )
+    assert report["manifests"]["v1c-gradual-unfreeze"]["train"]["sha256"] == (
+        "6e610a77bbef8b462700cf5b08214b00c6eea5218dffbb42e1f87d92d281880e"
+    )

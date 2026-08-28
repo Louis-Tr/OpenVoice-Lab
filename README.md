@@ -444,6 +444,10 @@ GPU hours, and recorded an estimated RunPod cost of USD 1.47. Two controller/
 monitoring interruptions were retained in provenance; neither restarted or
 altered a trainer. See [the completed training evidence](docs/STAGE11_TRAINING.md).
 
+Reusable pod creation, launch, monitoring, verified checkpoint download, and
+recovery commands are documented in
+[Agent Training Toolkit](docs/TRAINING_AUTOMATION.md).
+
 **Portfolio proof:** controlled ML experimentation, immutable datasets,
 recoverable training, honest failure records, and evidence-based model
 selection.

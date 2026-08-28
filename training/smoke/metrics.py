@@ -70,6 +70,19 @@ def word_error_rate(references: list[str], hypotheses: list[str]) -> float:
 
 def comparison_metrics(rows: list[dict[str, Any]]) -> dict[str, Any]:
     successful = [row for row in rows if not row.get("error")]
+    length_ratios = [
+        len(normal_words(row.get("transcript", "")))
+        / max(1, len(normal_words(row["reference"])))
+        for row in successful
+    ]
+    short_outputs = [
+        row for row in successful if len(normal_words(row.get("transcript", ""))) <= 2
+    ]
+    exact = [
+        row
+        for row in successful
+        if normal_words(row.get("transcript", "")) == normal_words(row["reference"])
+    ]
     return {
         "case_count": len(rows),
         "successful_cases": len(successful),
@@ -94,4 +107,21 @@ def comparison_metrics(rows: list[dict[str, Any]]) -> dict[str, Any]:
         "peak_gpu_memory_mb": (
             max(row["peak_gpu_memory_mb"] for row in successful) if successful else None
         ),
+        "average_audio_duration_seconds": (
+            statistics.fmean(row["audio_duration_seconds"] for row in successful)
+            if successful and all("audio_duration_seconds" in row for row in successful)
+            else None
+        ),
+        "peak_process_memory_mb": (
+            max(row["process_memory_mb"] for row in successful)
+            if successful and all("process_memory_mb" in row for row in successful)
+            else None
+        ),
+        "short_output_count": len(short_outputs),
+        "short_output_rate": len(short_outputs) / len(successful) if successful else None,
+        "median_transcript_reference_length_ratio": (
+            statistics.median(length_ratios) if length_ratios else None
+        ),
+        "exact_sentence_count": len(exact),
+        "exact_sentence_rate": len(exact) / len(successful) if successful else None,
     }

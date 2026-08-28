@@ -22,7 +22,6 @@ import yaml
 
 from training.full_training.checkpoint import verify_checkpoint
 
-VARIANTS = ("v1-baseline", "v2-term-balance", "v3-replay")
 CHECKPOINT_RE = re.compile(r"^checkpoint-(\d+)$")
 
 
@@ -48,8 +47,7 @@ def _atomic_json(path: Path, value: Any) -> None:
     os.replace(temporary, path)
 
 
-def _read_runpod_key(repository_root: Path) -> str:
-    env_path = repository_root / ".env"
+def _read_runpod_key(env_path: Path) -> str:
     for line in env_path.read_text(encoding="utf-8").splitlines():
         if line.startswith("RUNPOD_API="):
             value = line.split("=", 1)[1].strip().strip("\"'")
@@ -143,10 +141,51 @@ class ExperimentOrchestrator:
         self.root = repository_root.resolve()
         self.config_path = config_path.resolve()
         self.config = yaml.safe_load(self.config_path.read_text(encoding="utf-8"))
-        self.client = RunPodClient(_read_runpod_key(self.root))
+        self.variants = tuple(value["id"] for value in self.config["variants"])
+        if not self.variants:
+            raise ValueError("orchestration requires at least one variant")
+        self.variant_config = {
+            value["id"]: value for value in self.config["variants"]
+        }
+        orchestration = self.config.get("orchestration", {})
+        credential_file = Path(orchestration.get("credential_file", self.root / ".env"))
+        if not credential_file.is_absolute():
+            credential_file = self.root / credential_file
+        self.client = RunPodClient(_read_runpod_key(credential_file.resolve()))
         self.poll_seconds = poll_seconds
-        self.artifact_root = self.root / "artifacts" / "stage11" / "full-training"
-        self.state_path = self.artifact_root / "orchestrator-state.json"
+        state_path = Path(
+            orchestration.get(
+                "state_path", "artifacts/stage11/full-training/orchestrator-state.json"
+            )
+        )
+        self.state_path = (
+            state_path if state_path.is_absolute() else self.root / state_path
+        ).resolve()
+        self.artifact_root = self.state_path.parent
+        self.pod_name_prefix = orchestration.get("pod_name_prefix", "ovl-s11-full-")
+        self.training_module = orchestration.get(
+            "training_module", "training.full_training.run"
+        )
+        self.remote_config_path = orchestration.get(
+            "config_path", "training/config/full_training.yaml"
+        )
+        source = subprocess.run(
+            ["git", "rev-parse", "HEAD"],
+            cwd=self.root,
+            check=True,
+            text=True,
+            capture_output=True,
+        )
+        self.source_commit = source.stdout.strip()
+        dirty = subprocess.run(
+            ["git", "status", "--porcelain", "--untracked-files=all"],
+            cwd=self.root,
+            check=True,
+            text=True,
+            capture_output=True,
+        ).stdout.strip()
+        if dirty:
+            raise RuntimeError("refusing to launch training from a dirty source worktree")
         self.resume = resume
         self.attach_only = attach_only
         if resume:
@@ -158,7 +197,14 @@ class ExperimentOrchestrator:
             self.temp_root = Path(tempfile.mkdtemp(prefix="openvoice-full-training-"))
             self.key_path = self.temp_root / "id_ed25519"
         self.known_hosts = self.temp_root / "known_hosts"
-        self.bundle = self.artifact_root / "full-training-input.tar.gz"
+        bundle_path = Path(
+            orchestration.get(
+                "bundle_path", "artifacts/stage11/full-training/full-training-input.tar.gz"
+            )
+        )
+        self.bundle = (
+            bundle_path if bundle_path.is_absolute() else self.root / bundle_path
+        ).resolve()
         self.lock = threading.Lock()
         if resume:
             self.state = json.loads(self.state_path.read_text(encoding="utf-8"))
@@ -176,6 +222,7 @@ class ExperimentOrchestrator:
                 "started_utc": _utc(),
                 "status": "initializing",
                 "stability_gate_decision": "user_authorized_skip",
+                "source_commit": self.source_commit,
                 "variants": {},
             }
 
@@ -197,13 +244,16 @@ class ExperimentOrchestrator:
     def _build_bundle(self) -> None:
         self.bundle.parent.mkdir(parents=True, exist_ok=True)
         temporary = self.bundle.with_name(self.bundle.name + ".tmp")
+        dataset_paths = {self.config["dataset"]["lock"], "data-processing/clean_audio/medical_16khz"}
+        dataset_paths.update(
+            value["manifest_root"] for value in self.config["variants"]
+        )
         command = [
             "tar",
             "-czf",
             str(temporary),
             "training",
-            "data-processing/manifests/stage11",
-            "data-processing/clean_audio/medical_16khz",
+            *sorted(dataset_paths),
         ]
         subprocess.run(command, cwd=self.root, check=True)
         os.replace(temporary, self.bundle)
@@ -219,10 +269,22 @@ class ExperimentOrchestrator:
     def _save_state_unlocked(self) -> None:
         _atomic_json(self.state_path, self.state)
 
+    def _relative_output(self, variant: str) -> Path:
+        path = Path(self.variant_config[variant]["output_root"])
+        if path.is_absolute() or ".." in path.parts:
+            raise ValueError(f"variant output_root must stay repository-relative: {path}")
+        return path
+
+    def _local_output(self, variant: str) -> Path:
+        return (self.root / self._relative_output(variant)).resolve()
+
+    def _remote_output(self, variant: str) -> str:
+        return f"/workspace/OpenVoice-Lab/{self._relative_output(variant).as_posix()}"
+
     def _pod_body(self, variant: str, public_key: str) -> dict[str, Any]:
         runtime = self.config["runtime"]
         return {
-            "name": f"ovl-s11-full-{variant}-{self.run_id.rsplit('-', 2)[-2]}-{self.run_id.rsplit('-', 1)[-1]}",
+            "name": f"{self.pod_name_prefix}{self.run_id.rsplit('-', 2)[-2]}-{self.run_id.rsplit('-', 1)[-1]}",
             "imageName": runtime["image"],
             "gpuTypeIds": [runtime["gpu_type"]],
             "gpuCount": int(runtime["gpu_count"]),
@@ -241,7 +303,7 @@ class ExperimentOrchestrator:
         existing = [
             pod
             for pod in self.client.list_pods()
-            if str(pod.get("name", "")).startswith("ovl-s11-full-")
+            if str(pod.get("name", "")).startswith(self.pod_name_prefix)
         ]
         if existing:
             names = ", ".join(str(pod.get("name")) for pod in existing)
@@ -251,7 +313,7 @@ class ExperimentOrchestrator:
         )
         created: dict[str, dict[str, Any]] = {}
         try:
-            for variant in VARIANTS:
+            for variant in self.variants:
                 last_error: Exception | None = None
                 for attempt in range(1, 7):
                     try:
@@ -413,8 +475,7 @@ class ExperimentOrchestrator:
             "cd /workspace/OpenVoice-Lab; "
             "python -m pip install --disable-pip-version-check --no-cache-dir "
             "-r training/smoke/requirements.txt; "
-            "mkdir -p artifacts/stage11/full-training/"
-            f"{variant}/logs; "
+            f"mkdir -p {self._relative_output(variant).as_posix()}/logs; "
             "df -Pk /workspace | tail -1"
         )
         disk_line = (
@@ -425,11 +486,11 @@ class ExperimentOrchestrator:
             raise RuntimeError(
                 f"insufficient remote free disk before {variant}: {disk_line}"
             )
-        remote_output = f"artifacts/stage11/full-training/{variant}"
+        remote_output = self._relative_output(variant).as_posix()
         existing = self._ssh(
             endpoint,
-            "pgrep -f '^python -m training.full_training.run "
-            f"--variant {variant} --config training/config/full_training.yaml$' "
+            f"pgrep -f '^python -m {self.training_module} "
+            f"--variant {variant} --config {self.remote_config_path}$' "
             "| head -1",
             check=False,
         ).stdout.strip()
@@ -443,9 +504,10 @@ class ExperimentOrchestrator:
             return
         launch = (
             "cd /workspace/OpenVoice-Lab; "
-            f"RUNPOD_POD_ID={pod_id} OPENVOICE_RUN_ID={self.run_id} PYTHONUNBUFFERED=1 "
-            "nohup python -m training.full_training.run "
-            f"--variant {variant} --config training/config/full_training.yaml "
+            f"RUNPOD_POD_ID={pod_id} OPENVOICE_RUN_ID={self.run_id} "
+            f"OPENVOICE_SOURCE_COMMIT={self.source_commit} PYTHONUNBUFFERED=1 "
+            f"nohup python -m {self.training_module} "
+            f"--variant {variant} --config {self.remote_config_path} "
             f"> {remote_output}/logs/training.log 2>&1 < /dev/null & echo $!"
         )
         pid = self._ssh(endpoint, launch).stdout.strip().splitlines()[-1]
@@ -461,7 +523,7 @@ class ExperimentOrchestrator:
         self, endpoint: SshEndpoint, variant: str
     ) -> list[str]:
         command = (
-            f"find /workspace/OpenVoice-Lab/artifacts/stage11/full-training/{variant}/checkpoints "
+            f"find {self._remote_output(variant)}/checkpoints "
             "-mindepth 2 -maxdepth 2 -name checkpoint_complete.json -printf '%h\\n' "
             "2>/dev/null | sed 's#.*/##' | sort -V"
         )
@@ -479,7 +541,7 @@ class ExperimentOrchestrator:
     def _download_checkpoint(
         self, endpoint: SshEndpoint, variant: str, checkpoint_name: str
     ) -> dict[str, Any]:
-        local_root = self.artifact_root / variant / "checkpoints"
+        local_root = self._local_output(variant) / "checkpoints"
         local_root.mkdir(parents=True, exist_ok=True)
         final = local_root / checkpoint_name
         if final.exists():
@@ -496,8 +558,8 @@ class ExperimentOrchestrator:
         temporary = local_root / f".{checkpoint_name}.download-{uuid.uuid4().hex}"
         temporary.mkdir()
         remote = (
-            f"root@{endpoint.host}:/workspace/OpenVoice-Lab/artifacts/stage11/"
-            f"full-training/{variant}/checkpoints/{checkpoint_name}"
+            f"root@{endpoint.host}:{self._remote_output(variant)}/checkpoints/"
+            f"{checkpoint_name}"
         )
         try:
             subprocess.run(
@@ -528,17 +590,17 @@ class ExperimentOrchestrator:
     def _download_final_artifacts(
         self, endpoint: SshEndpoint, variant: str
     ) -> dict[str, Any]:
-        local_output = self.artifact_root / variant
+        local_output = self._local_output(variant)
         local_output.mkdir(parents=True, exist_ok=True)
-        remote_root = (
-            f"root@{endpoint.host}:/workspace/OpenVoice-Lab/artifacts/stage11/"
-            f"full-training/{variant}"
-        )
+        remote_root = f"root@{endpoint.host}:{self._remote_output(variant)}"
         names = [
             "selected-model",
             "evaluation",
             "run_provenance.json",
             "training_metadata.json",
+            "initial_parameter_inventory.json",
+            "parameter_inventory.json",
+            "checkpoint-probes",
             "pip-freeze.txt",
             "run_result.json",
             "run_artifact_manifest.json",
@@ -594,21 +656,50 @@ class ExperimentOrchestrator:
         local.write_text(result.stdout, encoding="utf-8")
         return True
 
+    def _capture_telemetry(self, endpoint: SshEndpoint, variant: str) -> dict[str, Any]:
+        command = (
+            "gpu=$(nvidia-smi --query-gpu=timestamp,memory.used,memory.total,"
+            "utilization.gpu,temperature.gpu,power.draw --format=csv,noheader,nounits "
+            "2>/dev/null | head -1); "
+            "disk=$(df -Pk /workspace | tail -1 | awk '{print $4}'); "
+            "printf '%s|%s' \"$gpu\" \"$disk\""
+        )
+        result = self._ssh(endpoint, command, check=False)
+        fields = [value.strip() for value in result.stdout.strip().split("|")]
+        payload: dict[str, Any] = {"captured_utc": _utc(), "raw": result.stdout.strip()}
+        if len(fields) == 2:
+            gpu = [value.strip() for value in fields[0].split(",")]
+            if len(gpu) == 6:
+                payload.update(
+                    gpu_timestamp=gpu[0],
+                    gpu_memory_used_mb=float(gpu[1]),
+                    gpu_memory_total_mb=float(gpu[2]),
+                    gpu_utilization_percent=float(gpu[3]),
+                    gpu_temperature_c=float(gpu[4]),
+                    gpu_power_w=float(gpu[5]),
+                )
+            if fields[1].isdigit():
+                payload["workspace_disk_free_gb"] = int(fields[1]) / 1024**2
+        telemetry = self._local_output(variant) / "telemetry.jsonl"
+        telemetry.parent.mkdir(parents=True, exist_ok=True)
+        with telemetry.open("a", encoding="utf-8") as handle:
+            handle.write(json.dumps(payload, sort_keys=True) + "\n")
+        return payload
+
     def _monitor_variant(self, variant: str, pod: dict[str, Any]) -> dict[str, Any]:
         pod_id = pod["id"]
         endpoint = self._wait_endpoint(variant, pod_id)
         if self.attach_only:
             remote_pid = self._ssh(
                 endpoint,
-                "pgrep -f '^python -m training.full_training.run "
-                f"--variant {variant} --config training/config/full_training.yaml$' "
+                f"pgrep -f '^python -m {self.training_module} "
+                f"--variant {variant} --config {self.remote_config_path}$' "
                 "| head -1",
                 check=False,
             ).stdout.strip()
             if not remote_pid.isdigit():
                 remote_output = (
-                    "/workspace/OpenVoice-Lab/artifacts/stage11/full-training/"
-                    f"{variant}"
+                    self._remote_output(variant)
                 )
                 terminal = (
                     self._ssh(
@@ -633,10 +724,10 @@ class ExperimentOrchestrator:
         else:
             self._upload_and_launch(variant, pod_id, endpoint)
         downloaded: dict[str, Any] = {}
-        remote_output = (
-            f"/workspace/OpenVoice-Lab/artifacts/stage11/full-training/{variant}"
-        )
+        remote_output = self._remote_output(variant)
         while True:
+            telemetry = self._capture_telemetry(endpoint, variant)
+            self._variant_state(variant, latest_telemetry=telemetry)
             for checkpoint_name in self._remote_completed_checkpoints(
                 endpoint, variant
             ):
@@ -650,7 +741,7 @@ class ExperimentOrchestrator:
                     latest_checkpoint=checkpoint_name,
                     last_checkpoint_download_utc=_utc(),
                 )
-            progress_local = self.artifact_root / variant / "live-progress.json"
+            progress_local = self._local_output(variant) / "live-progress.json"
             if self._capture_remote_file(
                 endpoint, f"{remote_output}/progress.json", progress_local
             ):
@@ -679,7 +770,7 @@ class ExperimentOrchestrator:
                         downloaded[checkpoint_name] = record
                 final = self._download_final_artifacts(endpoint, variant)
                 result = json.loads(
-                    (self.artifact_root / variant / "run_result.json").read_text(
+                    (self._local_output(variant) / "run_result.json").read_text(
                         encoding="utf-8"
                     )
                 )
@@ -697,8 +788,8 @@ class ExperimentOrchestrator:
                 )
                 return result
             if failed:
-                failure_local = self.artifact_root / variant / "RUN_FAILED.json"
-                log_local = self.artifact_root / variant / "logs" / "training.log"
+                failure_local = self._local_output(variant) / "RUN_FAILED.json"
+                log_local = self._local_output(variant) / "logs" / "training.log"
                 self._capture_remote_file(
                     endpoint, f"{remote_output}/RUN_FAILED.json", failure_local
                 )
@@ -720,7 +811,7 @@ class ExperimentOrchestrator:
                 check=False,
             )
             if process.returncode != 0:
-                log_local = self.artifact_root / variant / "logs" / "training.log"
+                log_local = self._local_output(variant) / "logs" / "training.log"
                 self._capture_remote_file(
                     endpoint, f"{remote_output}/logs/training.log", log_local
                 )
@@ -737,9 +828,9 @@ class ExperimentOrchestrator:
                     "name": self.state["variants"][variant].get("pod_name"),
                     "costPerHr": self.state["variants"][variant].get("cost_per_hour"),
                 }
-                for variant in VARIANTS
+                for variant in self.variants
             }
-            for variant in VARIANTS:
+            for variant in self.variants:
                 self._variant_state(
                     variant,
                     status="resuming_orchestration",
@@ -759,7 +850,7 @@ class ExperimentOrchestrator:
         with concurrent.futures.ThreadPoolExecutor(max_workers=3) as executor:
             futures = {
                 executor.submit(self._monitor_variant, variant, pods[variant]): variant
-                for variant in VARIANTS
+                for variant in self.variants
             }
             for future in concurrent.futures.as_completed(futures):
                 variant = futures[future]

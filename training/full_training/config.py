@@ -109,13 +109,55 @@ def validate_values(values: dict[str, Any]) -> list[str]:
     if int(early_stopping.get("patience_evaluations", 0)) <= 0:
         errors.append("early stopping patience must be positive")
 
+    reduction_factor = int(training.get("reduction_factor", 2))
+    if reduction_factor <= 0:
+        errors.append("training.reduction_factor must be positive")
+
+    approach = values.get("approach")
+    if approach is not None and approach.get("type") == "gradual_unfreeze":
+        transition = int(approach.get("transition_after_step", 0))
+        if transition <= 0 or transition >= max_steps:
+            errors.append("gradual-unfreeze transition must occur within training")
+        head_lr = float(approach.get("head_learning_rate", 0))
+        decoder_lr = float(approach.get("decoder_learning_rate", 0))
+        if head_lr <= 0 or decoder_lr <= 0 or decoder_lr >= head_lr:
+            errors.append(
+                "gradual-unfreeze decoder LR must be positive and lower than head LR"
+            )
+        if int(approach.get("top_decoder_blocks", 0)) != 2:
+            errors.append("gradual-unfreeze must expose exactly two top decoder blocks")
+        if not approach.get("phase_one_trainable_prefixes") or not approach.get(
+            "phase_two_decoder_prefixes"
+        ):
+            errors.append("gradual-unfreeze trainable prefixes are required")
+    elif approach is not None and approach.get("type") == "peft_lora":
+        if int(approach.get("rank", 0)) <= 0:
+            errors.append("LoRA rank must be positive")
+        if int(approach.get("alpha", 0)) <= 0:
+            errors.append("LoRA alpha must be positive")
+        if not approach.get("target_modules"):
+            errors.append("LoRA target_modules are required")
+        if int(approach.get("expected_target_linear_modules", 0)) <= 0:
+            errors.append("LoRA expected_target_linear_modules must be positive")
+    elif approach is not None:
+        errors.append("the configured V1 approach type is unsupported")
+
     variants = values.get("variants", [])
     variant_ids = [
         variant.get("id") for variant in variants if isinstance(variant, dict)
     ]
-    if variant_ids != ["v1-baseline", "v2-term-balance", "v3-replay"]:
+    if not variant_ids or any(not value for value in variant_ids):
+        errors.append("at least one named training variant is required")
+    elif len(variant_ids) != len(set(variant_ids)):
+        errors.append("training variant ids must be unique")
+    if values.get("experiment_id") == "stage11-speecht5-full" and variant_ids != [
+        "v1-baseline",
+        "v2-term-balance",
+        "v3-replay",
+    ]:
         errors.append(
-            "variants must contain v1-baseline, v2-term-balance, and v3-replay in order"
+            "the original full experiment must contain v1-baseline, "
+            "v2-term-balance, and v3-replay in order"
         )
     if len({variant.get("output_root") for variant in variants}) != len(variants):
         errors.append("each variant must use an independent output_root")
@@ -164,6 +206,12 @@ def build_preflight_report(config: FullTrainingConfig) -> dict[str, Any]:
     locked_variants = lock.get("variants", {})
     for variant in values["variants"]:
         variant_id = variant["id"]
+        dataset_lock_variant = variant.get(
+            "dataset_source_variant",
+            variant.get(
+                "dataset_lock_variant", variant.get("dataset_variant_id", variant_id)
+            ),
+        )
         root = config.resolve(variant["manifest_root"])
         manifests[variant_id] = {}
         for split in ("train", "validation", "test"):
@@ -176,7 +224,7 @@ def build_preflight_report(config: FullTrainingConfig) -> dict[str, Any]:
                 row_count = _jsonl_rows(path)
                 digest = _sha256(path)
                 expected_digest = (
-                    locked_variants.get(variant_id, {})
+                    locked_variants.get(dataset_lock_variant, {})
                     .get("manifest_sha256", {})
                     .get(split)
                 )
@@ -189,7 +237,8 @@ def build_preflight_report(config: FullTrainingConfig) -> dict[str, Any]:
                     entry["status"] = "failed"
                 if digest != expected_digest:
                     errors.append(
-                        f"{variant_id} {split} digest does not match dataset lock"
+                        f"{variant_id} {split} digest does not match dataset lock "
+                        f"entry {dataset_lock_variant}"
                     )
                     entry["status"] = "failed"
             manifests[variant_id][split] = entry
