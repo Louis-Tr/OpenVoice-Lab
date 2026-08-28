@@ -45,12 +45,14 @@ def run(config_path: Path) -> dict:
         text="The patient was prescribed amlodipine for hypertension.",
         return_tensors="pt",
     )["input_ids"].to("cuda")
+    attention_mask = torch.ones_like(input_ids)
     labels = torch.zeros((1, 100, int(base.config.num_mel_bins)), device="cuda")
     speaker = torch.ones((1, int(base.config.speaker_embedding_dim)), device="cuda")
     speaker = torch.nn.functional.normalize(speaker, dim=-1)
     with torch.autocast("cuda", dtype=torch.bfloat16):
         loss = wrapped(
             input_ids=input_ids,
+            attention_mask=attention_mask,
             labels=labels,
             speaker_embeddings=speaker,
         ).loss
@@ -75,6 +77,7 @@ def run(config_path: Path) -> dict:
     with torch.inference_mode():
         adapter_values = reloaded(
             input_ids=input_ids,
+            attention_mask=attention_mask,
             labels=labels,
             speaker_embeddings=speaker,
         ).spectrogram.float()
@@ -82,6 +85,7 @@ def run(config_path: Path) -> dict:
     with torch.inference_mode():
         merged_values = merged(
             input_ids=input_ids,
+            attention_mask=attention_mask,
             labels=labels,
             speaker_embeddings=speaker,
         ).spectrogram.float()
