@@ -79,7 +79,7 @@ def run(config_path: Path) -> dict:
         models["tts_id"], revision=models["tts_revision"], cache_dir=cache
     ).to("cuda")
     reloaded = load_adapter(reload_base, adapter, trainable=False).eval()
-    comparison_seed = int(config["training"]["seed"])
+    comparison_seed = int(config["seed"])
     _reset_comparison_rng(comparison_seed)
     with torch.inference_mode():
         adapter_values = reloaded(

@@ -89,4 +89,5 @@ def test_merge_compatibility_replays_identical_rng_state() -> None:
 
     assert "torch.manual_seed(seed)" in source
     assert "torch.cuda.manual_seed_all(seed)" in source
+    assert 'comparison_seed = int(config["seed"])' in source
     assert source.count("_reset_comparison_rng(comparison_seed)") == 2
