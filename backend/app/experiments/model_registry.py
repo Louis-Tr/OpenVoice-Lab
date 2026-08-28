@@ -5,6 +5,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Literal
 
+from app.experiments.approach_catalog import V1_APPROACHES
 from app.experiments.common import (
     ExperimentEvidenceError,
     ExperimentModelNotFoundError,
@@ -80,6 +81,50 @@ class ExperimentModelRegistry:
                     name=name,
                     role="adapted",
                     variant=variant_id,
+                    source=selected,
+                    revision=provenance["models"]["tts_revision"],
+                    model_sha256=_manifest_weight_hash(manifest, selected),
+                )
+            )
+        return cls(definitions)
+
+    @classmethod
+    def from_v1_approach_runs(
+        cls,
+        approach_run_root: Path,
+        pretrained_root: Path,
+        tts_revision: str,
+    ) -> "ExperimentModelRegistry":
+        """Build the live catalog from the four pinned, verified agent runs."""
+        definitions: list[ExperimentModelDefinition] = [
+            ExperimentModelDefinition(
+                id="speecht5-pretrained",
+                name="SpeechT5 Pretrained",
+                role="pretrained",
+                variant="pretrained",
+                source=pretrained_root.resolve(),
+                revision=tts_revision,
+                model_sha256=_local_weight_hash(pretrained_root.resolve()),
+            )
+        ]
+        for approach in V1_APPROACHES:
+            final_root = approach_run_root.resolve() / approach.run_id / "final"
+            provenance = read_json(final_root / "run_provenance.json")
+            manifest = read_json(final_root / "run_artifact_manifest.json")
+            selected = final_root / "selected-model"
+            if (
+                provenance.get("variant") != approach.variant_id
+                or provenance.get("run_id") != approach.run_id
+            ):
+                raise ExperimentEvidenceError(
+                    f"The selected run identity differs for {approach.variant_id}."
+                )
+            definitions.append(
+                ExperimentModelDefinition(
+                    id=approach.model_id,
+                    name=approach.name,
+                    role="adapted",
+                    variant=approach.variant_id,
                     source=selected,
                     revision=provenance["models"]["tts_revision"],
                     model_sha256=_manifest_weight_hash(manifest, selected),

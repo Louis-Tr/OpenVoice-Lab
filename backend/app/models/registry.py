@@ -19,16 +19,22 @@ class ModelDefinition:
 
     model_id: str
     display_name: str
-    precision: Literal["FP32", "INT8"]
+    precision: str
     variant: ModelVariant
     model_version: str
     model_path: Path
-    voices_path: Path
+    voices_path: Path | None
     voices: tuple[str, ...]
     runtime: str = "ONNX"
+    engine: Literal["kokoro-onnx", "speecht5-transformers", "audio8"] = "kokoro-onnx"
     hosting: str = "self-hosted"
     language: str = "en-us"
     speed: float = 1.0
+    additional_artifacts: tuple[Path, ...] = ()
+    enabled: bool = True
+    unavailable_reason: str | None = None
+    benchmark_enabled: bool = True
+    description: str = "Local open-weight text-to-speech model."
 
     @property
     def key(self) -> str:
@@ -40,7 +46,25 @@ class ModelDefinition:
 
     @property
     def artifacts_available(self) -> bool:
-        return self.model_path.is_file() and self.voices_path.is_file()
+        return self.enabled and all(path.exists() for path in self.required_artifacts)
+
+    @property
+    def required_artifacts(self) -> tuple[Path, ...]:
+        """Return every local artifact required to construct this engine."""
+        paths = [self.model_path]
+        if self.voices_path is not None:
+            paths.append(self.voices_path)
+        paths.extend(self.additional_artifacts)
+        return tuple(paths)
+
+    @property
+    def resolved_unavailable_reason(self) -> str | None:
+        if self.artifacts_available:
+            return None
+        if self.unavailable_reason:
+            return self.unavailable_reason
+        missing = [str(path) for path in self.required_artifacts if not path.exists()]
+        return "Missing local model artifacts: " + ", ".join(missing)
 
 
 class ModelRegistry:
@@ -73,6 +97,17 @@ class ModelRegistry:
                 hosting=model.hosting,
                 external_inference_apis=[],
                 available=model.artifacts_available,
+                unavailable_reason=model.resolved_unavailable_reason,
+                description=model.description,
             )
             for model in self._models.values()
+        ]
+
+    def list_benchmark_models(self) -> list[ModelSummary]:
+        """Return deployed models whose voice contract matches the benchmark corpus."""
+        by_id = {summary.id: summary for summary in self.list_available()}
+        return [
+            by_id[model.model_id]
+            for model in self._models.values()
+            if model.benchmark_enabled and model.artifacts_available
         ]

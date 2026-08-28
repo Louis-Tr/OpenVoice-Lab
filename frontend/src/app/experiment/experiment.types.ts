@@ -1,8 +1,15 @@
 export type ExperimentModelId =
   | 'speecht5-pretrained'
-  | 'speecht5-v1-baseline'
-  | 'speecht5-v2-term-balance'
-  | 'speecht5-v3-replay';
+  | 'speecht5-v1a-conservative-full'
+  | 'speecht5-v1b-lora'
+  | 'speecht5-v1c-gradual-unfreeze'
+  | 'speecht5-v1d-reduction-factor-1';
+
+export type ExperimentVariantId =
+  | 'v1a-conservative-full'
+  | 'v1b-lora'
+  | 'v1c-gradual-unfreeze'
+  | 'v1d-reduction-factor-1';
 
 export interface ExperimentIntegrity {
   readonly status: 'passed';
@@ -15,17 +22,17 @@ export interface ExperimentIntegrity {
 }
 export interface ExperimentTrainingConfig {
   readonly precision: string;
-  readonly physicalBatchSize: number;
-  readonly gradientAccumulationSteps: number;
+  readonly physicalBatchSize: number | null;
+  readonly gradientAccumulationSteps: number | null;
   readonly effectiveBatchSize: number;
   readonly maximumSteps: number;
   readonly nominalEpochs: number;
-  readonly learningRate: number;
+  readonly learningRate: number | null;
   readonly warmupSteps: number;
   readonly evaluationSteps: number;
   readonly maximumGradientNorm: number;
   readonly gradientCheckpointing: boolean;
-  readonly earlyStoppingPatience: number;
+  readonly earlyStoppingPatience: number | null;
   readonly earlyStoppingThreshold: number;
   readonly seed: number;
 }
@@ -73,12 +80,28 @@ export interface ExperimentEvaluation {
   readonly averageInferenceMs: number;
   readonly averageRealTimeFactor: number;
   readonly peakGpuMemoryMb: number;
+  readonly peakProcessMemoryMb: number | null;
+  readonly successfulCases: number | null;
+  readonly exactSentenceRate: number | null;
   readonly synthesisVerified: boolean;
 }
 
+export interface ExperimentApproachTrainingConfig {
+  readonly type: string;
+  readonly physicalBatchSize: number;
+  readonly gradientAccumulationSteps: number;
+  readonly effectiveBatchSize: number;
+  readonly learningRate: number;
+  readonly earlyStoppingEnabled: boolean;
+  readonly earlyStoppingPatience: number;
+  readonly reductionFactor: number;
+}
+
 export interface ExperimentVariantReport {
-  readonly id: 'v1-baseline' | 'v2-term-balance' | 'v3-replay';
+  readonly id: ExperimentVariantId;
   readonly name: string;
+  readonly runId: string | null;
+  readonly approach: string | null;
   readonly podId: string;
   readonly startedAt: string;
   readonly finishedAt: string;
@@ -88,13 +111,17 @@ export interface ExperimentVariantReport {
   readonly stoppedEarly: boolean;
   readonly trainingSeconds: number;
   readonly trainingStepsPerSecond: number;
+  readonly trainLoss: number | null;
   readonly checkpointSteps: readonly number[];
   readonly estimatedCostUsd: number;
   readonly dataset: ExperimentDatasetStats;
+  readonly trainingConfig: ExperimentApproachTrainingConfig | null;
   readonly validationHistory: readonly ExperimentLossPoint[];
   readonly evaluation: ExperimentEvaluation;
   readonly selectedModelSha256: string;
   readonly artifactManifestSha256: string;
+  readonly selectedStep: number | null;
+  readonly selectionStatus: string | null;
 }
 
 export interface ExperimentPretrainedReport {

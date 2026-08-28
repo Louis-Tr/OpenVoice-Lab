@@ -18,12 +18,12 @@ def main() -> int:
     parser.add_argument("--cpu-threads", type=int, default=8)
     args = parser.parse_args()
     root = args.repo_root.resolve()
-    stage11 = root / "artifacts" / "stage11" / "full-training"
+    stage11 = root / "artifacts" / "stage11" / "agent-runs"
     stage12 = root / "artifacts" / "stage12"
     cache = stage12 / "model-cache"
     output = stage12 / "verification"
     output.mkdir(parents=True, exist_ok=True)
-    registry = ExperimentModelRegistry.from_artifacts(
+    registry = ExperimentModelRegistry.from_v1_approach_runs(
         stage11,
         cache / "pretrained-speecht5",
         "30fcde30f19b87502b8435427b5f5068e401d5f6",

@@ -5,6 +5,15 @@
 OpenVoice Lab evaluates and serves open-weight TTS models through a modular
 Angular + FastAPI architecture.
 
+### Current synthesis catalog
+
+The main Synthesis tab is driven entirely by `GET /api/models` and exposes five
+concrete configurations: **Kokoro FP32**, **Kokoro FP16**, **Kokoro INT8**,
+**Audio8 0.6B**, and **SpeechT5**. Kokoro's three verified ONNX files and the
+pinned SpeechT5 CPU profile run locally. Audio8 remains visibly setup-gated
+until its separate reviewed runtime and model package are provisioned; the UI
+does not present it as ready prematurely.
+
 This README is a cumulative build record. New stages extend the story; completed
 stages stay visible as evidence of how the system evolved.
 
@@ -460,14 +469,20 @@ selection.
 **Responsibility:** add a third top-level **Experiment** tab without changing the
 Synthesis or Benchmarks products. The page reads verified Stage 11 artifacts,
 shows the full pipeline and training statistics, and runs real self-hosted
-SpeechT5 comparisons on CPU. Its compact hiring walkthrough leads with the
-decision, pairs each variant's expectation with its actual result, and keeps
-the full data, training, recovery, and provenance detail one disclosure away.
+SpeechT5 comparisons on CPU. The current view compares four controlled V1
+update strategies—conservative full tuning, LoRA, gradual unfreezing, and
+reduction factor 1—against the measured pretrained control. Its compact hiring
+walkthrough follows the experiment in engineering order: controlled data and
+training methods, agent-driven execution, verified checkpoints, safe pod
+termination, shared metrics, the measured decision, and live model testing.
+The page explicitly separates the local agent control plane from the four
+independent PyTorch training processes and keeps recovery and provenance detail
+one disclosure away.
 
 ![Stage 12 SpeechT5 experiment dashboard](docs/images/stage12-experiment.png)
 
 The live lab supports locked Stage 11 fixtures and custom text with explicit
-target terms. It runs two to four models sequentially against the same text and
+target terms. It runs two to five models sequentially against the same text and
 speaker profile, exposes each WAV as soon as it is complete, transcribes it with
 the pinned local Whisper evaluator, and reports exact term accuracy, WER,
 inference time, audio duration, RTF, process memory, cold/warm state, and model
@@ -475,39 +490,36 @@ provenance. Sanitization and normalization remain independent backend-owned
 policies. No external inference API is used.
 
 The pretrained SpeechT5 model is the explicit control in the interface. It is
-shown alongside V1, V2, and V3 in both the locked aggregate and every live
+shown alongside V1A, V1B, V1C, and V1D in both the locked aggregate and every live
 result. Its aggregate was produced separately on secure RTX 4090 pod
 `oxnfq72nezkgft`, using the same test-manifest hash, speaker source, vocoder,
 Whisper revision, and evaluation code path. All 662 cases completed with zero
 failures; the evidence manifest and representative WAV passed SHA-256
 verification before the pod was terminated.
 
-One genuine four-model CPU fixture run on this development machine used:
+The locked 662-case aggregate currently makes the decision explicit: V1C tied
+pretrained domain-term accuracy at 91.59%, V1B was the fastest adapted model at
+901 ms average inference and 0.1667 RTF, but pretrained retained the lowest WER
+at 11.10%. V1D recorded 68 synthesis failures and is presented as a rejected
+architecture change rather than hidden from the comparison.
 
-```text
-there is too much pain when i move my arm
-target term: arm
-```
+One exercised live CPU fixture compared pretrained with V1C on `there is too
+much pain when i move my arm` using target term `arm`. Both produced playable
+audio, Whisper transcribed both exactly, and the job completed without failure:
 
 | Model | Term accuracy | WER | Inference | RTF | RSS |
 | --- | ---: | ---: | ---: | ---: | ---: |
-| SpeechT5 pretrained | 100% | 0% | 2,390 ms | 0.6496 | 1,026 MB |
-| V1 Baseline | 0% | 100% | 3,316 ms | 0.6205 | 2,639 MB |
-| V2 Term Balance | 0% | 100% | 2,481 ms | 0.6152 | 2,698 MB |
-| V3 Replay | 0% | 100% | 3,570 ms | 0.6130 | 2,707 MB |
+| SpeechT5 pretrained | 100% | 0% | 3,072 ms | 0.8349 | 1,026 MB |
+| V1C Gradual Unfreeze | 100% | 0% | 2,856 ms | 0.7693 | 2,620 MB |
 
-This is a single smoke case, not an aggregate model ranking. It usefully caught
-a real limitation: every adapted checkpoint missed `arm` while the pretrained
-model transcribed it correctly. A second exercised custom comparison for
-`amlodipine` and `hypertension` also completed and preserved its contradictory
-result. Live RSS includes the bounded model cache and is not an isolated
-per-model memory benchmark. The interface exists to reveal results like these,
-not suppress them.
+This is a cold, single-sentence interaction check—not an aggregate ranking.
+The locked 662-case table above remains the deployment evidence.
 
 ### Enable the CPU experiment runtime
 
 Stage 12 is native-only for now and requires the completed Stage 11 selected
-models under `artifacts/stage11/full-training/`. Those weights and generated
+models under `artifacts/stage11/agent-runs/`. The pretrained evaluation remains
+under `artifacts/stage11/full-training/pretrained/`. Those weights and generated
 comparison files are intentionally excluded from Git.
 
 ```powershell

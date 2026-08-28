@@ -25,6 +25,7 @@ from app.experiments.model_registry import (
 from app.experiments.scorer import score_terms, word_error_rate
 from app.experiments.service import ExperimentService
 from app.experiments.store import ExperimentJobStore
+from app.experiments.v1_approach_report import V1ApproachReportService
 from app.inference.speecht5_cpu import SpeechT5SynthesisOutput
 from app.schemas.experiment import ExperimentComparisonRequest
 from app.text_processing.service import TextProcessingService
@@ -32,6 +33,7 @@ from app.text_processing.service import TextProcessingService
 REPO_ROOT = Path(__file__).resolve().parents[2]
 ARTIFACT_ROOT = REPO_ROOT / "artifacts" / "stage11" / "full-training"
 MANIFEST_ROOT = REPO_ROOT / "data-processing" / "manifests" / "stage11"
+APPROACH_RUN_ROOT = REPO_ROOT / "artifacts" / "stage11" / "agent-runs"
 VARIANTS = ("v1-baseline", "v2-term-balance", "v3-replay")
 
 
@@ -476,6 +478,40 @@ def test_local_report_matches_completed_stage11_run() -> None:
     assert [item.best_step for item in report.variants] == [1000, 625, 1000]
     assert report.variants[2].evaluation.domain_terms_correct == 146
     assert report.variants[2].evaluation.domain_terms_total == 416
+
+
+@pytest.mark.integration
+@pytest.mark.skipif(
+    not all(
+        (APPROACH_RUN_ROOT / run_id / "final" / "RUN_COMPLETE.json").is_file()
+        for run_id in (
+            "v1a-real-20260828-001",
+            "v1b-real-20260828-001",
+            "v1c-real-20260828-001",
+            "v1d-real-20260828-001",
+        )
+    ),
+    reason="Local ignored V1 approach evidence is not provisioned.",
+)
+def test_local_v1_approach_report_matches_completed_runs() -> None:
+    report = V1ApproachReportService(
+        APPROACH_RUN_ROOT,
+        ARTIFACT_ROOT,
+        MANIFEST_ROOT,
+    ).get()
+
+    assert report.integrity.checkpoint_count == 40
+    assert report.integrity.all_pods_terminated is True
+    assert [item.id for item in report.variants] == [
+        "v1a-conservative-full",
+        "v1b-lora",
+        "v1c-gradual-unfreeze",
+        "v1d-reduction-factor-1",
+    ]
+    assert [item.selected_step for item in report.variants] == [25, 25, 25, 200]
+    assert report.variants[2].evaluation.domain_terms_correct == 381
+    assert report.variants[2].evaluation.domain_terms_total == 416
+    assert report.variants[3].evaluation.failure_count == 68
 
 
 def test_fixture_catalog_uses_locked_shared_manifest(

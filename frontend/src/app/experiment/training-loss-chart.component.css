@@ -8,7 +8,7 @@
 
 .section-label {
   color: var(--color-accent);
-  font: 700 11px/1.5 var(--font-mono);
+  font: 700 var(--font-size-xs)/1.5 var(--font-mono);
   text-transform: uppercase;
   letter-spacing: 0.12em;
 }
@@ -23,14 +23,14 @@
 
 h3 {
   margin: 0 0 6px;
-  font-size: 26px;
+  font-size: var(--font-size-xl);
   letter-spacing: -0.04em;
 }
 
 p {
   margin: 0;
   color: var(--color-muted-foreground);
-  font-size: 13px;
+  font-size: var(--font-size-sm);
 }
 
 .legend {
@@ -41,7 +41,7 @@ p {
   padding: 0;
   list-style: none;
   color: var(--color-muted-foreground);
-  font: 700 10px/1.4 var(--font-mono);
+  font: 700 var(--font-size-xs)/1.4 var(--font-mono);
   text-transform: uppercase;
 }
 
@@ -66,13 +66,36 @@ svg {
 
 svg text {
   fill: var(--color-muted-foreground);
-  font: 10px var(--font-mono);
+  font: var(--font-size-xs) var(--font-mono);
 }
 
 .grid {
   stroke: var(--color-border);
   stroke-width: 1;
 }
+
+.plot-band {
+  pointer-events: none;
+}
+
+.detail-band { fill: rgba(100, 181, 246, 0.025); }
+.outlier-band { fill: rgba(255, 123, 156, 0.035); }
+
+.axis-break {
+  fill: none;
+  stroke: var(--color-muted-foreground);
+  stroke-width: 1.5;
+}
+
+svg text.band-caption,
+svg text.break-caption {
+  fill: var(--color-muted-foreground);
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+
+svg text.outlier-caption { fill: #ff9bb4; }
 
 .dot {
   stroke: var(--color-background);
@@ -82,6 +105,7 @@ svg text {
 .series-0 { stroke: #43e07d; background: #43e07d; fill: #43e07d; }
 .series-1 { stroke: #64b5f6; background: #64b5f6; fill: #64b5f6; }
 .series-2 { stroke: #ffbd66; background: #ffbd66; fill: #ffbd66; }
+.series-3 { stroke: #ff7b9c; background: #ff7b9c; fill: #ff7b9c; }
 
 .line {
   fill: none;
@@ -90,16 +114,32 @@ svg text {
   stroke-linejoin: round;
 }
 
+.line.series-1 { stroke-dasharray: 9 5; }
+.line.series-2 { stroke-dasharray: 2 5; }
+.line.series-3 { stroke-dasharray: 12 4 2 4; }
+
+.legend i.series-1 {
+  background: repeating-linear-gradient(90deg, #64b5f6 0 7px, transparent 7px 10px);
+}
+
+.legend i.series-2 {
+  background: repeating-linear-gradient(90deg, #ffbd66 0 2px, transparent 2px 5px);
+}
+
+.legend i.series-3 {
+  background: repeating-linear-gradient(90deg, #ff7b9c 0 9px, transparent 9px 12px);
+}
+
 details {
   margin-top: 16px;
   color: var(--color-muted-foreground);
-  font-size: 13px;
+  font-size: var(--font-size-sm);
 }
 
 summary {
   min-height: 44px;
   cursor: pointer;
-  font: 700 11px/44px var(--font-mono);
+  font: 700 var(--font-size-xs)/44px var(--font-mono);
   text-transform: uppercase;
   letter-spacing: 0.06em;
 }
@@ -111,7 +151,7 @@ summary {
 table {
   width: 100%;
   border-collapse: collapse;
-  font: 12px/1.5 var(--font-mono);
+  font: var(--font-size-xs)/1.5 var(--font-mono);
   font-variant-numeric: tabular-nums;
 }
 

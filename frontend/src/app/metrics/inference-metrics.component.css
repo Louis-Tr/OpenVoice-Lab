@@ -13,7 +13,7 @@
   justify-content: space-between;
   min-height: 20px;
   color: var(--color-accent);
-  font: 700 11px/1.4 var(--font-mono);
+  font: 700 var(--font-size-xs)/1.4 var(--font-mono);
   text-transform: uppercase;
   letter-spacing: 0.12em;
 }
@@ -60,7 +60,7 @@ dl div {
 dt {
   margin-bottom: 10px;
   color: var(--color-muted-foreground);
-  font: 700 10px/1.4 var(--font-mono);
+  font: 700 var(--font-size-xs)/1.4 var(--font-mono);
   text-transform: uppercase;
   letter-spacing: 0.08em;
 }
@@ -68,7 +68,7 @@ dt {
 dd {
   margin: 0;
   color: var(--color-foreground);
-  font: 700 22px/1 var(--font-mono);
+  font: 700 var(--font-size-xl)/1 var(--font-mono);
   font-variant-numeric: tabular-nums;
   letter-spacing: -0.04em;
 }
@@ -76,20 +76,20 @@ dd {
 dd span {
   margin-left: 5px;
   color: var(--color-muted-foreground);
-  font-size: 10px;
+  font-size: var(--font-size-xs);
   letter-spacing: 0.04em;
 }
 
 dd.variant {
   color: var(--color-accent);
-  font-size: 17px;
+  font-size: var(--font-size-lg);
   letter-spacing: 0.04em;
 }
 
 .definition {
   margin: 14px 0 0;
   color: var(--color-muted-foreground);
-  font: 400 11px/1.6 var(--font-mono);
+  font: 400 var(--font-size-xs)/1.6 var(--font-mono);
 }
 
 .empty-metrics {
@@ -112,7 +112,7 @@ dd.variant {
 
 .empty-metrics span {
   color: var(--color-muted-foreground);
-  font-size: 13px;
+  font-size: var(--font-size-sm);
   line-height: 1.5;
 }
 

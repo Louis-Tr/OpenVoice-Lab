@@ -13,7 +13,7 @@
 .card-index {
   margin: 0;
   color: var(--color-accent);
-  font: 700 11px/1.5 var(--font-mono);
+  font: 700 var(--font-size-xs)/1.5 var(--font-mono);
   text-transform: uppercase;
   letter-spacing: 0.14em;
 }
@@ -78,7 +78,7 @@ h2 span {
 .processed-preview p {
   margin: 0 0 8px;
   color: var(--color-accent);
-  font: 700 10px/1.5 var(--font-mono);
+  font: 700 var(--font-size-xs)/1.5 var(--font-mono);
   text-transform: uppercase;
   letter-spacing: 0.12em;
 }
@@ -86,7 +86,7 @@ h2 span {
 .processed-preview blockquote {
   margin: 0;
   color: var(--color-foreground);
-  font-size: 14px;
+  font-size: var(--font-size-sm);
   line-height: 1.6;
   overflow-wrap: anywhere;
 }
@@ -121,12 +121,12 @@ h3 {
 }
 
 .request-error strong {
-  font-size: 14px;
+  font-size: var(--font-size-sm);
 }
 
 .request-error p {
   margin: 3px 0 0;
-  font-size: 13px;
+  font-size: var(--font-size-sm);
   line-height: 1.5;
 }
 
@@ -135,7 +135,7 @@ h3 {
   min-height: 44px;
   padding: 0 14px;
   color: var(--color-foreground);
-  font: 700 11px/1 var(--font-mono);
+  font: 700 var(--font-size-xs)/1 var(--font-mono);
   text-transform: uppercase;
   background: transparent;
   border: 1px solid currentColor;
@@ -149,7 +149,7 @@ h3 {
   gap: 14px;
   margin-top: 32px;
   color: var(--color-muted-foreground);
-  font: 700 10px/1.5 var(--font-mono);
+  font: 700 var(--font-size-xs)/1.5 var(--font-mono);
   text-transform: uppercase;
   letter-spacing: 0.1em;
 }

@@ -26,7 +26,7 @@ its public contract, but it should not absorb the other module's responsibility.
 | `synthesis` | Orchestration of the complete synthesis workflow. |
 | `text_processing` | Ordered, optional English normalization, sanitization, and processed-text validation. |
 | `models` | Model registry, model loading and lifecycle. |
-| `inference` | Abstract TTS inference interface plus Kokoro ONNX implementation. |
+| `inference` | Abstract TTS inference interface plus Kokoro ONNX and pinned SpeechT5 CPU adapters. |
 | `audio` | Encoding, duration and audio-file handling. |
 | `metrics` | Latency, process memory, RTF and cold/warm metrics. |
 | `benchmark` | Predefined test execution and result aggregation. |
@@ -72,6 +72,8 @@ The connected vertical slice is intentionally narrow:
 - Implemented Stage 12 experiment path: lazy Angular tab → artifact-backed
   report/fixture/model APIs → bounded durable job service → replaceable CPU
   SpeechT5 runtime → progressive WAV → pinned Whisper → term/WER scoring.
+- Current experiment presentation: one measured pretrained control → four V1
+  update strategies on identical locked manifests → aggregate and live comparison.
 - Implemented live-job durability: atomic request/status/result storage,
   cancellation, restart recovery, partial per-model failure, and terminal
   SHA-256 manifest.
@@ -89,7 +91,8 @@ The connected vertical slice is intentionally narrow:
   `text_processing`.
 - Feature-specific frontend state stays in its owning feature; only genuinely
   reusable pieces move to `shared` or `core`.
-- SpeechT5 experiment models stay in their own immutable registry and runtime;
-  they never enter the Kokoro product registry or `SynthesisService`.
+- SpeechT5 experiment models stay in their own immutable experiment registry;
+  the main synthesis registry exposes only the pinned pretrained control through
+  the generic inference port, never adapted-run evidence or Whisper scoring.
 - Historical training claims must be parsed from verified artifacts, and live
   CPU measurements must never be presented as historical RTX 4090 results.

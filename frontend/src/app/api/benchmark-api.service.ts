@@ -12,7 +12,7 @@ export interface BenchmarkRequest {
 export interface BenchmarkAggregate {
   readonly modelId: string;
   readonly name: string;
-  readonly precision: 'FP32' | 'INT8';
+  readonly precision: string;
   readonly modelVariant: 'fp32' | 'quantized';
   readonly totalCases: number;
   readonly successCount: number;

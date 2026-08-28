@@ -7,12 +7,24 @@ from pydantic import Field, model_validator
 
 from app.schemas.base import ApiSchema
 
-ExperimentVariantId = Literal["v1-baseline", "v2-term-balance", "v3-replay"]
+ExperimentVariantId = Literal[
+    "v1-baseline",
+    "v2-term-balance",
+    "v3-replay",
+    "v1a-conservative-full",
+    "v1b-lora",
+    "v1c-gradual-unfreeze",
+    "v1d-reduction-factor-1",
+]
 ExperimentModelId = Literal[
     "speecht5-pretrained",
     "speecht5-v1-baseline",
     "speecht5-v2-term-balance",
     "speecht5-v3-replay",
+    "speecht5-v1a-conservative-full",
+    "speecht5-v1b-lora",
+    "speecht5-v1c-gradual-unfreeze",
+    "speecht5-v1d-reduction-factor-1",
 ]
 ComparisonStage = Literal[
     "queued",
@@ -42,20 +54,20 @@ class ExperimentIntegrity(ApiSchema):
 
 
 class ExperimentTrainingConfig(ApiSchema):
-    """Frozen hyperparameters shared by all three Stage 11 variants."""
+    """Hyperparameters shared across the compared Stage 11 runs."""
 
     precision: str
-    physical_batch_size: int = Field(ge=1)
-    gradient_accumulation_steps: int = Field(ge=1)
+    physical_batch_size: int | None = Field(default=None, ge=1)
+    gradient_accumulation_steps: int | None = Field(default=None, ge=1)
     effective_batch_size: int = Field(ge=1)
     maximum_steps: int = Field(ge=1)
     nominal_epochs: int = Field(ge=1)
-    learning_rate: float = Field(gt=0)
+    learning_rate: float | None = Field(default=None, gt=0)
     warmup_steps: int = Field(ge=0)
     evaluation_steps: int = Field(ge=1)
     maximum_gradient_norm: float = Field(gt=0)
     gradient_checkpointing: bool
-    early_stopping_patience: int = Field(ge=1)
+    early_stopping_patience: int | None = Field(default=None, ge=1)
     early_stopping_threshold: float = Field(ge=0)
     seed: int
 
@@ -111,7 +123,23 @@ class ExperimentEvaluation(ApiSchema):
     average_inference_ms: float = Field(ge=0)
     average_real_time_factor: float = Field(ge=0)
     peak_gpu_memory_mb: float = Field(ge=0)
+    peak_process_memory_mb: float | None = Field(default=None, ge=0)
+    successful_cases: int | None = Field(default=None, ge=0)
+    exact_sentence_rate: float | None = Field(default=None, ge=0, le=1)
     synthesis_verified: bool
+
+
+class ExperimentApproachTrainingConfig(ApiSchema):
+    """Approach-specific optimizer and model-update configuration."""
+
+    type: str
+    physical_batch_size: int = Field(ge=1)
+    gradient_accumulation_steps: int = Field(ge=1)
+    effective_batch_size: int = Field(ge=1)
+    learning_rate: float = Field(gt=0)
+    early_stopping_enabled: bool
+    early_stopping_patience: int = Field(ge=1)
+    reduction_factor: int = Field(ge=1)
 
 
 class ExperimentVariantReport(ApiSchema):
@@ -119,6 +147,8 @@ class ExperimentVariantReport(ApiSchema):
 
     id: ExperimentVariantId
     name: str
+    run_id: str | None = None
+    approach: str | None = None
     pod_id: str
     started_at: datetime
     finished_at: datetime
@@ -128,13 +158,17 @@ class ExperimentVariantReport(ApiSchema):
     stopped_early: bool
     training_seconds: float = Field(ge=0)
     training_steps_per_second: float = Field(ge=0)
+    train_loss: float | None = Field(default=None, ge=0)
     checkpoint_steps: list[int]
     estimated_cost_usd: float = Field(ge=0)
     dataset: ExperimentDatasetStats
+    training_config: ExperimentApproachTrainingConfig | None = None
     validation_history: list[ExperimentLossPoint]
     evaluation: ExperimentEvaluation
     selected_model_sha256: str
     artifact_manifest_sha256: str
+    selected_step: int | None = Field(default=None, ge=0)
+    selection_status: str | None = None
 
 
 class ExperimentPretrainedReport(ApiSchema):
@@ -233,7 +267,7 @@ class ExperimentComparisonRequest(ApiSchema):
     fixture_id: str | None = Field(default=None, min_length=1, max_length=160)
     text: str | None = Field(default=None, min_length=1, max_length=500)
     target_terms: list[str] | None = Field(default=None, min_length=1, max_length=20)
-    model_ids: list[ExperimentModelId] = Field(min_length=2, max_length=4)
+    model_ids: list[ExperimentModelId] = Field(min_length=2, max_length=5)
     sanitize_text: bool = True
     normalize_text: bool = True
 

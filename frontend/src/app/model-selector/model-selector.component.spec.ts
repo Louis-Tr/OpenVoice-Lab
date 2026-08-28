@@ -17,6 +17,8 @@ const models: readonly ModelSummary[] = [
     hosting: 'self-hosted',
     externalInferenceApis: [],
     available: true,
+    unavailableReason: null,
+    description: 'Full precision local model.',
   },
   {
     id: 'kokoro-q8',
@@ -29,6 +31,8 @@ const models: readonly ModelSummary[] = [
     hosting: 'self-hosted',
     externalInferenceApis: [],
     available: true,
+    unavailableReason: null,
+    description: 'Quantized local model.',
   },
 ];
 
@@ -38,8 +42,22 @@ describe('ModelSelectorComponent', () => {
     component.models = models;
 
     expect(component.choices).toEqual([
-      { modelId: 'kokoro-fp32', label: 'Kokoro FP32' },
-      { modelId: 'kokoro-q8', label: 'Kokoro INT8' },
+      {
+        modelId: 'kokoro-fp32',
+        label: 'Kokoro FP32',
+        precision: 'FP32',
+        runtime: 'ONNX',
+        available: true,
+        unavailableReason: null,
+      },
+      {
+        modelId: 'kokoro-q8',
+        label: 'Kokoro INT8',
+        precision: 'INT8',
+        runtime: 'ONNX',
+        available: true,
+        unavailableReason: null,
+      },
     ]);
   });
 
@@ -54,5 +72,28 @@ describe('ModelSelectorComponent', () => {
     } as unknown as Event);
 
     expect(listener).toHaveBeenCalledWith({ modelId: 'kokoro-q8' });
+  });
+
+  it('explains an unavailable catalog model without emitting a selection', () => {
+    const component = new ModelSelectorComponent();
+    const listener = vi.fn();
+    component.modelSelectionChange.subscribe(listener);
+    component.models = [
+      ...models,
+      {
+        ...models[0],
+        id: 'audio8-0.6b',
+        name: 'Audio8 0.6B',
+        precision: 'BF16',
+        variant: 'audio8',
+        available: false,
+        unavailableReason: 'Provision the reviewed Audio8 runtime first.',
+      },
+    ];
+
+    component.selectChoice(component.choices[2]);
+
+    expect(listener).not.toHaveBeenCalled();
+    expect(component.catalogNotice).toContain('Provision the reviewed Audio8 runtime');
   });
 });

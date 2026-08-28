@@ -1,12 +1,12 @@
 # Stage 12 — Interactive SpeechT5 Experiment Interface
 
-Status: implemented and verified on 2026-08-27
+Status: implemented; V1-approach presentation updated on 2026-08-28
 
 This file is the durable source of truth for Stage 12. Update the progress ledger below as work is completed so the task can resume safely after context compaction.
 
 ## Objective
 
-Add a third top-level Angular destination at `/experiments/stage11` without changing the existing Synthesis and Benchmarks behavior. The page must present verified Stage 11 training evidence and run real, self-hosted CPU comparisons across pinned pretrained SpeechT5, V1 baseline, V2 term balance, and V3 replay.
+Add a third top-level Angular destination at `/experiments/stage11` without changing the existing Synthesis and Benchmarks behavior. The page presents the measured pretrained SpeechT5 control against four V1 training approaches: conservative full-model tuning, LoRA, gradual unfreezing, and reduction factor 1.
 
 ## Locked decisions
 
@@ -34,7 +34,9 @@ Add a third top-level Angular destination at `/experiments/stage11` without chan
 ## Frontend deliverables
 
 - Lazy route `/experiments/stage11` and third navigation tab `Experiment`.
-- Evidence-first Stage 11 page with integrity status, result table, pipeline, dataset strategies, frozen configuration, validation-loss chart with accessible table, and provenance.
+- Method-first Stage 11 page titled **Agent-Orchestrated SpeechT5 Experiment**, with integrity status, a controlled experiment contract, the shared V1 dataset boundary, four update strategies, and approach-specific configuration.
+- A first-class agent training narrative that distinguishes the local control plane from independent PyTorch trainers and explains preflight, secure pod provisioning, continuous monitoring, atomic checkpoint transfer, shared evaluation, final-artifact verification, and guarded pod termination.
+- Broken-axis validation-loss chart with an accessible exact-value table, followed by the common metric framework, result table, engineering decision, and provenance.
 - Live lab with `Locked fixture` and `Custom text` modes.
 - Searchable fixtures, explicit target-term chips, independent sanitizer/normalizer controls, model selection, progress, cancellation, retry guidance, progressive audio, ASR text, term scoring, WER, and CPU metrics.
 - Responsive dark technical presentation consistent with the existing site, visible focus, 44px targets, table fallbacks, `aria-live`, and reduced-motion behavior.
@@ -53,7 +55,7 @@ DELETE /api/experiments/stage11/comparisons/{jobId}
 
 ## Artifact and provenance requirements
 
-- Read `artifacts/stage11/full-training/final-audit.json`, per-variant provenance/training/evaluation files, dataset lock, and selected-model files.
+- Read the pinned completed runs under `artifacts/stage11/agent-runs/`, plus the separately measured pretrained control under `artifacts/stage11/full-training/pretrained/`.
 - Fail closed when required evidence, hashes, revisions, or selected model files are invalid.
 - Prepare a deterministic Stage 12 speaker profile from the same locked validation reference and pinned speaker-encoder revision because Stage 11 did not export its embedding.
 - Persist live jobs atomically under `artifacts/stage12/comparisons/<job-id>/` with request, status, result, audio, and SHA-256 manifest.
@@ -82,7 +84,7 @@ validate request
 - Job progress, partial failure, cancellation, persistence, and restart recovery.
 - Preprocessing exact text and inference-only timing boundaries.
 - Model cache cold/warm behavior.
-- Real CPU synthesis creates playable WAV from pretrained and all three selected models.
+- Real CPU synthesis creates playable WAV from pretrained and each of the four selected V1 approach models.
 - Third Angular tab and deep link, loading/error/empty/progress states, both modes, independent toggles, progressive result cards, audio, and accessible chart/table rendering.
 - Existing backend and frontend regression suites remain green.
 - Browser acceptance at 375, 768, 1024, and 1440px with keyboard and reduced motion.
@@ -93,7 +95,7 @@ Preserve all earlier stages while updating README, ARCHITECTURE, MODULES, API, a
 
 ## Acceptance criteria
 
-A fresh browser can open the third tab, inspect verified Stage 11 evidence, select a locked fixture or submit custom text plus target terms, compare at least two and up to all four SpeechT5 variants, play each successful CPU-generated WAV, and inspect ASR transcription, correct/missed terms, WER, latency, duration, RTF, memory, cold/warm state, and provenance. Existing Synthesis and Benchmarks behavior remains unchanged.
+A fresh browser can open the third tab, inspect the four verified V1 approach runs, select a locked fixture or submit custom text plus target terms, compare at least two and up to all five models including pretrained, play each successful CPU-generated WAV, and inspect ASR transcription, correct/missed terms, WER, latency, duration, RTF, memory, cold/warm state, and provenance. Existing Synthesis and Benchmarks behavior remains unchanged.
 
 ## Progress ledger
 
@@ -112,18 +114,26 @@ A fresh browser can open the third tab, inspect verified Stage 11 evidence, sele
 - [x] Evaluate pretrained SpeechT5 on the locked 662-case RTX 4090 path, verify
   and retain its evidence, expose all comparison statistics, and revise the
   conclusion to reflect the measured adaptation regression.
+- [x] Replace the earlier V1/V2/V3 presentation with the four completed V1
+  update approaches while retaining pretrained as the measured control.
+- [x] Retitle and reorganize the page around the controlled training methods and
+  the complete agent-driven run lifecycle from preflight through verified pod
+  termination and shared metrics.
 
 ## Verification ledger
 
-- Backend: 72 tests passed locally, including the provisioned local-artifact
+- Backend: 73 tests passed locally, including the provisioned local-artifact
   integration; Ruff passed across `app`, `tests`, and `scripts`.
-- Frontend: 27 tests passed; Angular production build passed; the Experiment
+- Frontend: 29 tests passed; Angular production build passed; the Experiment
   feature remains a lazy route.
-- Runtime: pretrained, V1, V2, and V3 each produced a real mono 16 kHz WAV and a
-  local Whisper transcript on CPU.
-- Browser: a four-model locked fixture and a two-model custom-term comparison
-  completed with playable audio, ASR, scores, metrics, provenance, and no console
-  errors.
+- Runtime: the registry resolves pretrained plus V1A, V1B, V1C, and V1D from
+  immutable selected-model artifacts; live CPU verification is recorded by
+  `backend/scripts/verify_experiment_runtime.py`.
+- Browser: the comparison surface supports two-to-five model selection, locked
+  fixtures, custom terms, playable audio, ASR, scores, metrics, and provenance.
+- Live acceptance: pretrained and V1C completed a real locked-fixture CPU job;
+  both produced playable WAVs, exact `arm` recognition, and zero WER for that
+  bounded interaction check.
 - Responsive: 375, 768, 1024, and 1440 CSS-pixel widths had no horizontal
   document overflow; the Experiment tab and comparison action remained visible.
 - Accessibility: semantic regions/labels, SVG chart description plus exact table,

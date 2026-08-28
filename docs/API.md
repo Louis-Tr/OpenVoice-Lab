@@ -1,9 +1,11 @@
 # API contract
 
-The Kokoro product and SpeechT5 experiment use separate API namespaces and
-registries. Both reuse backend-owned text processing, keep generated WAV files
-local, and use no external inference or text-processing API. Historical Stage
-11 evidence and live Stage 12 CPU measurements are distinct response fields.
+The product synthesis catalog and SpeechT5 experiment use separate API
+namespaces and registries. The product catalog can expose a pinned pretrained
+SpeechT5 serving configuration, but it does not expose experiment reports,
+adapted checkpoints, or Whisper scoring. Both paths reuse backend-owned text
+processing, keep generated WAV files local, and use no external inference or
+text-processing API.
 
 ## `POST /api/synthesis`
 
@@ -86,42 +88,24 @@ TODO: define artifact retention and cancellation.
 
 ## `GET /api/models`
 
-List selectable deployable configurations, voices, precision, and public runtime
-metadata without exposing local artifact paths.
+List the full serving catalog, including capability state, voices, precision,
+and public runtime metadata without exposing local artifact paths. Angular
+disables entries whose `available` value is `false` and presents
+`unavailableReason`; it does not infer readiness from model names.
 
-Current response:
+Current catalog:
 
-```json
-[
-  {
-    "id": "kokoro-fp32",
-    "name": "Kokoro",
-    "precision": "FP32",
-    "variant": "fp32",
-    "voices": ["af_heart"],
-    "modelVersion": "1.0",
-    "runtime": "ONNX",
-    "hosting": "self-hosted",
-    "externalInferenceApis": [],
-    "available": true
-  },
-  {
-    "id": "kokoro-q8",
-    "name": "Kokoro",
-    "precision": "INT8",
-    "variant": "quantized",
-    "voices": ["af_heart"],
-    "modelVersion": "1.0",
-    "runtime": "ONNX",
-    "hosting": "self-hosted",
-    "externalInferenceApis": [],
-    "available": true
-  }
-]
-```
+| ID | Display | Precision | Runtime | Current state |
+| --- | --- | --- | --- | --- |
+| `kokoro-fp32` | Kokoro | FP32 | ONNX Runtime | Ready with verified artifact |
+| `kokoro-fp16` | Kokoro | FP16 | ONNX Runtime | Ready with verified artifact |
+| `kokoro-q8` | Kokoro | INT8 | ONNX Runtime | Ready with verified artifact |
+| `audio8-0.6b` | Audio8 0.6B | BF16 | Transformers / CUDA | Catalogued; setup-gated |
+| `speecht5-pretrained` | SpeechT5 | FP32 | PyTorch CPU | Ready with pinned Stage 12 profile |
 
-Current behavior: `200 OK` with one entry per registry configuration and local
-artifact availability. Listing metadata does not load either ONNX session.
+Every item also returns `variant`, `voices`, `modelVersion`, `hosting`,
+`externalInferenceApis`, `available`, `unavailableReason`, and `description`.
+Listing metadata does not load an inference engine.
 
 TODO: define richer capabilities, readiness policy, and pagination.
 
@@ -211,12 +195,12 @@ retention, and paginated raw-result retrieval for production.
 ### `GET /api/experiments/stage11/report`
 
 Return a verified projection of the completed Stage 11 artifacts: integrity
-state, frozen configuration, source audio/leakage audit, per-variant exposure
-strategies and manifest hashes, exact validation histories, shared-test
+state, shared and approach-specific configuration, source audio/leakage audit,
+the common V1 manifest hashes, exact validation histories, shared-test
 evaluation, checkpoint inventory, selected-model hashes, GPU time, cost,
 resumptions, incidents, and the zero-step pretrained control evaluated on the
 same locked 662-case manifest. The endpoint fails closed with `503` if the
-dataset lock, final audit, revisions, model files, pretrained evidence, or
+dataset lock, run completion records, revisions, model files, pretrained evidence, or
 artifact hashes disagree.
 
 ### `GET /api/experiments/stage11/fixtures`
@@ -229,7 +213,7 @@ paths are never exposed to the browser.
 ### `GET /api/experiments/stage11/models`
 
 Return the immutable live-comparison catalog for pretrained SpeechT5 and the
-three selected Stage 11 variants. Public metadata includes ID, role, revision,
+four selected V1 approach models. Public metadata includes ID, role, revision,
 model SHA-256, CPU runtime label, self-hosted state, and availability; local
 paths are private.
 
@@ -242,7 +226,7 @@ and terms from the locked manifest:
 {
   "mode": "fixture",
   "fixtureId": "medical-3ac812069e511fd83561",
-  "modelIds": ["speecht5-pretrained", "speecht5-v3-replay"],
+  "modelIds": ["speecht5-pretrained", "speecht5-v1c-gradual-unfreeze"],
   "sanitizeText": true,
   "normalizeText": true
 }
@@ -256,13 +240,13 @@ text:
   "mode": "custom",
   "text": "The patient was prescribed amlodipine for hypertension.",
   "targetTerms": ["amlodipine", "hypertension"],
-  "modelIds": ["speecht5-pretrained", "speecht5-v3-replay"],
+  "modelIds": ["speecht5-pretrained", "speecht5-v1b-lora"],
   "sanitizeText": true,
   "normalizeText": false
 }
 ```
 
-At least two and at most four unique model IDs are required. Both text options
+At least two and at most five unique model IDs are required. Both text options
 default to `true` and remain independent. A successful start returns `202` with
 the durable job snapshot. Queue saturation returns `429`; missing optional CPU
 dependencies or pinned artifacts return `503`; malformed input returns `422`.

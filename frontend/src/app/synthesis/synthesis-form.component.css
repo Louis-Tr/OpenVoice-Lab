@@ -5,7 +5,7 @@ form {
 label {
   margin-bottom: 8px;
   color: var(--color-muted-foreground);
-  font: 700 12px/1.3 var(--font-mono);
+  font: 700 var(--font-size-xs)/1.3 var(--font-mono);
   text-transform: uppercase;
   letter-spacing: 0.08em;
 }
@@ -20,7 +20,7 @@ textarea {
   padding: 16px;
   resize: vertical;
   color: var(--color-foreground);
-  font-size: 17px;
+  font-size: var(--font-size-lg);
   line-height: 1.65;
   background: var(--color-background);
   border: 1px solid var(--color-border);
@@ -48,7 +48,7 @@ textarea[aria-invalid='true'] {
   gap: 16px;
   margin-top: 8px;
   color: var(--color-muted-foreground);
-  font: 400 12px/1.5 var(--font-mono);
+  font: 400 var(--font-size-xs)/1.5 var(--font-mono);
 }
 
 .text-meta p,
@@ -67,7 +67,7 @@ textarea[aria-invalid='true'] {
   margin-bottom: 8px;
   padding: 0;
   color: var(--color-muted-foreground);
-  font: 700 12px/1.3 var(--font-mono);
+  font: 700 var(--font-size-xs)/1.3 var(--font-mono);
   text-transform: uppercase;
   letter-spacing: 0.08em;
 }
@@ -123,12 +123,12 @@ textarea[aria-invalid='true'] {
 }
 
 .cleanup-copy strong {
-  font: 700 14px/1.4 var(--font-sans);
+  font: 700 var(--font-size-sm)/1.4 var(--font-sans);
 }
 
 .cleanup-copy small {
   color: var(--color-muted-foreground);
-  font: 400 12px/1.5 var(--font-sans);
+  font: 400 var(--font-size-sm)/1.5 var(--font-sans);
 }
 
 .switch-input {
@@ -151,7 +151,7 @@ textarea[aria-invalid='true'] {
 .switch-status {
   min-width: 22px;
   color: var(--color-muted-foreground);
-  font: 700 10px/1 var(--font-mono);
+  font: 700 var(--font-size-xs)/1 var(--font-mono);
   text-align: right;
   text-transform: uppercase;
   letter-spacing: 0.06em;
@@ -208,7 +208,7 @@ textarea[aria-invalid='true'] {
 .field-error {
   margin-top: 8px;
   color: var(--color-error);
-  font-size: 14px;
+  font-size: var(--font-size-sm);
   line-height: 1.5;
 }
 
@@ -221,7 +221,7 @@ button {
   margin-top: 24px;
   padding: 0 24px;
   color: var(--color-on-accent);
-  font: 800 14px/1 var(--font-mono);
+  font: 800 var(--font-size-sm)/1 var(--font-mono);
   text-transform: uppercase;
   letter-spacing: 0.04em;
   background: var(--color-accent);

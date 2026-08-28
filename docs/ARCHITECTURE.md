@@ -8,10 +8,11 @@ that model runtimes and benchmarking mechanics can evolve without leaking into
 the browser or HTTP controllers.
 
 Stage 12 adds an independently composed SpeechT5 experiment surface beside the
-Kokoro product. Angular still knows HTTP contracts only. Verified Stage 11
-artifacts drive the training report, while a replaceable CPU runtime owns live
-SpeechT5/Whisper execution. The experiment never enters `SynthesisService`, the
-Kokoro registry, or the existing benchmark path.
+product synthesis path. Angular still knows HTTP contracts only. Verified Stage
+11 artifacts drive the training report, while a replaceable CPU runtime owns
+live SpeechT5/Whisper evaluation. The main synthesis registry may separately
+serve the pinned pretrained SpeechT5 control through the generic inference port;
+adapted checkpoints, training evidence, and Whisper scoring remain isolated.
 
 ## System spine
 
@@ -28,7 +29,7 @@ TextProcessingService
   ↓
 Inference abstraction
   ↓
-Kokoro
+Kokoro ONNX or pinned SpeechT5
   ↓
 Audio
   ↓
@@ -56,7 +57,7 @@ and audio URL contracts.
 │ Model registry│ Inference port │ Metrics        │ Audio service  │
 │ and lifecycle │ (abstract)     │ collector      │                │
 ├───────────────┴────────┬───────┴────────────────┴────────────────┤
-│ Concrete adapters      │ Kokoro ONNX (initial adapter)           │
+│ Concrete adapters      │ Kokoro ONNX · pinned SpeechT5 CPU      │
 └────────────────────────┴─────────────────────────────────────────┘
 ```
 
@@ -371,9 +372,9 @@ WAV referenced by `SynthesisResult`.
 8. Text transformation belongs to `text_processing`; Angular chooses policy,
    the synthesis service sequences normalization before sanitization, and
    inference adapters receive only the final text.
-9. The SpeechT5 experiment registry/runtime remain separate from the Kokoro
-   product registry/runtime; shared code is limited to technology-neutral text
-   processing and HTTP/error conventions.
+9. The SpeechT5 experiment registry remains separate from the product registry.
+   Product synthesis can serve only the pinned pretrained control through the
+   inference abstraction; adapted models and evaluator state never cross over.
 10. Training reports are projections of verified artifacts. Angular never owns
     training metrics, model paths, hashes, or evaluation math.
 

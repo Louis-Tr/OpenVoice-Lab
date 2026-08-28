@@ -19,6 +19,8 @@ const model: ModelSummary = {
   hosting: 'self-hosted',
   externalInferenceApis: [],
   available: true,
+  unavailableReason: null,
+  description: 'Full precision local model.',
 };
 
 const quantizedModel: ModelSummary = {
@@ -64,6 +66,26 @@ describe('SynthesisPageComponent', () => {
     expect(component.modelState()).toBe('ready');
     expect(component.selectedModelId()).toBe('kokoro-fp32');
     expect(component.selectedVoiceId()).toBe('voice-one');
+  });
+
+  it('keeps unavailable catalog entries visible while selecting the first ready model', () => {
+    const unavailable: ModelSummary = {
+      ...model,
+      id: 'audio8-0.6b',
+      name: 'Audio8 0.6B',
+      precision: 'BF16',
+      variant: 'audio8',
+      available: false,
+      unavailableReason: 'Runtime not provisioned.',
+    };
+    const component = new SynthesisPageComponent(
+      createApi({ listModels: vi.fn(() => of([unavailable, model])) }),
+    );
+
+    component.ngOnInit();
+
+    expect(component.models()).toEqual([unavailable, model]);
+    expect(component.selectedModelId()).toBe('kokoro-fp32');
   });
 
   it('rejects empty input without calling synthesis', () => {

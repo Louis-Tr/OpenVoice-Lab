@@ -16,7 +16,7 @@ export const routes: Routes = [
       import('./experiment/stage11-experiment-page.component').then(
         (module) => module.Stage11ExperimentPageComponent,
       ),
-    title: 'Stage 11 Experiment | OpenVoice Lab',
+    title: 'Agent-Orchestrated SpeechT5 Experiment | OpenVoice Lab',
   },
   { path: '**', redirectTo: '' },
 ];

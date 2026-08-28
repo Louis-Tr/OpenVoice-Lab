@@ -18,6 +18,7 @@ $backendPython = if (Test-Path -LiteralPath $experimentBackendPython -PathType L
 }
 $frontendCli = Join-Path $frontendPath 'node_modules\.bin\ng.cmd'
 $modelPath = Join-Path $backendPath 'model-artifacts\kokoro-v1.0.onnx'
+$fp16ModelPath = Join-Path $backendPath 'model-artifacts\kokoro-v1.0.fp16.onnx'
 $quantizedModelPath = Join-Path $backendPath 'model-artifacts\kokoro-v1.0.int8.onnx'
 $voicesPath = Join-Path $backendPath 'model-artifacts\voices-v1.0.bin'
 
@@ -49,6 +50,12 @@ Install frontend dependencies:
 "@
 
 Assert-RequiredFile -LiteralPath $modelPath -SetupHint @"
+Download the local model artifacts:
+  cd $backendPath
+  .\.venv\Scripts\python.exe scripts\download_models.py
+"@
+
+Assert-RequiredFile -LiteralPath $fp16ModelPath -SetupHint @"
 Download the local model artifacts:
   cd $backendPath
   .\.venv\Scripts\python.exe scripts\download_models.py

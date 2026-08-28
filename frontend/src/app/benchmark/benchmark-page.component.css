@@ -13,7 +13,7 @@
 .card-heading {
   margin: 0;
   color: var(--color-accent);
-  font: 700 11px/1.5 var(--font-mono);
+  font: 700 var(--font-size-xs)/1.5 var(--font-mono);
   text-transform: uppercase;
   letter-spacing: 0.14em;
 }
@@ -85,7 +85,7 @@ h3 {
 .run-heading-row p {
   margin: 0;
   color: var(--color-muted-foreground);
-  font-size: 13px;
+  font-size: var(--font-size-sm);
   line-height: 1.55;
 }
 
@@ -93,7 +93,7 @@ h3 {
 .error-state button {
   min-height: 48px;
   padding: 0 18px;
-  font: 800 11px/1 var(--font-mono);
+  font: 800 var(--font-size-xs)/1 var(--font-mono);
   text-transform: uppercase;
   letter-spacing: 0.06em;
   border-radius: var(--radius-sm);
@@ -140,7 +140,7 @@ h3 {
 dt {
   margin-bottom: 10px;
   color: var(--color-muted-foreground);
-  font: 700 10px/1.4 var(--font-mono);
+  font: 700 var(--font-size-xs)/1.4 var(--font-mono);
   text-transform: uppercase;
   letter-spacing: 0.08em;
 }
@@ -148,21 +148,21 @@ dt {
 dd {
   margin: 0;
   color: var(--color-foreground);
-  font: 700 24px/1 var(--font-mono);
+  font: 700 var(--font-size-xl)/1 var(--font-mono);
   font-variant-numeric: tabular-nums;
   letter-spacing: -0.04em;
 }
 
 dd.voice {
   color: var(--color-accent);
-  font-size: 16px;
+  font-size: var(--font-size-base);
   letter-spacing: 0;
 }
 
 .inline-status {
   margin: 16px 0 0;
   color: var(--color-muted-foreground);
-  font: 400 12px/1.6 var(--font-mono);
+  font: 400 var(--font-size-xs)/1.6 var(--font-mono);
 }
 
 .progress-panel,
@@ -180,7 +180,7 @@ dd.voice {
 
 .progress-copy {
   color: var(--color-muted-foreground);
-  font: 700 11px/1.4 var(--font-mono);
+  font: 700 var(--font-size-xs)/1.4 var(--font-mono);
   text-transform: uppercase;
   letter-spacing: 0.06em;
 }
@@ -216,13 +216,13 @@ progress::-moz-progress-bar {
 .progress-panel p {
   margin: 9px 0 0;
   color: var(--color-muted-foreground);
-  font-size: 12px;
+  font-size: var(--font-size-xs);
   line-height: 1.5;
 }
 
 .completion-state {
   color: var(--color-accent-strong);
-  font-size: 13px;
+  font-size: var(--font-size-sm);
   font-weight: 700;
   background: var(--color-success-surface);
   border: 1px solid rgb(67 224 125 / 38%);
@@ -235,12 +235,12 @@ progress::-moz-progress-bar {
 }
 
 .error-state strong {
-  font-size: 14px;
+  font-size: var(--font-size-sm);
 }
 
 .error-state p {
   margin: 3px 0 0;
-  font-size: 13px;
+  font-size: var(--font-size-sm);
   line-height: 1.5;
 }
 
@@ -263,7 +263,7 @@ progress::-moz-progress-bar {
   gap: 14px;
   margin-top: 32px;
   color: var(--color-muted-foreground);
-  font: 700 10px/1.5 var(--font-mono);
+  font: 700 var(--font-size-xs)/1.5 var(--font-mono);
   text-transform: uppercase;
   letter-spacing: 0.1em;
 }

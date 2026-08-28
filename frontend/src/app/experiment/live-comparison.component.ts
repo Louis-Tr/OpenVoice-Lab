@@ -26,12 +26,12 @@ import {
   changeDetection: ChangeDetectionStrategy.OnPush,
   styleUrl: './live-comparison.component.css',
   template: `
-    <section class="live-lab" aria-labelledby="live-lab-title">
+    <section id="live-lab" class="live-lab" aria-labelledby="live-lab-title">
       <div class="section-label">Live CPU evaluation</div>
       <div class="heading-row">
         <div>
-          <h3 id="live-lab-title">Test the adaptation yourself.</h3>
-          <p>One text. Same speaker profile. Same CPU. Pretrained control versus every adapted model.</p>
+          <h3 id="live-lab-title">Challenge all four approaches.</h3>
+          <p>One text. Same speaker profile. Same CPU. Pretrained control versus the four V1 update strategies.</p>
         </div>
         <span class="runtime-badge"><i aria-hidden="true"></i> Self-hosted CPU</span>
       </div>

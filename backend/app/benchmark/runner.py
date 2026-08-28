@@ -87,7 +87,7 @@ def resolve_models(
     requested_ids: Sequence[str] | None,
 ) -> list[ModelSummary]:
     """Resolve requested IDs in order, defaulting to the complete registry."""
-    summaries = model_registry.list_available()
+    summaries = model_registry.list_benchmark_models()
     if requested_ids is None:
         return summaries
 
@@ -97,7 +97,12 @@ def resolve_models(
     resolved: list[ModelSummary] = []
     for model_id in requested_ids:
         model_registry.get(model_id)
-        resolved.append(by_id[model_id])
+        try:
+            resolved.append(by_id[model_id])
+        except KeyError as error:
+            raise ValueError(
+                f"Model '{model_id}' is not deployed for the shared-voice benchmark."
+            ) from error
     return resolved
 
 

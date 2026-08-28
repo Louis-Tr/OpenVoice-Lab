@@ -153,7 +153,7 @@ export class SynthesisPageComponent implements OnInit, OnDestroy {
       this.synthesisApi.listModels().subscribe({
         next: (models) => {
           const availableModels = models.filter((model) => model.available);
-          this.models.set(availableModels);
+          this.models.set(models);
 
           if (availableModels.length === 0) {
             this.modelState.set('error');
@@ -184,10 +184,12 @@ export class SynthesisPageComponent implements OnInit, OnDestroy {
   }
 
   setModelSelection(selection: ModelSelection): void {
-    this.selectedModelId.set(selection.modelId);
-
     const model = this.models().find((item) => item.id === selection.modelId);
-    if (model && !model.voices.includes(this.selectedVoiceId())) {
+    if (!model?.available) {
+      return;
+    }
+    this.selectedModelId.set(selection.modelId);
+    if (!model.voices.includes(this.selectedVoiceId())) {
       this.selectedVoiceId.set(model.voices[0] ?? '');
     }
   }
@@ -201,7 +203,7 @@ export class SynthesisPageComponent implements OnInit, OnDestroy {
     }
 
     const model = this.selectedModel();
-    if (!model || !this.selectedVoiceId()) {
+    if (!model?.available || !this.selectedVoiceId()) {
       this.requestError.set('Choose an available model and voice, then try again.');
       return;
     }

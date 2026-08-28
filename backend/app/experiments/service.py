@@ -8,6 +8,7 @@ from app.experiments.fixtures import ExperimentFixtureService
 from app.experiments.jobs import ExperimentJobService
 from app.experiments.model_registry import ExperimentModelRegistry
 from app.experiments.store import ExperimentJobStore
+from app.experiments.v1_approach_report import V1ApproachReportService
 from app.inference.speecht5_cpu import SpeechT5CpuRuntime
 from app.schemas.experiment import (
     ExperimentComparisonJob,
@@ -25,7 +26,7 @@ class ExperimentService:
     def __init__(
         self,
         *,
-        reports: ExperimentReportService,
+        reports: ExperimentReportService | V1ApproachReportService,
         fixtures: ExperimentFixtureService,
         models: ExperimentModelRegistry,
         jobs: ExperimentJobService | None,
@@ -83,6 +84,7 @@ class ExperimentService:
 def create_experiment_service(
     *,
     artifact_root: Path,
+    approach_run_root: Path,
     manifest_root: Path,
     stage12_root: Path,
     model_cache_root: Path,
@@ -96,10 +98,14 @@ def create_experiment_service(
     cpu_threads: int | None,
 ) -> ExperimentService:
     """Compose lightweight evidence services and optional live CPU execution."""
-    reports = ExperimentReportService(artifact_root, manifest_root)
-    fixtures = ExperimentFixtureService(manifest_root)
-    models = ExperimentModelRegistry.from_artifacts(
+    reports = V1ApproachReportService(
+        approach_run_root,
         artifact_root,
+        manifest_root,
+    )
+    fixtures = ExperimentFixtureService(manifest_root)
+    models = ExperimentModelRegistry.from_v1_approach_runs(
+        approach_run_root,
         model_cache_root / "pretrained-speecht5",
         tts_revision,
     )

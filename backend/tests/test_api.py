@@ -169,6 +169,8 @@ def test_model_listing(harness: ApiHarness) -> None:
             "hosting": "self-hosted",
             "externalInferenceApis": [],
             "available": True,
+            "unavailableReason": None,
+            "description": "Local open-weight text-to-speech model.",
         },
         {
             "id": "kokoro-q8",
@@ -181,8 +183,41 @@ def test_model_listing(harness: ApiHarness) -> None:
             "hosting": "self-hosted",
             "externalInferenceApis": [],
             "available": True,
+            "unavailableReason": None,
+            "description": "Local open-weight text-to-speech model.",
         },
     ]
+
+
+def test_default_catalog_exposes_all_model_options_without_claiming_missing_artifacts(
+    tmp_path: Path,
+) -> None:
+    settings = Settings(
+        environment="test",
+        model_artifact_dir=tmp_path / "models",
+        generated_audio_dir=tmp_path / "audio",
+        benchmark_result_dir=tmp_path / "benchmarks",
+        stage11_artifact_root=tmp_path / "stage11",
+        stage11_approach_run_root=tmp_path / "agent-runs",
+        stage11_manifest_root=tmp_path / "manifests",
+        stage12_artifact_root=tmp_path / "stage12",
+        experiment_model_cache_dir=tmp_path / "model-cache",
+        experiment_speaker_profile_dir=tmp_path / "speaker-profile",
+    )
+    response = request(create_app(settings), "GET", "/api/models")
+
+    assert response.status_code == 200
+    models = response.json()
+    assert [model["id"] for model in models] == [
+        "kokoro-fp32",
+        "kokoro-fp16",
+        "kokoro-q8",
+        "audio8-0.6b",
+        "speecht5-pretrained",
+    ]
+    assert not any(model["available"] for model in models)
+    audio8 = next(model for model in models if model["id"] == "audio8-0.6b")
+    assert "review-required remote model code" in audio8["unavailableReason"]
 
 
 def test_valid_synthesis_request_returns_playable_wav(harness: ApiHarness) -> None:

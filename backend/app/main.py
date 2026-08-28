@@ -1,5 +1,6 @@
 """FastAPI application composition root."""
 
+from importlib.util import find_spec
 from pathlib import Path
 
 from fastapi import FastAPI
@@ -27,6 +28,14 @@ def resolve_backend_path(path: Path) -> Path:
     return path if path.is_absolute() else BACKEND_ROOT / path
 
 
+def dependencies_available(*module_names: str) -> bool:
+    """Check optional runtime modules without importing heavyweight packages."""
+    try:
+        return all(find_spec(name) is not None for name in module_names)
+    except (ImportError, ModuleNotFoundError):
+        return False
+
+
 def create_app(
     settings: Settings | None = None,
     *,
@@ -41,6 +50,16 @@ def create_app(
     """Create the API and compose controllers with application services."""
     resolved_settings = settings or Settings()
     health_service = HealthService()
+    model_artifact_root = resolve_backend_path(resolved_settings.model_artifact_dir)
+    experiment_model_root = resolve_backend_path(
+        resolved_settings.experiment_model_cache_dir
+    )
+    speaker_profile_root = resolve_backend_path(
+        resolved_settings.experiment_speaker_profile_dir
+    )
+    speecht5_dependencies_ready = dependencies_available(
+        "torch", "transformers", "sentencepiece"
+    )
     resolved_registry = model_registry or ModelRegistry(
         (
             ModelDefinition(
@@ -49,13 +68,29 @@ def create_app(
                 precision="FP32",
                 variant="fp32",
                 model_version=resolved_settings.kokoro_model_version,
-                model_path=resolve_backend_path(resolved_settings.model_artifact_dir)
-                / resolved_settings.kokoro_model_filename,
-                voices_path=resolve_backend_path(resolved_settings.model_artifact_dir)
-                / resolved_settings.kokoro_voices_filename,
+                model_path=model_artifact_root / resolved_settings.kokoro_model_filename,
+                voices_path=model_artifact_root / resolved_settings.kokoro_voices_filename,
                 voices=(resolved_settings.default_voice_id,),
                 language=resolved_settings.kokoro_language,
                 speed=resolved_settings.kokoro_speed,
+                runtime="ONNX Runtime",
+                description="Highest-fidelity Kokoro baseline with full-precision weights.",
+            ),
+            ModelDefinition(
+                model_id=resolved_settings.fp16_model_id,
+                display_name=resolved_settings.default_model_display_name,
+                precision="FP16",
+                variant="fp16",
+                model_version=resolved_settings.kokoro_model_version,
+                model_path=(
+                    model_artifact_root / resolved_settings.kokoro_fp16_model_filename
+                ),
+                voices_path=model_artifact_root / resolved_settings.kokoro_voices_filename,
+                voices=(resolved_settings.default_voice_id,),
+                language=resolved_settings.kokoro_language,
+                speed=resolved_settings.kokoro_speed,
+                runtime="ONNX Runtime",
+                description="Half-precision Kokoro for lower memory with the same voice set.",
             ),
             ModelDefinition(
                 model_id=resolved_settings.quantized_model_id,
@@ -63,13 +98,57 @@ def create_app(
                 precision="INT8",
                 variant="quantized",
                 model_version=resolved_settings.kokoro_model_version,
-                model_path=resolve_backend_path(resolved_settings.model_artifact_dir)
-                / resolved_settings.kokoro_quantized_model_filename,
-                voices_path=resolve_backend_path(resolved_settings.model_artifact_dir)
-                / resolved_settings.kokoro_voices_filename,
+                model_path=(
+                    model_artifact_root / resolved_settings.kokoro_quantized_model_filename
+                ),
+                voices_path=model_artifact_root / resolved_settings.kokoro_voices_filename,
                 voices=(resolved_settings.default_voice_id,),
                 language=resolved_settings.kokoro_language,
                 speed=resolved_settings.kokoro_speed,
+                runtime="ONNX Runtime",
+                description="Weight-quantized Kokoro for the smallest local footprint.",
+            ),
+            ModelDefinition(
+                model_id=resolved_settings.audio8_model_id,
+                display_name="Audio8 0.6B",
+                precision="BF16",
+                variant="audio8",
+                model_version="Preview",
+                model_path=(
+                    model_artifact_root / resolved_settings.audio8_model_dirname
+                ),
+                voices_path=None,
+                voices=(),
+                runtime="Transformers / CUDA",
+                engine="audio8",
+                enabled=False,
+                unavailable_reason=(
+                    "Audio8 is catalogued but not provisioned. Its preview checkpoint uses "
+                    "review-required remote model code and a separate voice/runtime contract."
+                ),
+                benchmark_enabled=False,
+                description="Multilingual 0.6B preview model with zero-shot voice cloning.",
+            ),
+            ModelDefinition(
+                model_id=resolved_settings.speecht5_model_id,
+                display_name="SpeechT5",
+                precision="FP32",
+                variant="pretrained",
+                model_version=resolved_settings.speecht5_revision,
+                model_path=experiment_model_root / "pretrained-speecht5",
+                voices_path=speaker_profile_root / "speaker-embedding.npy",
+                voices=(resolved_settings.speecht5_voice_id,),
+                runtime="PyTorch CPU",
+                engine="speecht5-transformers",
+                additional_artifacts=(experiment_model_root / "vocoder",),
+                enabled=speecht5_dependencies_ready,
+                unavailable_reason=(
+                    None
+                    if speecht5_dependencies_ready
+                    else "SpeechT5 requires the optional local experiment dependencies."
+                ),
+                benchmark_enabled=False,
+                description="Pinned pretrained SpeechT5 control with a verified speaker profile.",
             ),
         )
     )
@@ -101,6 +180,9 @@ def create_app(
                 artifact_root=resolve_backend_path(
                     resolved_settings.stage11_artifact_root
                 ).resolve(),
+                approach_run_root=resolve_backend_path(
+                    resolved_settings.stage11_approach_run_root
+                ).resolve(),
                 manifest_root=resolve_backend_path(
                     resolved_settings.stage11_manifest_root
                 ).resolve(),
@@ -128,9 +210,8 @@ def create_app(
         title="OpenVoice Lab API",
         version="0.12.0",
         description=(
-            "Measured self-hosted Kokoro ONNX variants with deterministic "
-            "text processing and benchmarks, plus artifact-backed SpeechT5 "
-            "training evidence and local CPU comparisons."
+            "Capability-aware local TTS serving with Kokoro ONNX variants, "
+            "SpeechT5, deterministic text processing, and measured experiments."
         ),
     )
     application.include_router(synthesis.create_router(synthesis_service), prefix="/api")

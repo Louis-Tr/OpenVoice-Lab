@@ -23,6 +23,10 @@ ARTIFACTS = (
         sha256="beb0d1848dee9a49da392cc3df26958d46cfa35d321edf434f52949153f0df3a",
     ),
     Artifact(
+        filename="kokoro-v1.0.fp16.onnx",
+        sha256="f3a290d384fbb27966d462905c71a46cef9e5fd00516b40df32a0b4afe77ac96",
+    ),
+    Artifact(
         filename="kokoro-v1.0.int8.onnx",
         sha256="ae315a79b623f244700e4afb9246c46a26066782e049ba174bf3ba433970ee9c",
     ),

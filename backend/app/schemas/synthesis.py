@@ -6,7 +6,7 @@ from pydantic import Field
 
 from app.schemas.base import ApiSchema
 
-ModelVariant = Literal["fp32", "quantized"]
+ModelVariant = Literal["fp32", "fp16", "quantized", "audio8", "pretrained"]
 
 
 class SynthesisRequest(ApiSchema):

@@ -1,4 +1,4 @@
-export type ModelVariant = 'fp32' | 'quantized';
+export type ModelVariant = 'fp32' | 'fp16' | 'quantized' | 'audio8' | 'pretrained';
 
 export interface SynthesisRequest {
   readonly text: string;
@@ -30,7 +30,7 @@ export interface SynthesisResult {
 export interface ModelSummary {
   readonly id: string;
   readonly name: string;
-  readonly precision: 'FP32' | 'INT8';
+  readonly precision: string;
   readonly variant: ModelVariant;
   readonly voices: readonly string[];
   readonly modelVersion: string;
@@ -38,6 +38,8 @@ export interface ModelSummary {
   readonly hosting: string;
   readonly externalInferenceApis: readonly string[];
   readonly available: boolean;
+  readonly unavailableReason: string | null;
+  readonly description: string;
 }
 
 export interface ModelSelection {

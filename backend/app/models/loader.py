@@ -6,6 +6,7 @@ from threading import Lock
 
 from app.inference.base import InferenceError, TTSInferenceEngine
 from app.inference.kokoro_onnx import KokoroONNXEngine
+from app.inference.speecht5 import SpeechT5InferenceEngine
 from app.models.registry import ModelDefinition
 
 EngineFactory = Callable[[ModelDefinition], TTSInferenceEngine]
@@ -44,14 +45,10 @@ class ModelLoader:
             if cached is not None:
                 return ModelLoadResult(engine=cached, warm=True)
 
-            missing = [
-                str(path)
-                for path in (model.model_path, model.voices_path)
-                if not path.is_file()
-            ]
-            if missing:
+            if not model.artifacts_available:
                 raise ModelLoadError(
-                    "Missing local model artifacts: " + ", ".join(missing)
+                    model.resolved_unavailable_reason
+                    or f"Model '{model.label}' is not available."
                 )
 
             try:
@@ -71,6 +68,20 @@ class ModelLoader:
 
     @staticmethod
     def _create_engine(model: ModelDefinition) -> TTSInferenceEngine:
-        if model.runtime != "ONNX":
-            raise ModelLoadError(f"Unsupported runtime '{model.runtime}'.")
-        return KokoroONNXEngine(model.model_path, model.voices_path)
+        if model.engine == "kokoro-onnx":
+            if model.voices_path is None:
+                raise ModelLoadError("Kokoro requires a local voice-vector artifact.")
+            return KokoroONNXEngine(model.model_path, model.voices_path)
+        if model.engine == "speecht5-transformers":
+            if model.voices_path is None or len(model.additional_artifacts) != 1:
+                raise ModelLoadError("SpeechT5 requires a speaker profile and vocoder.")
+            return SpeechT5InferenceEngine(
+                model_root=model.model_path,
+                vocoder_root=model.additional_artifacts[0],
+                speaker_embedding_path=model.voices_path,
+                voice_id=model.voices[0],
+            )
+        raise ModelLoadError(
+            model.resolved_unavailable_reason
+            or f"Unsupported runtime '{model.runtime}'."
+        )

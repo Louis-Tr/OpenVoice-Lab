@@ -19,16 +19,16 @@ const evaluation = (domainTermAccuracy: number, wordErrorRate: number) => ({
   synthesisVerified: true,
 });
 
-const v1 = {
-  id: 'v1-baseline',
-  name: 'V1 Baseline',
-  evaluation: evaluation(0.3341, 0.7084),
+const v1a = {
+  id: 'v1a-conservative-full',
+  name: 'V1A Conservative Full',
+  evaluation: evaluation(0.8918, 0.2253),
 } as unknown as ExperimentVariantReport;
 
-const v3 = {
-  id: 'v3-replay',
-  name: 'V3 Replay',
-  evaluation: evaluation(0.351, 0.7019),
+const v1c = {
+  id: 'v1c-gradual-unfreeze',
+  name: 'V1C Gradual Unfreeze',
+  evaluation: evaluation(0.9159, 0.1378),
 } as unknown as ExperimentVariantReport;
 
 const report = {
@@ -37,7 +37,7 @@ const report = {
     name: 'SpeechT5 Pretrained',
     evaluation: evaluation(0.9159, 0.111),
   },
-  variants: [v1, v3],
+  variants: [v1a, v1c],
 } as unknown as ExperimentReport;
 
 describe('Stage11ExperimentPageComponent', () => {
@@ -47,8 +47,8 @@ describe('Stage11ExperimentPageComponent', () => {
     expect(component.primaryWinnerId(report)).toBe('speecht5-pretrained');
   });
 
-  it('does not recommend the best adapted checkpoint over the stronger control', () => {
-    expect(component.conclusion(v3, report)).toContain('do not prefer it over pretrained');
-    expect(component.conclusion(v3, report)).toContain('56.49 points ahead');
+  it('does not recommend the tied V1C checkpoint over the lower-WER control', () => {
+    expect(component.conclusion(v1c, report)).toContain('do not replace the control');
+    expect(component.measuredOutcome(v1c, report)).toContain('Matched pretrained');
   });
 });

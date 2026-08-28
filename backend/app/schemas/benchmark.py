@@ -43,7 +43,7 @@ class BenchmarkCaseResult(ApiSchema):
     sanitize_text: bool
     normalize_text: bool
     model_id: str
-    precision: Literal["FP32", "INT8"]
+    precision: str
     model_variant: ModelVariant
     voice_id: str
     status: Literal["success", "failure"]
@@ -58,7 +58,7 @@ class BenchmarkAggregate(ApiSchema):
 
     model_id: str
     name: str
-    precision: Literal["FP32", "INT8"]
+    precision: str
     model_variant: ModelVariant
     total_cases: int = Field(ge=0)
     success_count: int = Field(ge=0)

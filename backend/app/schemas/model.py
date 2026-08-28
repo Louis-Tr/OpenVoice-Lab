@@ -1,7 +1,5 @@
 """Model discovery contracts."""
 
-from typing import Literal
-
 from app.schemas.base import ApiSchema
 from app.schemas.synthesis import ModelVariant
 
@@ -11,7 +9,7 @@ class ModelSummary(ApiSchema):
 
     id: str
     name: str
-    precision: Literal["FP32", "INT8"]
+    precision: str
     variant: ModelVariant
     voices: list[str]
     model_version: str
@@ -19,3 +17,5 @@ class ModelSummary(ApiSchema):
     hosting: str
     external_inference_apis: list[str]
     available: bool
+    unavailable_reason: str | None = None
+    description: str = "Local open-weight text-to-speech model."

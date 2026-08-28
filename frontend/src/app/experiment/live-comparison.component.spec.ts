@@ -21,10 +21,10 @@ const models: readonly ExperimentModelSummary[] = [
     unavailableReason: null,
   },
   {
-    id: 'speecht5-v3-replay',
-    name: 'V3 Replay',
+    id: 'speecht5-v1c-gradual-unfreeze',
+    name: 'V1C Gradual Unfreeze',
     role: 'adapted',
-    variant: 'v3-replay',
+    variant: 'v1c-gradual-unfreeze',
     runtime: 'PyTorch CPU',
     hosting: 'self-hosted',
     revision: 'revision',
@@ -50,7 +50,7 @@ const queued: ExperimentComparisonJob = {
   targetTerms: ['arm'],
   sanitizeText: true,
   normalizeText: true,
-  modelIds: ['speecht5-pretrained', 'speecht5-v3-replay'],
+  modelIds: ['speecht5-pretrained', 'speecht5-v1c-gradual-unfreeze'],
   results: [],
   createdAt: '2026-08-27T00:00:00Z',
   updatedAt: '2026-08-27T00:00:00Z',
@@ -81,7 +81,7 @@ describe('LiveComparisonComponent', () => {
     expect(service.startComparison).toHaveBeenCalledWith({
       mode: 'fixture',
       fixtureId: fixture.id,
-      modelIds: ['speecht5-pretrained', 'speecht5-v3-replay'],
+      modelIds: ['speecht5-pretrained', 'speecht5-v1c-gradual-unfreeze'],
       sanitizeText: false,
       normalizeText: true,
     });

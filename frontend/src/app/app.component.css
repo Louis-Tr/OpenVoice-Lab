@@ -45,7 +45,7 @@
   height: 36px;
   place-items: center;
   color: var(--color-on-accent);
-  font: 800 12px/1 var(--font-mono);
+  font: 800 var(--font-size-xs)/1 var(--font-mono);
   letter-spacing: -0.04em;
   background: var(--color-accent);
   border-radius: var(--radius-sm);
@@ -53,7 +53,7 @@
 
 h1 {
   margin: 0;
-  font-size: 16px;
+  font-size: var(--font-size-base);
   line-height: 1;
   letter-spacing: -0.02em;
 }
@@ -69,7 +69,7 @@ nav a {
   min-height: 44px;
   padding: 0 12px;
   color: var(--color-muted-foreground);
-  font: 700 12px/1 var(--font-mono);
+  font: 700 var(--font-size-xs)/1 var(--font-mono);
   text-decoration: none;
   text-transform: uppercase;
   letter-spacing: 0.08em;
@@ -96,6 +96,6 @@ nav a.active {
 
   nav a {
     padding-inline: 9px;
-    font-size: 11px;
+    font-size: var(--font-size-xs);
   }
 }
