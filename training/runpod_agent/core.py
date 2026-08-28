@@ -822,6 +822,9 @@ def collect_status(
         else:
             phase = "pod_ready_not_started"
 
+    if provider_status == "TERMINATED" and run.get("pod_terminated"):
+        phase = "terminated"
+
     estimated_cost = None
     if paths.pod.exists():
         pod_document = read_json(paths.pod)
@@ -829,9 +832,15 @@ def collect_status(
         created = pod_document.get("created_utc")
         if hourly is not None and created:
             started = datetime.fromisoformat(created.replace("Z", "+00:00"))
+            ended_value = pod_document.get("terminated_utc")
+            ended = (
+                datetime.fromisoformat(ended_value.replace("Z", "+00:00"))
+                if ended_value
+                else datetime.now(timezone.utc)
+            )
             hours = max(
                 0.0,
-                (datetime.now(timezone.utc) - started).total_seconds() / 3600,
+                (ended - started).total_seconds() / 3600,
             )
             estimated_cost = round(hours * float(hourly), 4)
     status = {

@@ -156,6 +156,35 @@ def test_collect_status_records_terminated_provider(tmp_path):
     assert (tmp_path / "status.json").is_file()
 
 
+def test_collect_status_freezes_confirmed_termination_and_cost(tmp_path):
+    run_path = tmp_path / "run.json"
+    core.atomic_json(
+        run_path,
+        {
+            "schema_version": 1,
+            "run_id": "completed-run",
+            "approach": "v1a-conservative-full",
+            "pod_id": "gone-pod",
+            "pod_terminated": True,
+            "repository_root": str(repository_root()),
+            "document_root": str(tmp_path),
+            "ssh": {"private_key_path": str(tmp_path / "id")},
+        },
+    )
+    core.atomic_json(
+        tmp_path / "pod.json",
+        {
+            "cost_per_hour": 0.72,
+            "created_utc": "2026-01-01T00:00:00Z",
+            "terminated_utc": "2026-01-01T00:30:00Z",
+        },
+    )
+    status = core.collect_status(run_path, client=FakeClient())
+    assert status["phase"] == "terminated"
+    assert status["estimated_cost_usd"] == 0.36
+    assert core.read_json(run_path)["status"] == "terminated"
+
+
 def test_build_bundle_contains_training_and_locked_data_roots(tmp_path):
     repository = tmp_path / "repository"
     data = tmp_path / "data"
