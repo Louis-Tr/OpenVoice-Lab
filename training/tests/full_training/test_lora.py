@@ -11,6 +11,9 @@ from training.full_training.config import load_config, validate_values
 
 REPOSITORY_ROOT = Path(__file__).resolve().parents[3]
 CONFIG_PATH = REPOSITORY_ROOT / "training" / "config" / "v1b_lora.yaml"
+COMPATIBILITY_PATH = (
+    REPOSITORY_ROOT / "training" / "full_training" / "lora_compatibility.py"
+)
 
 
 def test_lora_recipe_is_locked() -> None:
@@ -79,3 +82,11 @@ def test_only_lora_parameters_may_be_trainable() -> None:
     inventory = assert_lora_only_trainable(Tiny())
     assert inventory["trainable_parameters"] == 2
     assert inventory["trainable_parameter_names"] == ["lora_A.weight"]
+
+
+def test_merge_compatibility_replays_identical_rng_state() -> None:
+    source = COMPATIBILITY_PATH.read_text(encoding="utf-8")
+
+    assert "torch.manual_seed(seed)" in source
+    assert "torch.cuda.manual_seed_all(seed)" in source
+    assert source.count("_reset_comparison_rng(comparison_seed)") == 2

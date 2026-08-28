@@ -25,6 +25,11 @@ def _atomic_json(path: Path, value: dict) -> None:
     os.replace(temporary, path)
 
 
+def _reset_comparison_rng(seed: int) -> None:
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed_all(seed)
+
+
 def run(config_path: Path) -> dict:
     config = yaml.safe_load(config_path.read_text(encoding="utf-8"))
     root = Path.cwd()
@@ -74,6 +79,8 @@ def run(config_path: Path) -> dict:
         models["tts_id"], revision=models["tts_revision"], cache_dir=cache
     ).to("cuda")
     reloaded = load_adapter(reload_base, adapter, trainable=False).eval()
+    comparison_seed = int(config["training"]["seed"])
+    _reset_comparison_rng(comparison_seed)
     with torch.inference_mode():
         adapter_values = reloaded(
             input_ids=input_ids,
@@ -82,6 +89,7 @@ def run(config_path: Path) -> dict:
             speaker_embeddings=speaker,
         ).spectrogram.float()
     merged = merge_adapter(reloaded).eval()
+    _reset_comparison_rng(comparison_seed)
     with torch.inference_mode():
         merged_values = merged(
             input_ids=input_ids,
