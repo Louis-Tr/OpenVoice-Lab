@@ -9,10 +9,16 @@ Angular + FastAPI architecture.
 
 The main Synthesis tab is driven entirely by `GET /api/models` and exposes five
 concrete configurations: **Kokoro FP32**, **Kokoro FP16**, **Kokoro INT8**,
-**Audio8 0.6B**, and **SpeechT5**. Kokoro's three verified ONNX files and the
-pinned SpeechT5 CPU profile run locally. Audio8 remains visibly setup-gated
-until its separate reviewed runtime and model package are provisioned; the UI
-does not present it as ready prematurely.
+**Audio8 INT4**, and **SpeechT5 CPU**. All five are self-hosted and provisioned
+from checksum-pinned artifacts. Audio8 uses the official INT4 ONNX CPU export;
+SpeechT5 uses the pinned Microsoft model, vocoder, and CMU speaker profile.
+Neither path calls an external inference API or executes remote model code.
+
+Real CPU acceptance on 2026-08-28 produced playable WAVs through the complete
+`SynthesisService` path: Audio8 generated 1.765 seconds of audio in 4.966
+seconds at 1,047 MB process memory; SpeechT5 generated 3.008 seconds in 1.833
+seconds at 1,002 MB. These are local validation measurements, not promised
+Cloud Run benchmarks.
 
 This README is a cumulative build record. New stages extend the story; completed
 stages stay visible as evidence of how the system evolved.
@@ -580,15 +586,16 @@ and models remain in named volumes so restarts do not require reprovisioning.
 ## Deploy one service to Google Cloud Run
 
 The root [`Dockerfile`](Dockerfile) packages the Angular production build,
-FastAPI, and three checksum-verified Kokoro variants behind one Cloud Run URL.
+FastAPI, three Kokoro variants, Audio8 INT4 ONNX, and SpeechT5 CPU behind one
+Cloud Run URL. The constrained deployment retains at most one heavyweight
+engine in memory and serializes requests through Cloud Run concurrency `1`.
 For repository-triggered builds, select branch `main`, build type **Dockerfile**,
 and source location `/Dockerfile`.
 
 See the [Cloud Run deployment guide](docs/CLOUD_RUN.md) for the recommended CPU,
-memory, scaling, billing, capability, and persistence settings. The cloud image
-keeps live SpeechT5 comparison disabled unless its full runtime and selected
-weights are deliberately packaged; the Experiment tab still presents its
-hash-verified measured snapshot without claiming live availability.
+memory, scaling, billing, capability, and persistence settings. Main Synthesis
+supports the pinned pretrained SpeechT5 control; adapted Stage 11 checkpoints
+remain separate from that product catalog and are not packaged in the image.
 
 ## Run the full stack natively
 
@@ -606,14 +613,16 @@ model artifacts before opening the backend and frontend server processes. Run
 Backend:
 
 ```powershell
+uv venv --python 3.12 .runtime\serving-venv
+uv pip install --python .runtime\serving-venv\Scripts\python.exe -e "backend[dev,serving]"
+uv pip install --python .runtime\serving-venv\Scripts\python.exe --index-url https://download.pytorch.org/whl/cpu torch==2.6.0+cpu
 cd backend
-py -3 -m venv .venv
-.\.venv\Scripts\python.exe -m pip install -e ".[dev]"
-.\.venv\Scripts\python.exe scripts\download_models.py
-.\.venv\Scripts\uvicorn.exe app.main:app --reload
+..\.runtime\serving-venv\Scripts\python.exe scripts\download_models.py
+..\.runtime\serving-venv\Scripts\python.exe scripts\download_cpu_models.py
+..\.runtime\serving-venv\Scripts\uvicorn.exe app.main:app --reload
 ```
 
-Model binaries are downloaded from the upstream release, checksum-verified,
+Model binaries are downloaded from pinned upstream revisions, checksum-verified,
 and excluded from Git. See [artifact provenance](backend/model-artifacts/README.md).
 
 Frontend (second terminal):

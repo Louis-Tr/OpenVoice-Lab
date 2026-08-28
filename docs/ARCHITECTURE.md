@@ -29,7 +29,7 @@ TextProcessingService
   ↓
 Inference abstraction
   ↓
-Kokoro ONNX or pinned SpeechT5
+Kokoro ONNX, Audio8 INT4 ONNX, or pinned SpeechT5 CPU
   ↓
 Audio
   ↓
@@ -57,7 +57,7 @@ and audio URL contracts.
 │ Model registry│ Inference port │ Metrics        │ Audio service  │
 │ and lifecycle │ (abstract)     │ collector      │                │
 ├───────────────┴────────┬───────┴────────────────┴────────────────┤
-│ Concrete adapters      │ Kokoro ONNX · pinned SpeechT5 CPU      │
+│ Concrete adapters      │ Kokoro ONNX · Audio8 INT4 · SpeechT5  │
 └────────────────────────┴─────────────────────────────────────────┘
 ```
 
@@ -99,11 +99,11 @@ TextProcessingService
   ↓
 ModelRegistry
   ↓
-ModelLoader (cached)
+ModelLoader (cached; bounded LRU in constrained deployment)
   ↓
 MetricsCollector wraps TTSInferenceEngine
   ↓
-KokoroONNXEngine
+Selected TTSInferenceEngine
   ↓
 AudioService
   ↓
@@ -323,9 +323,10 @@ configuration does not expose model paths or ONNX details to Angular.
 ### Single-container Cloud Run composition
 
 The root `Dockerfile` is a separate production composition for Cloud Run source
-builds. A multi-stage build compiles Angular, downloads and checksum-verifies the
-three Kokoro artifacts, and installs the locked FastAPI runtime. FastAPI then
-owns same-origin delivery in this order:
+builds. A multi-stage build compiles Angular, downloads and checksum-verifies
+the Kokoro, Audio8 INT4, SpeechT5, vocoder, and speaker-profile artifacts, and
+installs the locked CPU serving runtime. FastAPI then owns same-origin delivery
+in this order:
 
 ```text
 /api, /health, /audio
@@ -346,8 +347,10 @@ models and rejects live comparison jobs explicitly; it preserves historical
 evidence without presenting unavailable weights as a running capability.
 
 This deployment intentionally uses one instance because generated audio and job
-coordination are local to the process. Durable object storage and an external
-job coordinator are prerequisites for horizontal scaling.
+coordination are local to the process. Its model loader uses a one-entry LRU:
+switching configurations evicts the previous engine before loading the next,
+which trades cold-load latency for a safe 4 GiB memory ceiling. Durable object
+storage and an external job coordinator are prerequisites for horizontal scaling.
 
 ## Primary synthesis request flow
 
@@ -367,7 +370,7 @@ SynthesisService
 Registry Adapter     Collector
          │
          ▼
-    Kokoro ONNX
+ Selected inference engine
          │
          ▼
     Audio Service
@@ -377,9 +380,9 @@ Registry Adapter     Collector
 ```
 
 In implementation terms, the registry resolves metadata, `ModelLoader` creates
-one cached engine and reports its load lifecycle, `MetricsCollector` measures the
-abstract inference call, and the audio service writes a stable request-addressed
-WAV referenced by `SynthesisResult`.
+and caches engines under the configured lifecycle limit, `MetricsCollector`
+measures the abstract inference call, and the audio service writes a stable
+request-addressed WAV referenced by `SynthesisResult`.
 
 ## Dependency rules
 
@@ -410,7 +413,7 @@ WAV referenced by `SynthesisResult`.
 ## Composition and future work
 
 `backend/app/main.py` declaratively composes routers, services, both registry
-definitions, the cached model loader, the Kokoro engine factory, local audio
+definitions, the cached model loader, the Kokoro, Audio8, and SpeechT5 adapters, local audio
 delivery, and the benchmark job service. The CLI and browser job coordinator
 both compose one fresh application per model worker and access the same
 `SynthesisService`. It also conditionally composes the artifact-backed Stage 12
@@ -418,10 +421,9 @@ experiment service when optional CPU dependencies, pinned models, selected
 Stage 11 weights, and the speaker profile are present. Missing experiment assets
 do not break Kokoro startup; the single-container cloud composition falls back
 to a verified read-only snapshot and rejects live experiment requests explicitly.
-Compose reproduces the full local Kokoro product boundary, while Cloud Run
-packages the core product and historical experiment presentation. Live Stage 12
-cloud inference, multi-replica experiment coordination, and durable retention
-remain deliberately deferred.
+Compose and Cloud Run package all five product synthesis configurations plus the
+historical experiment presentation. Live adapted-model/ASR comparison,
+multi-replica experiment coordination, and durable retention remain deferred.
 
 The implementation sequence and evidence gates are maintained in
 [`ITERATIVE_CODING_MAP.md`](ITERATIVE_CODING_MAP.md).

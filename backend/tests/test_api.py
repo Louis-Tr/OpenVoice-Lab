@@ -217,7 +217,13 @@ def test_default_catalog_exposes_all_model_options_without_claiming_missing_arti
     ]
     assert not any(model["available"] for model in models)
     audio8 = next(model for model in models if model["id"] == "audio8-0.6b")
-    assert "review-required remote model code" in audio8["unavailableReason"]
+    assert audio8["precision"] == "INT4"
+    assert audio8["runtime"] == "ONNX Runtime CPU"
+    assert audio8["voices"] == ["unconditioned"]
+    assert "remote model code" not in audio8["unavailableReason"]
+    speecht5 = next(model for model in models if model["id"] == "speecht5-pretrained")
+    assert speecht5["runtime"] == "PyTorch CPU"
+    assert speecht5["voices"] == ["cmu-slt"]
 
 
 def test_single_container_serves_angular_routes_without_swallowing_api_404s(

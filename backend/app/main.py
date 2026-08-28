@@ -53,15 +53,8 @@ def create_app(
     resolved_settings = settings or Settings()
     health_service = HealthService()
     model_artifact_root = resolve_backend_path(resolved_settings.model_artifact_dir)
-    experiment_model_root = resolve_backend_path(
-        resolved_settings.experiment_model_cache_dir
-    )
-    speaker_profile_root = resolve_backend_path(
-        resolved_settings.experiment_speaker_profile_dir
-    )
-    speecht5_dependencies_ready = dependencies_available(
-        "torch", "transformers", "sentencepiece"
-    )
+    audio8_dependencies_ready = dependencies_available("onnxruntime", "tokenizers")
+    speecht5_dependencies_ready = dependencies_available("torch", "transformers", "sentencepiece")
     resolved_registry = model_registry or ModelRegistry(
         (
             ModelDefinition(
@@ -113,23 +106,53 @@ def create_app(
             ModelDefinition(
                 model_id=resolved_settings.audio8_model_id,
                 display_name="Audio8 0.6B",
-                precision="BF16",
+                precision="INT4",
                 variant="audio8",
-                model_version="Preview",
+                model_version="818569c6b832118ad68d61bbd873abe250fcd68a",
                 model_path=(
                     model_artifact_root / resolved_settings.audio8_model_dirname
                 ),
                 voices_path=None,
-                voices=(),
-                runtime="Transformers / CUDA",
-                engine="audio8",
-                enabled=False,
+                voices=(resolved_settings.audio8_voice_id,),
+                runtime="ONNX Runtime CPU",
+                engine="audio8-onnx",
+                availability_markers=(
+                    model_artifact_root
+                    / resolved_settings.audio8_model_dirname
+                    / "runtime_manifest.json",
+                    model_artifact_root
+                    / resolved_settings.audio8_model_dirname
+                    / "slow_ar_int4.onnx",
+                    model_artifact_root
+                    / resolved_settings.audio8_model_dirname
+                    / "slow_ar_int4.onnx.data",
+                    model_artifact_root
+                    / resolved_settings.audio8_model_dirname
+                    / "fast_ar_int4.onnx",
+                    model_artifact_root
+                    / resolved_settings.audio8_model_dirname
+                    / "fast_ar_int4.onnx.data",
+                    model_artifact_root
+                    / resolved_settings.audio8_model_dirname
+                    / "codec_decoder_fp16.onnx",
+                    model_artifact_root
+                    / resolved_settings.audio8_model_dirname
+                    / "codec_decoder_fp16.onnx.data",
+                    model_artifact_root
+                    / resolved_settings.audio8_model_dirname
+                    / "tokenizer"
+                    / "tokenizer.json",
+                ),
+                enabled=audio8_dependencies_ready,
                 unavailable_reason=(
-                    "Audio8 is catalogued but not provisioned. Its preview checkpoint uses "
-                    "review-required remote model code and a separate voice/runtime contract."
+                    None
+                    if audio8_dependencies_ready
+                    else "Audio8 INT4 requires ONNX Runtime and the local tokenizer runtime."
                 ),
                 benchmark_enabled=False,
-                description="Multilingual 0.6B preview model with zero-shot voice cloning.",
+                description=(
+                    "Official INT4 Audio8 export using deterministic, unconditioned CPU inference."
+                ),
             ),
             ModelDefinition(
                 model_id=resolved_settings.speecht5_model_id,
@@ -137,24 +160,45 @@ def create_app(
                 precision="FP32",
                 variant="pretrained",
                 model_version=resolved_settings.speecht5_revision,
-                model_path=experiment_model_root / "pretrained-speecht5",
-                voices_path=speaker_profile_root / "speaker-embedding.npy",
+                model_path=model_artifact_root / resolved_settings.speecht5_model_dirname,
+                voices_path=model_artifact_root / resolved_settings.speecht5_speaker_filename,
                 voices=(resolved_settings.speecht5_voice_id,),
                 runtime="PyTorch CPU",
                 engine="speecht5-transformers",
-                additional_artifacts=(experiment_model_root / "vocoder",),
+                additional_artifacts=(
+                    model_artifact_root / resolved_settings.speecht5_vocoder_dirname,
+                ),
+                availability_markers=(
+                    model_artifact_root
+                    / resolved_settings.speecht5_model_dirname
+                    / "pytorch_model.bin",
+                    model_artifact_root
+                    / resolved_settings.speecht5_model_dirname
+                    / "config.json",
+                    model_artifact_root
+                    / resolved_settings.speecht5_vocoder_dirname
+                    / "pytorch_model.bin",
+                    model_artifact_root
+                    / resolved_settings.speecht5_vocoder_dirname
+                    / "config.json",
+                ),
                 enabled=speecht5_dependencies_ready,
                 unavailable_reason=(
                     None
                     if speecht5_dependencies_ready
-                    else "SpeechT5 requires the optional local experiment dependencies."
+                    else "SpeechT5 CPU requires the pinned local PyTorch serving dependencies."
                 ),
                 benchmark_enabled=False,
-                description="Pinned pretrained SpeechT5 control with a verified speaker profile.",
+                description=(
+                    "Pinned Microsoft SpeechT5 CPU baseline with a verified CMU speaker profile."
+                ),
             ),
         )
     )
-    resolved_loader = model_loader or ModelLoader()
+    resolved_loader = model_loader or ModelLoader(
+        maximum_cached_engines=resolved_settings.product_maximum_cached_models,
+        cpu_threads=resolved_settings.product_cpu_threads,
+    )
     resolved_audio = audio_service or AudioService(
         resolve_backend_path(resolved_settings.generated_audio_dir),
         resolved_settings.audio_url_prefix,

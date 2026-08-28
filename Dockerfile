@@ -19,8 +19,10 @@ RUN apt-get update \
     && rm -rf /var/lib/apt/lists/*
 
 COPY backend/scripts/download_models.py ./backend/scripts/download_models.py
+COPY backend/scripts/download_cpu_models.py ./backend/scripts/download_cpu_models.py
 COPY backend/model-artifacts/README.md ./backend/model-artifacts/README.md
-RUN python backend/scripts/download_models.py
+RUN python backend/scripts/download_models.py \
+    && python backend/scripts/download_cpu_models.py
 
 
 FROM python:3.12.11-slim-bookworm@sha256:519591d6871b7bc437060736b9f7456b8731f1499a57e22e6c285135ae657bf7
@@ -39,6 +41,8 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     OPENVOICE_STAGE12_ARTIFACT_ROOT=/tmp/openvoice/stage12 \
     OPENVOICE_EXPERIMENT_MODEL_CACHE_DIR=/tmp/openvoice/stage12/model-cache \
     OPENVOICE_EXPERIMENT_SPEAKER_PROFILE_DIR=/tmp/openvoice/stage12/serving-profile \
+    OPENVOICE_PRODUCT_MAXIMUM_CACHED_MODELS=1 \
+    OPENVOICE_PRODUCT_CPU_THREADS=2 \
     OPENVOICE_FRONTEND_DIST_DIR=/app/frontend
 
 RUN apt-get update \
@@ -51,7 +55,10 @@ WORKDIR /app
 
 COPY backend/pyproject.toml ./pyproject.toml
 COPY backend/requirements.lock ./requirements.lock
-RUN python -m pip install --requirement requirements.lock \
+RUN python -m pip install \
+        --index-url https://download.pytorch.org/whl/cpu \
+        torch==2.6.0+cpu \
+    && python -m pip install --requirement requirements.lock \
     && python -m pip check
 
 COPY --chown=openvoice:openvoice backend/app ./app

@@ -14,7 +14,12 @@ x-backend-volumes: &backend-volumes
 services:
   model-init:
     <<: *backend-image
-    command: ["python", "scripts/download_models.py"]
+    command:
+      [
+        "sh",
+        "-c",
+        "python scripts/download_models.py && python scripts/download_cpu_models.py",
+      ]
     volumes:
       - model-artifacts:/app/model-artifacts
     restart: "no"
@@ -27,6 +32,8 @@ services:
       OPENVOICE_MODEL_ARTIFACT_DIR: /app/model-artifacts
       OPENVOICE_GENERATED_AUDIO_DIR: /app/artifacts/audio
       OPENVOICE_BENCHMARK_RESULT_DIR: /app/benchmark-results
+      OPENVOICE_PRODUCT_MAXIMUM_CACHED_MODELS: 1
+      OPENVOICE_PRODUCT_CPU_THREADS: 2
     volumes: *backend-volumes
     ports:
       - "${OPENVOICE_API_PORT:-8000}:8000"

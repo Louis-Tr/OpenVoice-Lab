@@ -3,7 +3,8 @@
 OpenVoice Lab ships a root `Dockerfile` for Google Cloud source builds. It
 produces one container: Angular is compiled during the build, FastAPI serves the
 SPA and API on Cloud Run's injected `PORT`, and the three Kokoro ONNX variants
-are downloaded and SHA-256 verified before entering the final image.
+plus Audio8 INT4 ONNX and pretrained SpeechT5 CPU are downloaded and SHA-256
+verified before entering the final image.
 
 ## Continuous deployment settings
 
@@ -25,7 +26,7 @@ Use this initial Cloud Run service configuration:
 | Setting | Recommended value | Reason |
 | --- | --- | --- |
 | CPU | 2 vCPU | CPU-hosted ONNX inference benefits from parallel execution. |
-| Memory | 4 GiB | Leaves headroom for the service, one or more cached model sessions, and generated audio. |
+| Memory | 4 GiB | Leaves headroom for the service, one bounded model session, and generated audio. |
 | Request timeout | 600 seconds | Allows long synthesis requests without using the 60-minute platform maximum. |
 | Billing | Instance-based | Benchmark work continues outside the request that starts a job. |
 | Minimum instances | 0 | Avoids paying continuously when the portfolio is idle. |
@@ -39,13 +40,19 @@ only below `/tmp/openvoice`.
 ## What the cloud image exposes
 
 - Kokoro FP32, FP16, and INT8 are available for live synthesis.
-- Audio8 remains visible but unavailable because its reviewed runtime and
-  checkpoint are not packaged.
+- Audio8 uses the official INT4 ONNX export on CPU with the API voice
+  `unconditioned`; its optional voice-registration model is not packaged.
+- The pretrained SpeechT5 control runs on CPU with a pinned model, vocoder, and
+  CMU speaker embedding.
 - The SpeechT5 experiment tab serves a committed, SHA-256-verified snapshot of
   the measured training report and its 350 fixtures.
-- Live SpeechT5 comparisons are explicitly unavailable because the selected
-  multi-gigabyte training checkpoints, speaker profile, ASR stack, and PyTorch
-  experiment runtime are not packaged in this CPU image.
+- Live adapted-model comparisons remain unavailable because the selected
+  multi-gigabyte Stage 11 checkpoints and ASR evaluator are not packaged.
+
+The product model loader retains only one engine in this 4 GiB deployment.
+Switching models may therefore incur a cold load, but avoids retaining Audio8,
+SpeechT5, and Kokoro sessions together. Keep concurrency at `1`; these CPU
+variants are portfolio-scale interactive paths, not high-throughput serving.
 
 The snapshot preserves measured evidence; it does not manufacture live model
 availability. The API returns an explicit capability error for unsupported live

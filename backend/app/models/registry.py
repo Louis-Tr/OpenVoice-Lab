@@ -26,11 +26,12 @@ class ModelDefinition:
     voices_path: Path | None
     voices: tuple[str, ...]
     runtime: str = "ONNX"
-    engine: Literal["kokoro-onnx", "speecht5-transformers", "audio8"] = "kokoro-onnx"
+    engine: Literal["kokoro-onnx", "speecht5-transformers", "audio8-onnx"] = "kokoro-onnx"
     hosting: str = "self-hosted"
     language: str = "en-us"
     speed: float = 1.0
     additional_artifacts: tuple[Path, ...] = ()
+    availability_markers: tuple[Path, ...] = ()
     enabled: bool = True
     unavailable_reason: str | None = None
     benchmark_enabled: bool = True
@@ -55,6 +56,7 @@ class ModelDefinition:
         if self.voices_path is not None:
             paths.append(self.voices_path)
         paths.extend(self.additional_artifacts)
+        paths.extend(self.availability_markers)
         return tuple(paths)
 
     @property

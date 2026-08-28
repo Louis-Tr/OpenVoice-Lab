@@ -100,12 +100,16 @@ Current catalog:
 | `kokoro-fp32` | Kokoro | FP32 | ONNX Runtime | Ready with verified artifact |
 | `kokoro-fp16` | Kokoro | FP16 | ONNX Runtime | Ready with verified artifact |
 | `kokoro-q8` | Kokoro | INT8 | ONNX Runtime | Ready with verified artifact |
-| `audio8-0.6b` | Audio8 0.6B | BF16 | Transformers / CUDA | Catalogued; setup-gated |
-| `speecht5-pretrained` | SpeechT5 | FP32 | PyTorch CPU | Ready with pinned Stage 12 profile |
+| `audio8-0.6b` | Audio8 0.6B | INT4 | ONNX Runtime CPU | Ready with pinned official export |
+| `speecht5-pretrained` | SpeechT5 | FP32 | PyTorch CPU | Ready with pinned model, vocoder, and speaker profile |
 
 Every item also returns `variant`, `voices`, `modelVersion`, `hosting`,
 `externalInferenceApis`, `available`, `unavailableReason`, and `description`.
 Listing metadata does not load an inference engine.
+
+Audio8 exposes the fixed `unconditioned` voice; SpeechT5 exposes `cmu-slt`.
+These are product-serving contracts. Audio8 voice cloning and adapted SpeechT5
+experiment checkpoints are intentionally outside `POST /api/synthesis`.
 
 TODO: define richer capabilities, readiness policy, and pagination.
 

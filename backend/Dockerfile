@@ -17,7 +17,10 @@ COPY backend/pyproject.toml ./pyproject.toml
 COPY backend/requirements.lock ./requirements.lock
 COPY backend/app ./app
 
-RUN python -m pip install --requirement requirements.lock \
+RUN python -m pip install \
+        --index-url https://download.pytorch.org/whl/cpu \
+        torch==2.6.0+cpu \
+    && python -m pip install --requirement requirements.lock \
     && python -m pip check
 
 COPY --chown=openvoice:openvoice backend/scripts ./scripts

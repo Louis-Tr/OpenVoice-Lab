@@ -33,9 +33,15 @@ class Settings(BaseSettings):
     kokoro_language: str = "en-us"
     kokoro_speed: float = 1.0
     audio8_model_id: str = "audio8-0.6b"
-    audio8_model_dirname: str = "audio8-tts-preview-0.6b"
+    audio8_model_dirname: str = "audio8-tts-preview-0.6b-int4"
+    audio8_voice_id: str = "unconditioned"
     speecht5_model_id: str = "speecht5-pretrained"
-    speecht5_voice_id: str = "medical-reference"
+    speecht5_model_dirname: str = "speecht5-tts"
+    speecht5_vocoder_dirname: str = "speecht5-hifigan"
+    speecht5_speaker_filename: str = "speecht5-speakers/cmu-slt.npy"
+    speecht5_voice_id: str = "cmu-slt"
+    product_maximum_cached_models: int | None = None
+    product_cpu_threads: int | None = None
     audio_url_prefix: str = "/audio"
     stage11_artifact_root: Path = Path("../artifacts/stage11/full-training")
     stage11_approach_run_root: Path = Path("../artifacts/stage11/agent-runs")
