@@ -3,6 +3,7 @@ import { Inject, Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 
 import { API_BASE_URL } from '../core/api-base-url.token';
+import { ModelVariant } from '../synthesis/synthesis.types';
 
 export interface BenchmarkRequest {
   readonly modelIds?: readonly string[];
@@ -13,7 +14,7 @@ export interface BenchmarkAggregate {
   readonly modelId: string;
   readonly name: string;
   readonly precision: string;
-  readonly modelVariant: 'fp32' | 'quantized';
+  readonly modelVariant: ModelVariant;
   readonly totalCases: number;
   readonly successCount: number;
   readonly failureCount: number;

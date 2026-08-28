@@ -40,6 +40,7 @@ its public contract, but it should not absorb the other module's responsibility.
 | --- | --- |
 | `backend/Dockerfile` | Digest-pinned, dependency-locked, non-root Python/ONNX runtime. |
 | `frontend/Dockerfile` | Reproducible Angular production build and Nginx runtime. |
+| Root `Dockerfile` | Single-container Cloud Run source build: Angular assets, FastAPI, verified Kokoro weights, and snapshot evidence. |
 | `frontend/nginx.conf` | SPA delivery and same-origin proxy for API, Kokoro/experiment audio, and health. |
 | `model-init` | Download and checksum-verify external model dependencies. |
 | `docker-compose.yml` | Startup ordering, ports, health checks, and persistent volumes. |
@@ -72,13 +73,16 @@ The connected vertical slice is intentionally narrow:
 - Implemented Stage 12 experiment path: lazy Angular tab → artifact-backed
   report/fixture/model APIs → bounded durable job service → replaceable CPU
   SpeechT5 runtime → progressive WAV → pinned Whisper → term/WER scoring.
+- Implemented Cloud Run path: root source build → one non-root FastAPI process →
+  API/static route separation → live Kokoro synthesis + verified read-only
+  experiment snapshot.
 - Current experiment presentation: one measured pretrained control → four V1
   update strategies on identical locked manifests → aggregate and live comparison.
 - Implemented live-job durability: atomic request/status/result storage,
   cancellation, restart recovery, partial per-model failure, and terminal
   SHA-256 manifest.
-- Still deferred: distributed experiment-job coordination, automated retention,
-  Stage 12 container packaging, broader language-aware normalization, and
+- Still deferred: durable cloud experiment-job coordination and retention, live
+  SpeechT5 cloud packaging, broader language-aware normalization, and
   statistically powered human evaluation.
 
 ## Boundary enforcement

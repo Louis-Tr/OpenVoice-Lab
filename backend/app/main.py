@@ -13,12 +13,14 @@ from app.benchmark.service import BenchmarkJobService
 from app.config.settings import Settings
 from app.experiments.common import ExperimentEvidenceError
 from app.experiments.service import ExperimentService, create_experiment_service
+from app.experiments.snapshot import SnapshotExperimentService
 from app.health.service import HealthService
 from app.metrics.collector import MetricsCollector
 from app.models.loader import ModelLoader
 from app.models.registry import ModelDefinition, ModelRegistry
 from app.synthesis.service import SynthesisService
 from app.text_processing.service import TextProcessingService
+from app.web import AngularStaticFiles
 
 BACKEND_ROOT = Path(__file__).resolve().parents[1]
 
@@ -202,9 +204,12 @@ def create_app(
                 cpu_threads=resolved_settings.experiment_cpu_threads,
             )
         except ExperimentEvidenceError:
-            # Test/partial deployments may intentionally omit the ignored Stage 11 artifacts.
-            # Existing synthesis and benchmark routes must remain available in that state.
-            resolved_experiments = None
+            # Lightweight deployments retain hash-verified historical evidence without
+            # packaging multi-gigabyte training and live-comparison model artifacts.
+            try:
+                resolved_experiments = SnapshotExperimentService()
+            except ExperimentEvidenceError:
+                resolved_experiments = None
 
     application = FastAPI(
         title="OpenVoice Lab API",
@@ -239,6 +244,18 @@ def create_app(
         StaticFiles(directory=experiment_audio_root),
         name="experiment-audio",
     )
+    frontend_dist_dir = resolved_settings.frontend_dist_dir
+    if frontend_dist_dir is not None:
+        resolved_frontend = resolve_backend_path(frontend_dist_dir).resolve()
+        if not (resolved_frontend / "index.html").is_file():
+            raise RuntimeError(
+                f"Configured frontend build is missing index.html: {resolved_frontend}"
+            )
+        application.mount(
+            "/",
+            AngularStaticFiles(directory=resolved_frontend, html=True),
+            name="frontend",
+        )
     register_error_handlers(application)
     application.state.model_loader = resolved_loader
     application.state.model_registry = resolved_registry
@@ -247,6 +264,7 @@ def create_app(
     application.state.text_processing_service = resolved_text_processing
     application.state.benchmark_job_service = resolved_benchmark_jobs
     application.state.experiment_service = resolved_experiments
+    application.state.frontend_dist_dir = frontend_dist_dir
     return application
 
 

@@ -19,6 +19,7 @@ class Settings(BaseSettings):
     model_artifact_dir: Path = Path("model-artifacts")
     generated_audio_dir: Path = Path("artifacts/audio")
     benchmark_result_dir: Path = Path("benchmark-results")
+    frontend_dist_dir: Path | None = None
     default_model_id: str = "kokoro-fp32"
     fp16_model_id: str = "kokoro-fp16"
     quantized_model_id: str = "kokoro-q8"

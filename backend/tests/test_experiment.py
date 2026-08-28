@@ -3,6 +3,7 @@
 import asyncio
 import hashlib
 import json
+import shutil
 import wave
 from pathlib import Path
 from threading import Event
@@ -24,6 +25,7 @@ from app.experiments.model_registry import (
 )
 from app.experiments.scorer import score_terms, word_error_rate
 from app.experiments.service import ExperimentService
+from app.experiments.snapshot import DEFAULT_SNAPSHOT_ROOT, SnapshotExperimentService
 from app.experiments.store import ExperimentJobStore
 from app.experiments.v1_approach_report import V1ApproachReportService
 from app.inference.speecht5_cpu import SpeechT5SynthesisOutput
@@ -682,3 +684,32 @@ def test_report_and_fixture_http_contracts(experiment_evidence: dict[str, Path])
     assert len(fixture_page.json()["items"]) == 1
     assert model_page.status_code == 200
     assert len(model_page.json()) == 4
+
+
+def test_cloud_snapshot_preserves_evidence_but_disables_live_models() -> None:
+    service = SnapshotExperimentService()
+
+    report = service.report()
+    fixtures = service.fixtures(
+        query=None,
+        term="arm",
+        category=None,
+        offset=0,
+        limit=10,
+    )
+
+    assert report.integrity.dataset_lock_verified
+    assert report.integrity.final_artifact_hashes_verified
+    assert fixtures.items
+    assert all(not model.available for model in service.models())
+    assert all("not packaged" in model.unavailable_reason for model in service.models())
+
+
+def test_cloud_snapshot_fails_closed_when_a_hash_changes(tmp_path: Path) -> None:
+    snapshot = tmp_path / "snapshot"
+    shutil.copytree(DEFAULT_SNAPSHOT_ROOT, snapshot)
+    with (snapshot / "report.json").open("a", encoding="utf-8") as output:
+        output.write(" ")
+
+    with pytest.raises(ExperimentEvidenceError, match="hash differs"):
+        SnapshotExperimentService(snapshot)

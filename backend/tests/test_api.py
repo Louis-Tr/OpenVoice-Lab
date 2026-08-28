@@ -220,6 +220,64 @@ def test_default_catalog_exposes_all_model_options_without_claiming_missing_arti
     assert "review-required remote model code" in audio8["unavailableReason"]
 
 
+def test_single_container_serves_angular_routes_without_swallowing_api_404s(
+    harness: ApiHarness,
+    tmp_path: Path,
+) -> None:
+    frontend = tmp_path / "frontend"
+    frontend.mkdir()
+    (frontend / "index.html").write_text(
+        "<!doctype html><title>OpenVoice Lab cloud</title>",
+        encoding="utf-8",
+    )
+    (frontend / "main.js").write_text("console.log('openvoice');", encoding="utf-8")
+    app = create_app(
+        Settings(
+            environment="test",
+            frontend_dist_dir=frontend,
+            stage12_artifact_root=tmp_path / "stage12",
+            stage11_artifact_root=tmp_path / "stage11",
+            stage11_approach_run_root=tmp_path / "agent-runs",
+            stage11_manifest_root=tmp_path / "manifests",
+        ),
+        model_registry=harness.app.state.model_registry,
+        model_loader=harness.loader,
+        audio_service=AudioService(tmp_path / "cloud-audio"),
+        metrics_collector=harness.app.state.metrics_collector,
+    )
+
+    assert request(app, "GET", "/").status_code == 200
+    angular_route = request(app, "GET", "/experiments/stage11")
+    assert angular_route.status_code == 200
+    assert "OpenVoice Lab cloud" in angular_route.text
+    assert request(app, "GET", "/main.js").headers["content-type"].startswith(
+        "text/javascript"
+    )
+    assert request(app, "GET", "/missing.js").status_code == 404
+    api_missing = request(app, "GET", "/api/does-not-exist")
+    assert api_missing.status_code == 404
+    assert api_missing.headers["content-type"].startswith("application/json")
+    assert request(app, "GET", "/api/models").status_code == 200
+
+
+def test_single_container_fails_fast_when_frontend_build_is_missing(
+    tmp_path: Path,
+) -> None:
+    with pytest.raises(RuntimeError, match="missing index.html"):
+        create_app(
+            Settings(
+                environment="test",
+                frontend_dist_dir=tmp_path / "missing-frontend",
+                generated_audio_dir=tmp_path / "audio",
+                benchmark_result_dir=tmp_path / "benchmarks",
+                stage12_artifact_root=tmp_path / "stage12",
+                stage11_artifact_root=tmp_path / "stage11",
+                stage11_approach_run_root=tmp_path / "agent-runs",
+                stage11_manifest_root=tmp_path / "manifests",
+            )
+        )
+
+
 def test_valid_synthesis_request_returns_playable_wav(harness: ApiHarness) -> None:
     response = request(
         harness.app,

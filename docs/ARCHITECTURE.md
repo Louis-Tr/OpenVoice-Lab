@@ -320,6 +320,35 @@ are pinned by immutable manifest digest, Angular installs from its lockfile,
 and Python installs from a container-specific runtime lock. Deployment
 configuration does not expose model paths or ONNX details to Angular.
 
+### Single-container Cloud Run composition
+
+The root `Dockerfile` is a separate production composition for Cloud Run source
+builds. A multi-stage build compiles Angular, downloads and checksum-verifies the
+three Kokoro artifacts, and installs the locked FastAPI runtime. FastAPI then
+owns same-origin delivery in this order:
+
+```text
+/api, /health, /audio
+        ↓ explicit backend routes
+Angular build assets
+        ↓
+index.html fallback for extensionless client routes only
+```
+
+API paths and missing static files never fall through to Angular. The process
+binds to the platform-supplied `PORT`, runs as a non-root user, and writes only
+ephemeral output below `/tmp/openvoice`.
+
+Ignored Stage 11 training artifacts are not available to a Git source build.
+Instead, the experiment service verifies and serves a committed snapshot of the
+measured report and fixture catalog. Snapshot mode disables all live SpeechT5
+models and rejects live comparison jobs explicitly; it preserves historical
+evidence without presenting unavailable weights as a running capability.
+
+This deployment intentionally uses one instance because generated audio and job
+coordination are local to the process. Durable object storage and an external
+job coordinator are prerequisites for horizontal scaling.
+
 ## Primary synthesis request flow
 
 The required request path is:
@@ -387,10 +416,12 @@ both compose one fresh application per model worker and access the same
 `SynthesisService`. It also conditionally composes the artifact-backed Stage 12
 experiment service when optional CPU dependencies, pinned models, selected
 Stage 11 weights, and the speaker profile are present. Missing experiment assets
-do not break Kokoro startup; live experiment requests fail explicitly while
-read-only evidence remains available. Compose reproduces the Kokoro product
-runtime on Linux; Stage 12 CPU packaging, multi-replica experiment coordination,
-and retention remain deliberately deferred.
+do not break Kokoro startup; the single-container cloud composition falls back
+to a verified read-only snapshot and rejects live experiment requests explicitly.
+Compose reproduces the full local Kokoro product boundary, while Cloud Run
+packages the core product and historical experiment presentation. Live Stage 12
+cloud inference, multi-replica experiment coordination, and durable retention
+remain deliberately deferred.
 
 The implementation sequence and evidence gates are maintained in
 [`ITERATIVE_CODING_MAP.md`](ITERATIVE_CODING_MAP.md).

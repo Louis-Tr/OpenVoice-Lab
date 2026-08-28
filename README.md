@@ -577,6 +577,19 @@ curl -X POST http://localhost:8000/api/synthesis \
 Stop the stack with `docker compose down`. Generated audio, benchmark results,
 and models remain in named volumes so restarts do not require reprovisioning.
 
+## Deploy one service to Google Cloud Run
+
+The root [`Dockerfile`](Dockerfile) packages the Angular production build,
+FastAPI, and three checksum-verified Kokoro variants behind one Cloud Run URL.
+For repository-triggered builds, select branch `main`, build type **Dockerfile**,
+and source location `/Dockerfile`.
+
+See the [Cloud Run deployment guide](docs/CLOUD_RUN.md) for the recommended CPU,
+memory, scaling, billing, capability, and persistence settings. The cloud image
+keeps live SpeechT5 comparison disabled unless its full runtime and selected
+weights are deliberately packaged; the Experiment tab still presents its
+hash-verified measured snapshot without claiming live availability.
+
 ## Run the full stack natively
 
 Once the one-time setup below is complete, start both servers from the repository
@@ -652,6 +665,7 @@ npm test
 - [Module responsibilities](docs/MODULES.md)
 - [API contract](docs/API.md)
 - [Iterative coding map](docs/ITERATIVE_CODING_MAP.md)
+- [Google Cloud Run deployment](docs/CLOUD_RUN.md)
 
 **Portfolio status:** this repository now demonstrates a measured, multi-variant
 TTS product and evaluation system: Angular synthesis and benchmark interfaces,
