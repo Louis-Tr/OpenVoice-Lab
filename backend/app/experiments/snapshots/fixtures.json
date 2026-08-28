@@ -1,0 +1,4178 @@
+{
+  "items": [
+    {
+      "id": "medical-3ac812069e511fd83561",
+      "text": "there is too much pain when i move my arm",
+      "targetTerms": [
+        {
+          "text": "arm",
+          "canonical": "arm",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-33ad143b808b91f64e8f",
+      "text": "i have muscle pain that my back i have muscle pain at my back leg",
+      "targetTerms": [
+        {
+          "text": "muscle pain",
+          "canonical": "muscle pain",
+          "category": "symptom"
+        },
+        {
+          "text": "back",
+          "canonical": "back",
+          "category": "anatomy"
+        },
+        {
+          "text": "leg",
+          "canonical": "leg",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-2e7e7b5899744e350b3e",
+      "text": "my infected wound cause fever",
+      "targetTerms": [
+        {
+          "text": "infected wound",
+          "canonical": "infected wound",
+          "category": "symptom"
+        }
+      ]
+    },
+    {
+      "id": "medical-ec038bcb126996512992",
+      "text": "my back got injured while i was lifting at the gym",
+      "targetTerms": [
+        {
+          "text": "back",
+          "canonical": "back",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-1ffa92d25d0383d58d8a",
+      "text": "my ankle is hurting me",
+      "targetTerms": [
+        {
+          "text": "ankle",
+          "canonical": "ankle",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-8c74c53326f2c6c1e37b",
+      "text": "i have a problem in the expiration because i have abronchial asthma",
+      "targetTerms": [
+        {
+          "text": "asthma",
+          "canonical": "asthma",
+          "category": "condition"
+        }
+      ]
+    },
+    {
+      "id": "medical-20759ecb60217b840080",
+      "text": "i often get a sharp pain in my chest and i can't tell what i'm doing that might be triggering it.",
+      "targetTerms": [
+        {
+          "text": "chest",
+          "canonical": "chest",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-68d24b69f69949aeda73",
+      "text": "i feel a burning sensation in my shoulder muscle.",
+      "targetTerms": [
+        {
+          "text": "shoulder",
+          "canonical": "shoulder",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-4dc523827cd20b3d660c",
+      "text": "i have a blurry vision during my swimming training in the pool, why?",
+      "targetTerms": [
+        {
+          "text": "blurry vision",
+          "canonical": "blurry vision",
+          "category": "symptom"
+        }
+      ]
+    },
+    {
+      "id": "medical-93f311de1ba407ea8ed5",
+      "text": "my knee hurts when i walk",
+      "targetTerms": [
+        {
+          "text": "knee",
+          "canonical": "knee",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-3e26268f3cf8266839eb",
+      "text": "i read a book for along time and when i finished reading i feel head ache",
+      "targetTerms": [
+        {
+          "text": "head",
+          "canonical": "head",
+          "category": "anatomy"
+        },
+        {
+          "text": "head ache",
+          "canonical": "head ache",
+          "category": "symptom"
+        }
+      ]
+    },
+    {
+      "id": "medical-69fdd18f7b89188a0b5a",
+      "text": "my body feels weak and i tried to make it relax but it stills pain me",
+      "targetTerms": [
+        {
+          "text": "body feels weak",
+          "canonical": "body feels weak",
+          "category": "symptom"
+        }
+      ]
+    },
+    {
+      "id": "medical-84dc6f994307fc33652c",
+      "text": "the pain is intense especially when i go down the stairs, it feels like something has snapped inside my knee.",
+      "targetTerms": [
+        {
+          "text": "knee",
+          "canonical": "knee",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-8a1596dd0d7ae427c287",
+      "text": "i feel a tightness in my chest",
+      "targetTerms": [
+        {
+          "text": "chest",
+          "canonical": "chest",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-c43d244467b8507bd233",
+      "text": "my ankle is hurting me",
+      "targetTerms": [
+        {
+          "text": "ankle",
+          "canonical": "ankle",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-de97f7b24fcce1759d48",
+      "text": "there is so much pain when i move my arm.",
+      "targetTerms": [
+        {
+          "text": "arm",
+          "canonical": "arm",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-5e48c1b80adb0a34a195",
+      "text": "i read a book for along time and when i finished reading i feel head ache",
+      "targetTerms": [
+        {
+          "text": "head",
+          "canonical": "head",
+          "category": "anatomy"
+        },
+        {
+          "text": "head ache",
+          "canonical": "head ache",
+          "category": "symptom"
+        }
+      ]
+    },
+    {
+      "id": "medical-17b1374fa07e16830216",
+      "text": "my foot had been aching since last tuesday.",
+      "targetTerms": [
+        {
+          "text": "foot",
+          "canonical": "foot",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-59fe779b741481b8ef8a",
+      "text": "i often get a sharp pain in my chest and i can't tell what i'm doing that might be triggering it.",
+      "targetTerms": [
+        {
+          "text": "chest",
+          "canonical": "chest",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-a512b0b716bbb52189ca",
+      "text": "i can't move my leg, there is pain in the joint",
+      "targetTerms": [
+        {
+          "text": "leg",
+          "canonical": "leg",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-ca6a3f71194ac5091bad",
+      "text": "i feel a tightness in my chest",
+      "targetTerms": [
+        {
+          "text": "chest",
+          "canonical": "chest",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-a4945a3652cd69eab98a",
+      "text": "after walking i have some pain under my foot",
+      "targetTerms": [
+        {
+          "text": "foot",
+          "canonical": "foot",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-e0ad365132eaa060f2a6",
+      "text": "my right shoulder clicks when i move my arm.",
+      "targetTerms": [
+        {
+          "text": "shoulder",
+          "canonical": "shoulder",
+          "category": "anatomy"
+        },
+        {
+          "text": "arm",
+          "canonical": "arm",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-c9d99f1d9e64c93c5ef6",
+      "text": "i knocked my foot and it really hurts.",
+      "targetTerms": [
+        {
+          "text": "foot",
+          "canonical": "foot",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-730798d53ea10c6e60de",
+      "text": "i feel a tightness in my chest",
+      "targetTerms": [
+        {
+          "text": "chest",
+          "canonical": "chest",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-1e6a2482c73f916b7ed1",
+      "text": "i feel a burning sensation in my shoulder muscle.",
+      "targetTerms": [
+        {
+          "text": "shoulder",
+          "canonical": "shoulder",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-12773fd32a7779367a26",
+      "text": "my heart hurts while i'm sad, why?",
+      "targetTerms": [
+        {
+          "text": "heart",
+          "canonical": "heart",
+          "category": "anatomy"
+        },
+        {
+          "text": "heart hurts",
+          "canonical": "heart hurts",
+          "category": "symptom"
+        }
+      ]
+    },
+    {
+      "id": "medical-97692b9621b929ff4570",
+      "text": "my neck hurts me and i can't look down or up",
+      "targetTerms": [
+        {
+          "text": "neck",
+          "canonical": "neck",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-9f66bb6fe0a219579e53",
+      "text": "i have pain in my stomach",
+      "targetTerms": [
+        {
+          "text": "stomach",
+          "canonical": "stomach",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-c37cec883cd859ed841c",
+      "text": "my head is so heavy can't think normally",
+      "targetTerms": [
+        {
+          "text": "head",
+          "canonical": "head",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-70a87f7b57415ff45ec8",
+      "text": "i feel hurts in my heart",
+      "targetTerms": [
+        {
+          "text": "heart",
+          "canonical": "heart",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-0c5ef5feb529a7c8929a",
+      "text": "i feel a tightness in my chest",
+      "targetTerms": [
+        {
+          "text": "chest",
+          "canonical": "chest",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-7d702bb94c22887cc9d2",
+      "text": "i feel like there is something swollen and inflamed at the back of my knee.",
+      "targetTerms": [
+        {
+          "text": "back",
+          "canonical": "back",
+          "category": "anatomy"
+        },
+        {
+          "text": "knee",
+          "canonical": "knee",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-00af8fe7ca08f853b3dc",
+      "text": "when i force my eyes to view i have blurry vision.",
+      "targetTerms": [
+        {
+          "text": "blurry vision",
+          "canonical": "blurry vision",
+          "category": "symptom"
+        }
+      ]
+    },
+    {
+      "id": "medical-a2dac60a0e2c0ca522ff",
+      "text": "my acne itches and oozes.",
+      "targetTerms": [
+        {
+          "text": "acne",
+          "canonical": "acne",
+          "category": "symptom"
+        }
+      ]
+    },
+    {
+      "id": "medical-3271cbcd22225a94633b",
+      "text": "i have a blurry vision during my swimming training in the pool, why?",
+      "targetTerms": [
+        {
+          "text": "blurry vision",
+          "canonical": "blurry vision",
+          "category": "symptom"
+        }
+      ]
+    },
+    {
+      "id": "medical-4d8162ed7c5e9a85a6a7",
+      "text": "when i force my eyes to view i have blurry vision.",
+      "targetTerms": [
+        {
+          "text": "blurry vision",
+          "canonical": "blurry vision",
+          "category": "symptom"
+        }
+      ]
+    },
+    {
+      "id": "medical-6d245411939f1e927efe",
+      "text": "my right shoulder clicks when i move my arm.",
+      "targetTerms": [
+        {
+          "text": "shoulder",
+          "canonical": "shoulder",
+          "category": "anatomy"
+        },
+        {
+          "text": "arm",
+          "canonical": "arm",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-90ec7fa26ae6b22e98d1",
+      "text": "i broke my ankle while doing rock climbing in the carpathians.",
+      "targetTerms": [
+        {
+          "text": "ankle",
+          "canonical": "ankle",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-762346e08bb602823a33",
+      "text": "i have a sharp pain in my ear",
+      "targetTerms": [
+        {
+          "text": "ear",
+          "canonical": "ear",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-ad284fb9ef5e66415667",
+      "text": "my knee hurts when i walk",
+      "targetTerms": [
+        {
+          "text": "knee",
+          "canonical": "knee",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-c3b1f141ae2f30ab4509",
+      "text": "i have a cut on my foot that became infected from using the showers at the gym.",
+      "targetTerms": [
+        {
+          "text": "foot",
+          "canonical": "foot",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-23b134799963af915e60",
+      "text": "i can't really jump on my left foot because my triple fracture of the ankle left me with neverending pains.",
+      "targetTerms": [
+        {
+          "text": "foot",
+          "canonical": "foot",
+          "category": "anatomy"
+        },
+        {
+          "text": "ankle",
+          "canonical": "ankle",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-fb4d53c32ff29054131e",
+      "text": "i read a book for along time and when i finished reading i feel head ache",
+      "targetTerms": [
+        {
+          "text": "head",
+          "canonical": "head",
+          "category": "anatomy"
+        },
+        {
+          "text": "head ache",
+          "canonical": "head ache",
+          "category": "symptom"
+        }
+      ]
+    },
+    {
+      "id": "medical-52a4043fefeaebb4442e",
+      "text": "my heart hurts while i'm sad, why?",
+      "targetTerms": [
+        {
+          "text": "heart",
+          "canonical": "heart",
+          "category": "anatomy"
+        },
+        {
+          "text": "heart hurts",
+          "canonical": "heart hurts",
+          "category": "symptom"
+        }
+      ]
+    },
+    {
+      "id": "medical-d498e49cc3004383e62b",
+      "text": "i feel hurts in my heart",
+      "targetTerms": [
+        {
+          "text": "heart",
+          "canonical": "heart",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-b1eb41a5ea395480f0fa",
+      "text": "my neck hurts me and i can't look down or up",
+      "targetTerms": [
+        {
+          "text": "neck",
+          "canonical": "neck",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-82768100971c5e43c1dc",
+      "text": "i have a blurry vision during my swimming training in the pool, why?",
+      "targetTerms": [
+        {
+          "text": "blurry vision",
+          "canonical": "blurry vision",
+          "category": "symptom"
+        }
+      ]
+    },
+    {
+      "id": "medical-f064379d9388b118d3d8",
+      "text": "my back got injured while i was lifting at the gym",
+      "targetTerms": [
+        {
+          "text": "back",
+          "canonical": "back",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-73f561ceff6bbebfbeac",
+      "text": "i broke my ankle while doing rock climbing in the carpathians.",
+      "targetTerms": [
+        {
+          "text": "ankle",
+          "canonical": "ankle",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-5156f845c44507f46416",
+      "text": "i feel a burning sensation in my shoulder muscle.",
+      "targetTerms": [
+        {
+          "text": "shoulder",
+          "canonical": "shoulder",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-68eca1e7a75c676058df",
+      "text": "i may have overdone it with the weightlifting, because i am afraid i may have torn a muscle on my back.",
+      "targetTerms": [
+        {
+          "text": "back",
+          "canonical": "back",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-b0380c207519b3bbe337",
+      "text": "i feel hurts in my heart",
+      "targetTerms": [
+        {
+          "text": "heart",
+          "canonical": "heart",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-accc063e92564d2ae5d7",
+      "text": "the pain is intense especially when i go down the stairs, it feels like something has snapped inside my knee.",
+      "targetTerms": [
+        {
+          "text": "knee",
+          "canonical": "knee",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-4a81497f8cf5ea9ad8f8",
+      "text": "pain in the large neck",
+      "targetTerms": [
+        {
+          "text": "neck",
+          "canonical": "neck",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-535c6db631cde67273b0",
+      "text": "i have a pain in my stomach",
+      "targetTerms": [
+        {
+          "text": "stomach",
+          "canonical": "stomach",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-d4bd1fd92a9332d0c759",
+      "text": "my acne itches and oozes.",
+      "targetTerms": [
+        {
+          "text": "acne",
+          "canonical": "acne",
+          "category": "symptom"
+        }
+      ]
+    },
+    {
+      "id": "medical-640f9f7b65dd875d2b15",
+      "text": "my knee hurts when i walk",
+      "targetTerms": [
+        {
+          "text": "knee",
+          "canonical": "knee",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-955e1b0fc868042c85ed",
+      "text": "i feel like there is something swollen and inflamed at the back of my knee.",
+      "targetTerms": [
+        {
+          "text": "back",
+          "canonical": "back",
+          "category": "anatomy"
+        },
+        {
+          "text": "knee",
+          "canonical": "knee",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-3b8ddbe56db5553c37a2",
+      "text": "i have a sharp pain in my ear",
+      "targetTerms": [
+        {
+          "text": "ear",
+          "canonical": "ear",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-c6ed89b439b2510dcef4",
+      "text": "i feel like there is something swollen and inflamed at the back of my knee.",
+      "targetTerms": [
+        {
+          "text": "back",
+          "canonical": "back",
+          "category": "anatomy"
+        },
+        {
+          "text": "knee",
+          "canonical": "knee",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-2d7c012590d03d11a304",
+      "text": "my infected wound caused a fever",
+      "targetTerms": [
+        {
+          "text": "infected wound",
+          "canonical": "infected wound",
+          "category": "symptom"
+        }
+      ]
+    },
+    {
+      "id": "medical-8bb2cecf55bc7e9b99fe",
+      "text": "i often get a sharp pain in my chest and i can't tell what i'm doing that might be triggering it.",
+      "targetTerms": [
+        {
+          "text": "chest",
+          "canonical": "chest",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-0f52df5f149fcfe9fed1",
+      "text": "my knee hurts when i walk",
+      "targetTerms": [
+        {
+          "text": "knee",
+          "canonical": "knee",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-980fe07ee6aaba154c77",
+      "text": "i feel a tightness in my chest",
+      "targetTerms": [
+        {
+          "text": "chest",
+          "canonical": "chest",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-35966dc68442ceb6c35a",
+      "text": "i can't move my leg, there is pain in the joint",
+      "targetTerms": [
+        {
+          "text": "leg",
+          "canonical": "leg",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-e379f0f442d12e81a943",
+      "text": "i think my body temperature is very low.",
+      "targetTerms": [
+        {
+          "text": "temperature",
+          "canonical": "temperature",
+          "category": "measurement"
+        }
+      ]
+    },
+    {
+      "id": "medical-b46dad7028fe7139a519",
+      "text": "i knocked my foot and it really hurts.",
+      "targetTerms": [
+        {
+          "text": "foot",
+          "canonical": "foot",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-6cc92e0e55f98fade18b",
+      "text": "my right shoulder clicks when i move my arm.",
+      "targetTerms": [
+        {
+          "text": "shoulder",
+          "canonical": "shoulder",
+          "category": "anatomy"
+        },
+        {
+          "text": "arm",
+          "canonical": "arm",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-68fdd36b90ad21ac1c06",
+      "text": "my right shoulder clicks when i move my arm.",
+      "targetTerms": [
+        {
+          "text": "shoulder",
+          "canonical": "shoulder",
+          "category": "anatomy"
+        },
+        {
+          "text": "arm",
+          "canonical": "arm",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-8d00952ff93bebf2bbd4",
+      "text": "after walking i have some pain under my foot",
+      "targetTerms": [
+        {
+          "text": "foot",
+          "canonical": "foot",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-18539c7e7345a030af64",
+      "text": "when i force my eyes to view i have blurry vision.",
+      "targetTerms": [
+        {
+          "text": "blurry vision",
+          "canonical": "blurry vision",
+          "category": "symptom"
+        }
+      ]
+    },
+    {
+      "id": "medical-4b35f75f34744b9d7d83",
+      "text": "i knocked my foot and it really hurts.",
+      "targetTerms": [
+        {
+          "text": "foot",
+          "canonical": "foot",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-077997e244095f1374a5",
+      "text": "my body feels weak and i tried to make it relax but it stills pain me",
+      "targetTerms": [
+        {
+          "text": "body feels weak",
+          "canonical": "body feels weak",
+          "category": "symptom"
+        }
+      ]
+    },
+    {
+      "id": "medical-e5b5284d965f4e70b272",
+      "text": "my foot had been aching since last tuesday.",
+      "targetTerms": [
+        {
+          "text": "foot",
+          "canonical": "foot",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-1619439c4d422d77ac32",
+      "text": "my ankle is hurting me",
+      "targetTerms": [
+        {
+          "text": "ankle",
+          "canonical": "ankle",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-f15f5f3ea4a978d4d79a",
+      "text": "my heart hurts while i'm sad, why?",
+      "targetTerms": [
+        {
+          "text": "heart",
+          "canonical": "heart",
+          "category": "anatomy"
+        },
+        {
+          "text": "heart hurts",
+          "canonical": "heart hurts",
+          "category": "symptom"
+        }
+      ]
+    },
+    {
+      "id": "medical-1a54e8a23167490e9ef2",
+      "text": "my heart hurts while i'm sad, why?",
+      "targetTerms": [
+        {
+          "text": "heart",
+          "canonical": "heart",
+          "category": "anatomy"
+        },
+        {
+          "text": "heart hurts",
+          "canonical": "heart hurts",
+          "category": "symptom"
+        }
+      ]
+    },
+    {
+      "id": "medical-0d6a67626e211516dfac",
+      "text": "i have a pain in my stomach",
+      "targetTerms": [
+        {
+          "text": "stomach",
+          "canonical": "stomach",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-baa094b60396b55d5912",
+      "text": "i have a pain in my stomach",
+      "targetTerms": [
+        {
+          "text": "stomach",
+          "canonical": "stomach",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-cdbdc551a05e46ae9e60",
+      "text": "i think my body temperature is very low.",
+      "targetTerms": [
+        {
+          "text": "temperature",
+          "canonical": "temperature",
+          "category": "measurement"
+        }
+      ]
+    },
+    {
+      "id": "medical-81256f2e0de2fd73c4d8",
+      "text": "i have a blurry vision during my swimming training in the pool, why?",
+      "targetTerms": [
+        {
+          "text": "blurry vision",
+          "canonical": "blurry vision",
+          "category": "symptom"
+        }
+      ]
+    },
+    {
+      "id": "medical-3ed4257205cf0d7b9883",
+      "text": "i have a pain in my stomach",
+      "targetTerms": [
+        {
+          "text": "stomach",
+          "canonical": "stomach",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-9ec594c7b6d0f9281ad8",
+      "text": "my back got injured while i was lifting at the gym",
+      "targetTerms": [
+        {
+          "text": "back",
+          "canonical": "back",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-4ed0d2d266841cf57de5",
+      "text": "my neck hurts me and i can't look down or up",
+      "targetTerms": [
+        {
+          "text": "neck",
+          "canonical": "neck",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-6e3e85a3227a4fda13c6",
+      "text": "my foot had been aching since last tuesday.",
+      "targetTerms": [
+        {
+          "text": "foot",
+          "canonical": "foot",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-5137529c08f0449b952f",
+      "text": "my foot had been aching since last tuesday.",
+      "targetTerms": [
+        {
+          "text": "foot",
+          "canonical": "foot",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-f626d695c6c28d3afa67",
+      "text": "i often get a sharp pain in my chest and i can't tell what i'm doing that might be triggering it.",
+      "targetTerms": [
+        {
+          "text": "chest",
+          "canonical": "chest",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-0a214d33934aff9bd461",
+      "text": "my infected wound caused a fever",
+      "targetTerms": [
+        {
+          "text": "infected wound",
+          "canonical": "infected wound",
+          "category": "symptom"
+        }
+      ]
+    },
+    {
+      "id": "medical-60bf0609d00930d95e01",
+      "text": "i can't really jump on my left foot because my triple fracture of the ankle left me with neverending pains.",
+      "targetTerms": [
+        {
+          "text": "foot",
+          "canonical": "foot",
+          "category": "anatomy"
+        },
+        {
+          "text": "ankle",
+          "canonical": "ankle",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-d748da2f35e001295da4",
+      "text": "i knocked my foot and it really hurts.",
+      "targetTerms": [
+        {
+          "text": "foot",
+          "canonical": "foot",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-451b1654fdd9385817dd",
+      "text": "my heart hurts while i'm sad, why?",
+      "targetTerms": [
+        {
+          "text": "heart",
+          "canonical": "heart",
+          "category": "anatomy"
+        },
+        {
+          "text": "heart hurts",
+          "canonical": "heart hurts",
+          "category": "symptom"
+        }
+      ]
+    },
+    {
+      "id": "medical-82094961c35f0757b41d",
+      "text": "my knee hurts when i walk",
+      "targetTerms": [
+        {
+          "text": "knee",
+          "canonical": "knee",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-230275de30e556506351",
+      "text": "my infected wound caused a fever",
+      "targetTerms": [
+        {
+          "text": "infected wound",
+          "canonical": "infected wound",
+          "category": "symptom"
+        }
+      ]
+    },
+    {
+      "id": "medical-294ef695a54bc9fdd4b8",
+      "text": "i think my body temperature is very low.",
+      "targetTerms": [
+        {
+          "text": "temperature",
+          "canonical": "temperature",
+          "category": "measurement"
+        }
+      ]
+    },
+    {
+      "id": "medical-657a7260d4837aa642be",
+      "text": "my knee hurts when i walk",
+      "targetTerms": [
+        {
+          "text": "knee",
+          "canonical": "knee",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-f635508687ea03936039",
+      "text": "i have pain in my stomach",
+      "targetTerms": [
+        {
+          "text": "stomach",
+          "canonical": "stomach",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-bbc6a87a879812212091",
+      "text": "i can't move my leg, there is pain in the joint",
+      "targetTerms": [
+        {
+          "text": "leg",
+          "canonical": "leg",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-69ad07d52ee14964242e",
+      "text": "i may have overdone it with the weightlifting, because i am afraid i may have torn a muscle on my back.",
+      "targetTerms": [
+        {
+          "text": "back",
+          "canonical": "back",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-c9c1a1399c639bbbe2c0",
+      "text": "my nose is congested all the time and there's this gluey secretion in my throat that makes it impossible for me to sleep. i often have to nap sitting down.",
+      "targetTerms": [
+        {
+          "text": "throat",
+          "canonical": "throat",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-3c289fbb7904e3e6853f",
+      "text": "i may have overdone it with the weightlifting, because i am afraid i may have torn a muscle on my back.",
+      "targetTerms": [
+        {
+          "text": "back",
+          "canonical": "back",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-de1e4f1750d08fbe9a14",
+      "text": "you won't believe me, but this infected wound on my hand is from a paper cut i didn't take seriously.",
+      "targetTerms": [
+        {
+          "text": "infected wound",
+          "canonical": "infected wound",
+          "category": "symptom"
+        },
+        {
+          "text": "hand",
+          "canonical": "hand",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-a4f2b22134817610c4f6",
+      "text": "i have pain in my stomach",
+      "targetTerms": [
+        {
+          "text": "stomach",
+          "canonical": "stomach",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-71eed767153a2b2ff0af",
+      "text": "i feel like there is something swollen and inflamed at the back of my knee.",
+      "targetTerms": [
+        {
+          "text": "back",
+          "canonical": "back",
+          "category": "anatomy"
+        },
+        {
+          "text": "knee",
+          "canonical": "knee",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-e719f48f3c824f54dbae",
+      "text": "i broke my ankle while doing rock climbing in the carpathians.",
+      "targetTerms": [
+        {
+          "text": "ankle",
+          "canonical": "ankle",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-23c0ada86ba101f59a26",
+      "text": "pain in the large neck",
+      "targetTerms": [
+        {
+          "text": "neck",
+          "canonical": "neck",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-adcd7af1dcbdf73801ff",
+      "text": "my foot had been aching since last tuesday.",
+      "targetTerms": [
+        {
+          "text": "foot",
+          "canonical": "foot",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-6e221f05a77419fb5d08",
+      "text": "i have a sharp pain in my ear",
+      "targetTerms": [
+        {
+          "text": "ear",
+          "canonical": "ear",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-7104c6a58f29119e3147",
+      "text": "i broke my ankle while doing rock climbing in the carpathians.",
+      "targetTerms": [
+        {
+          "text": "ankle",
+          "canonical": "ankle",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-0413600e9a36f10973bf",
+      "text": "i feel like there is something swollen and inflamed at the back of my knee.",
+      "targetTerms": [
+        {
+          "text": "back",
+          "canonical": "back",
+          "category": "anatomy"
+        },
+        {
+          "text": "knee",
+          "canonical": "knee",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-f018f502600a793b5b43",
+      "text": "i knocked my foot and it really hurts.",
+      "targetTerms": [
+        {
+          "text": "foot",
+          "canonical": "foot",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-d1f924500228f29b5fb1",
+      "text": "pain in the large neck",
+      "targetTerms": [
+        {
+          "text": "neck",
+          "canonical": "neck",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-63324a86ad8d6679be15",
+      "text": "i feel a burning sensation in my shoulder muscle.",
+      "targetTerms": [
+        {
+          "text": "shoulder",
+          "canonical": "shoulder",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-56bf0afd505e604a5216",
+      "text": "my ankle is hurting me",
+      "targetTerms": [
+        {
+          "text": "ankle",
+          "canonical": "ankle",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-60e93ef92c0bb308c038",
+      "text": "my heart hurts while i'm sad, why?",
+      "targetTerms": [
+        {
+          "text": "heart",
+          "canonical": "heart",
+          "category": "anatomy"
+        },
+        {
+          "text": "heart hurts",
+          "canonical": "heart hurts",
+          "category": "symptom"
+        }
+      ]
+    },
+    {
+      "id": "medical-f2b0a4d1bb6277d01cdd",
+      "text": "after walking i have some pain under my foot",
+      "targetTerms": [
+        {
+          "text": "foot",
+          "canonical": "foot",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-b5375e1ee9d7dd891b2a",
+      "text": "i can't move my leg, there is pain in the joint",
+      "targetTerms": [
+        {
+          "text": "leg",
+          "canonical": "leg",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-b1dd7cea142e462a2023",
+      "text": "i broke my ankle while doing rock climbing in the carpathians.",
+      "targetTerms": [
+        {
+          "text": "ankle",
+          "canonical": "ankle",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-af59f3e7549fb7886e9a",
+      "text": "my right shoulder clicks when i move my arm.",
+      "targetTerms": [
+        {
+          "text": "shoulder",
+          "canonical": "shoulder",
+          "category": "anatomy"
+        },
+        {
+          "text": "arm",
+          "canonical": "arm",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-2240afde3671f3fcd230",
+      "text": "pain in the large neck",
+      "targetTerms": [
+        {
+          "text": "neck",
+          "canonical": "neck",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-8f3a3276abf86f3f63a3",
+      "text": "i have a sharp pain in my ear",
+      "targetTerms": [
+        {
+          "text": "ear",
+          "canonical": "ear",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-621dd5b18809a9fde1a8",
+      "text": "i have a problem in the expiration because i have abronchial asthma",
+      "targetTerms": [
+        {
+          "text": "asthma",
+          "canonical": "asthma",
+          "category": "condition"
+        }
+      ]
+    },
+    {
+      "id": "medical-5171657cea0553971ac5",
+      "text": "i read a book for along time and when i finished reading i feel head ache",
+      "targetTerms": [
+        {
+          "text": "head",
+          "canonical": "head",
+          "category": "anatomy"
+        },
+        {
+          "text": "head ache",
+          "canonical": "head ache",
+          "category": "symptom"
+        }
+      ]
+    },
+    {
+      "id": "medical-1fdb21f65b68ae3b4f79",
+      "text": "after walking i have some pain under my foot",
+      "targetTerms": [
+        {
+          "text": "foot",
+          "canonical": "foot",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-ec42a61b7053d87726f0",
+      "text": "i have a sharp pain in my ear",
+      "targetTerms": [
+        {
+          "text": "ear",
+          "canonical": "ear",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-8bb05a863b21c2a12e0f",
+      "text": "pain in the large neck",
+      "targetTerms": [
+        {
+          "text": "neck",
+          "canonical": "neck",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-f06a5ffb8947beea9d37",
+      "text": "i often get a sharp pain in my chest and i can't tell what i'm doing that might be triggering it.",
+      "targetTerms": [
+        {
+          "text": "chest",
+          "canonical": "chest",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-09614c15c86c29bc8287",
+      "text": "i carried a heavy bag yesterday and when i get up today i felt a great shoulder pain.",
+      "targetTerms": [
+        {
+          "text": "shoulder",
+          "canonical": "shoulder",
+          "category": "anatomy"
+        },
+        {
+          "text": "shoulder pain",
+          "canonical": "shoulder pain",
+          "category": "symptom"
+        }
+      ]
+    },
+    {
+      "id": "medical-06f09a6974abe63d974b",
+      "text": "i feel a burning sensation in my shoulder muscle.",
+      "targetTerms": [
+        {
+          "text": "shoulder",
+          "canonical": "shoulder",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-36da8c0d2a8b0104501e",
+      "text": "i feel hurts in my heart",
+      "targetTerms": [
+        {
+          "text": "heart",
+          "canonical": "heart",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-c4574be403803630e07b",
+      "text": "i may have overdone it with the weightlifting, because i am afraid i may have torn a muscle on my back.",
+      "targetTerms": [
+        {
+          "text": "back",
+          "canonical": "back",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-8fe943dd3f3f511f5c8a",
+      "text": "i may have overdone it with the weightlifting, because i am afraid i may have torn a muscle on my back.",
+      "targetTerms": [
+        {
+          "text": "back",
+          "canonical": "back",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-c923a2722f36a99e0f37",
+      "text": "my head is so heavy can't think normally",
+      "targetTerms": [
+        {
+          "text": "head",
+          "canonical": "head",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-6c879f5224c617ead219",
+      "text": "my ankle is hurting me",
+      "targetTerms": [
+        {
+          "text": "ankle",
+          "canonical": "ankle",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-4658e4dea391990d5553",
+      "text": "my neck hurts me and i can't look down or up",
+      "targetTerms": [
+        {
+          "text": "neck",
+          "canonical": "neck",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-0c9a56f7741168e85109",
+      "text": "i can't really jump on my left foot because my triple fracture of the ankle left me with neverending pains.",
+      "targetTerms": [
+        {
+          "text": "foot",
+          "canonical": "foot",
+          "category": "anatomy"
+        },
+        {
+          "text": "ankle",
+          "canonical": "ankle",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-c7891a18e227087be01d",
+      "text": "when i force my eyes to view i have blurry vision.",
+      "targetTerms": [
+        {
+          "text": "blurry vision",
+          "canonical": "blurry vision",
+          "category": "symptom"
+        }
+      ]
+    },
+    {
+      "id": "medical-acb86d9547633789c9ae",
+      "text": "my head is so heavy can't think normally",
+      "targetTerms": [
+        {
+          "text": "head",
+          "canonical": "head",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-e60ebe036d5fc5c2630d",
+      "text": "i have a cut on my foot that became infected from using the showers at the gym.",
+      "targetTerms": [
+        {
+          "text": "foot",
+          "canonical": "foot",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-38e0c8605c4c95913546",
+      "text": "when i force my eyes to view i have blurry vision.",
+      "targetTerms": [
+        {
+          "text": "blurry vision",
+          "canonical": "blurry vision",
+          "category": "symptom"
+        }
+      ]
+    },
+    {
+      "id": "medical-d61830c88bffce1a0944",
+      "text": "i have a pain in my stomach",
+      "targetTerms": [
+        {
+          "text": "stomach",
+          "canonical": "stomach",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-28f52b2e9f89da11e7dd",
+      "text": "my foot had been aching since last tuesday.",
+      "targetTerms": [
+        {
+          "text": "foot",
+          "canonical": "foot",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-6f11aa9abdb46afdc44b",
+      "text": "i feel hurts in my heart",
+      "targetTerms": [
+        {
+          "text": "heart",
+          "canonical": "heart",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-81bcb8d71b03e2121de0",
+      "text": "after walking i have some pain under my foot",
+      "targetTerms": [
+        {
+          "text": "foot",
+          "canonical": "foot",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-b097069f357cfabc5bc1",
+      "text": "i carried a heavy bag yesterday and when i get up today i felt a great shoulder pain.",
+      "targetTerms": [
+        {
+          "text": "shoulder",
+          "canonical": "shoulder",
+          "category": "anatomy"
+        },
+        {
+          "text": "shoulder pain",
+          "canonical": "shoulder pain",
+          "category": "symptom"
+        }
+      ]
+    },
+    {
+      "id": "medical-da4b74dab92caf410666",
+      "text": "you won't believe me, but this infected wound on my hand is from a paper cut i didn't take seriously.",
+      "targetTerms": [
+        {
+          "text": "infected wound",
+          "canonical": "infected wound",
+          "category": "symptom"
+        },
+        {
+          "text": "hand",
+          "canonical": "hand",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-9e3952886cfb0abb711c",
+      "text": "i feel hurts in my heart",
+      "targetTerms": [
+        {
+          "text": "heart",
+          "canonical": "heart",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-764e9a8de27d9b973425",
+      "text": "my head is so heavy can't think normally",
+      "targetTerms": [
+        {
+          "text": "head",
+          "canonical": "head",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-ff3f7dc3785892ae1f6d",
+      "text": "my foot had been aching since last tuesday.",
+      "targetTerms": [
+        {
+          "text": "foot",
+          "canonical": "foot",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-b0b43373df5d5421da27",
+      "text": "i have a sharp pain in my ear",
+      "targetTerms": [
+        {
+          "text": "ear",
+          "canonical": "ear",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-cfc7b3eab0bc9deb7848",
+      "text": "i carried a heavy bag yesterday and when i get up today i felt a great shoulder pain.",
+      "targetTerms": [
+        {
+          "text": "shoulder",
+          "canonical": "shoulder",
+          "category": "anatomy"
+        },
+        {
+          "text": "shoulder pain",
+          "canonical": "shoulder pain",
+          "category": "symptom"
+        }
+      ]
+    },
+    {
+      "id": "medical-ecec86047b9776f4c641",
+      "text": "after walking i have some pain under my foot",
+      "targetTerms": [
+        {
+          "text": "foot",
+          "canonical": "foot",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-e14f8edad5107c93c403",
+      "text": "my body feels weak and i tried to make it relax but it stills pain me",
+      "targetTerms": [
+        {
+          "text": "body feels weak",
+          "canonical": "body feels weak",
+          "category": "symptom"
+        }
+      ]
+    },
+    {
+      "id": "medical-184abda64801e4221e66",
+      "text": "i have a sharp pain in my ear",
+      "targetTerms": [
+        {
+          "text": "ear",
+          "canonical": "ear",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-3abe70cc4468d3d3bfc9",
+      "text": "i knocked my foot and it really hurts.",
+      "targetTerms": [
+        {
+          "text": "foot",
+          "canonical": "foot",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-c5ee3f4168e4899e2006",
+      "text": "my neck hurts me and i can't look down or up",
+      "targetTerms": [
+        {
+          "text": "neck",
+          "canonical": "neck",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-a0e1e2d77b69b9bc1275",
+      "text": "i feel hurts in my heart",
+      "targetTerms": [
+        {
+          "text": "heart",
+          "canonical": "heart",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-0073c98039bf25061928",
+      "text": "i often get a sharp pain in my chest and i can't tell what i'm doing that might be triggering it.",
+      "targetTerms": [
+        {
+          "text": "chest",
+          "canonical": "chest",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-013fd1533edace049641",
+      "text": "my nose is congested all the time and there's this gluey secretion in my throat that makes it impossible for me to sleep. i often have to nap sitting down.",
+      "targetTerms": [
+        {
+          "text": "throat",
+          "canonical": "throat",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-ce59cdbea735364d995a",
+      "text": "my acne itches and oozes.",
+      "targetTerms": [
+        {
+          "text": "acne",
+          "canonical": "acne",
+          "category": "symptom"
+        }
+      ]
+    },
+    {
+      "id": "medical-e7af2cf81774db00f3fb",
+      "text": "i feel like there is something swollen and inflamed at the back of my knee.",
+      "targetTerms": [
+        {
+          "text": "back",
+          "canonical": "back",
+          "category": "anatomy"
+        },
+        {
+          "text": "knee",
+          "canonical": "knee",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-06d7e76fd15849fafac7",
+      "text": "my right shoulder clicks when i move my arm.",
+      "targetTerms": [
+        {
+          "text": "shoulder",
+          "canonical": "shoulder",
+          "category": "anatomy"
+        },
+        {
+          "text": "arm",
+          "canonical": "arm",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-a84e5fd2504570f46634",
+      "text": "i feel like there is something swollen and inflamed at the back of my knee.",
+      "targetTerms": [
+        {
+          "text": "back",
+          "canonical": "back",
+          "category": "anatomy"
+        },
+        {
+          "text": "knee",
+          "canonical": "knee",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-09a3a90a90cc501d0192",
+      "text": "pain in the large neck",
+      "targetTerms": [
+        {
+          "text": "neck",
+          "canonical": "neck",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-08657b37cc373c2108ea",
+      "text": "my body feels weak and i tried to make it relax but it stills pain me",
+      "targetTerms": [
+        {
+          "text": "body feels weak",
+          "canonical": "body feels weak",
+          "category": "symptom"
+        }
+      ]
+    },
+    {
+      "id": "medical-daa890bf1a9d13f196f8",
+      "text": "i have pain in my stomach",
+      "targetTerms": [
+        {
+          "text": "stomach",
+          "canonical": "stomach",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-37daa2bea140569549a2",
+      "text": "the pain is intense especially when i go down the stairs, it feels like something has snapped inside my knee.",
+      "targetTerms": [
+        {
+          "text": "knee",
+          "canonical": "knee",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-36193e36ed1d98c9ee09",
+      "text": "my acne itches and oozes.",
+      "targetTerms": [
+        {
+          "text": "acne",
+          "canonical": "acne",
+          "category": "symptom"
+        }
+      ]
+    },
+    {
+      "id": "medical-edcbeddff7f870c86c59",
+      "text": "my nose is congested all the time and there's this gluey secretion in my throat that makes it impossible for me to sleep. i often have to nap sitting down.",
+      "targetTerms": [
+        {
+          "text": "throat",
+          "canonical": "throat",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-fb5722bf748a663248b8",
+      "text": "i broke my ankle while doing rock climbing in the carpathians.",
+      "targetTerms": [
+        {
+          "text": "ankle",
+          "canonical": "ankle",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-82ac9e9795b32d314615",
+      "text": "i have pain in my stomach",
+      "targetTerms": [
+        {
+          "text": "stomach",
+          "canonical": "stomach",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-708ac6604895c231d2d8",
+      "text": "you won't believe me, but this infected wound on my hand is from a paper cut i didn't take seriously.",
+      "targetTerms": [
+        {
+          "text": "infected wound",
+          "canonical": "infected wound",
+          "category": "symptom"
+        },
+        {
+          "text": "hand",
+          "canonical": "hand",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-2bd6c5e4acfb4e9fd6e5",
+      "text": "my heart hurts while i'm sad, why?",
+      "targetTerms": [
+        {
+          "text": "heart",
+          "canonical": "heart",
+          "category": "anatomy"
+        },
+        {
+          "text": "heart hurts",
+          "canonical": "heart hurts",
+          "category": "symptom"
+        }
+      ]
+    },
+    {
+      "id": "medical-6117d853e96a5feb3f23",
+      "text": "i can't move my leg, there is pain in the joint",
+      "targetTerms": [
+        {
+          "text": "leg",
+          "canonical": "leg",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-5b3f55bbaee8729c077c",
+      "text": "i feel a tightness in my chest",
+      "targetTerms": [
+        {
+          "text": "chest",
+          "canonical": "chest",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-c86786cbaffd4694450d",
+      "text": "i have a blurry vision during my swimming training in the pool, why?",
+      "targetTerms": [
+        {
+          "text": "blurry vision",
+          "canonical": "blurry vision",
+          "category": "symptom"
+        }
+      ]
+    },
+    {
+      "id": "medical-1f9352d1afe4ab2f6b99",
+      "text": "my heart hurts while i'm sad, why?",
+      "targetTerms": [
+        {
+          "text": "heart",
+          "canonical": "heart",
+          "category": "anatomy"
+        },
+        {
+          "text": "heart hurts",
+          "canonical": "heart hurts",
+          "category": "symptom"
+        }
+      ]
+    },
+    {
+      "id": "medical-118af83f3dfd5feb934e",
+      "text": "my neck hurts me and i can't look down or up",
+      "targetTerms": [
+        {
+          "text": "neck",
+          "canonical": "neck",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-031343798ef41eb9acd2",
+      "text": "you won't believe me, but this infected wound on my hand is from a paper cut i didn't take seriously.",
+      "targetTerms": [
+        {
+          "text": "infected wound",
+          "canonical": "infected wound",
+          "category": "symptom"
+        },
+        {
+          "text": "hand",
+          "canonical": "hand",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-381421ae231070a5f56f",
+      "text": "my acne itches and oozes.",
+      "targetTerms": [
+        {
+          "text": "acne",
+          "canonical": "acne",
+          "category": "symptom"
+        }
+      ]
+    },
+    {
+      "id": "medical-087da2fb130c886f4b16",
+      "text": "after walking i have some pain under my foot",
+      "targetTerms": [
+        {
+          "text": "foot",
+          "canonical": "foot",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-9d65045ca79040692c6e",
+      "text": "my acne itches and oozes.",
+      "targetTerms": [
+        {
+          "text": "acne",
+          "canonical": "acne",
+          "category": "symptom"
+        }
+      ]
+    },
+    {
+      "id": "medical-4cd48d40b2280b1a75e6",
+      "text": "i broke my ankle while doing rock climbing in the carpathians.",
+      "targetTerms": [
+        {
+          "text": "ankle",
+          "canonical": "ankle",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-2a46abfa895ae6cd9842",
+      "text": "my knee hurts when i walk",
+      "targetTerms": [
+        {
+          "text": "knee",
+          "canonical": "knee",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-150f55bb70f67e12e957",
+      "text": "there is so much pain when i move my arm.",
+      "targetTerms": [
+        {
+          "text": "arm",
+          "canonical": "arm",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-887ff7baa7984bc4ab16",
+      "text": "my body feels weak and i tried to make it relax but it stills pain me",
+      "targetTerms": [
+        {
+          "text": "body feels weak",
+          "canonical": "body feels weak",
+          "category": "symptom"
+        }
+      ]
+    },
+    {
+      "id": "medical-62658aa9e344dbdacfab",
+      "text": "pain in the large neck",
+      "targetTerms": [
+        {
+          "text": "neck",
+          "canonical": "neck",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-a5f3a0c91cac8010e5ca",
+      "text": "my acne itches and oozes.",
+      "targetTerms": [
+        {
+          "text": "acne",
+          "canonical": "acne",
+          "category": "symptom"
+        }
+      ]
+    },
+    {
+      "id": "medical-c0ef2d26a19c05a84c97",
+      "text": "my head is so heavy can't think normally",
+      "targetTerms": [
+        {
+          "text": "head",
+          "canonical": "head",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-c92da579a8215a76002d",
+      "text": "i may have overdone it with the weightlifting, because i am afraid i may have torn a muscle on my back.",
+      "targetTerms": [
+        {
+          "text": "back",
+          "canonical": "back",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-b4f80d255ac0de5c80d9",
+      "text": "my foot had been aching since last tuesday.",
+      "targetTerms": [
+        {
+          "text": "foot",
+          "canonical": "foot",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-6b98cf05992737a4d3ce",
+      "text": "i have a blurry vision during my swimming training in the pool, why?",
+      "targetTerms": [
+        {
+          "text": "blurry vision",
+          "canonical": "blurry vision",
+          "category": "symptom"
+        }
+      ]
+    },
+    {
+      "id": "medical-a4b9ec20bf9af104ac9a",
+      "text": "my acne itches and oozes.",
+      "targetTerms": [
+        {
+          "text": "acne",
+          "canonical": "acne",
+          "category": "symptom"
+        }
+      ]
+    },
+    {
+      "id": "medical-c879fa8208e29319402e",
+      "text": "the pain is intense especially when i go down the stairs, it feels like something has snapped inside my knee.",
+      "targetTerms": [
+        {
+          "text": "knee",
+          "canonical": "knee",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-f2d2ae6705dead2b944a",
+      "text": "i have a cut on my foot that became infected from using the showers at the gym.",
+      "targetTerms": [
+        {
+          "text": "foot",
+          "canonical": "foot",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-667230d687420d7ba796",
+      "text": "my infected wound caused a fever",
+      "targetTerms": [
+        {
+          "text": "infected wound",
+          "canonical": "infected wound",
+          "category": "symptom"
+        }
+      ]
+    },
+    {
+      "id": "medical-5600c5d33008a3f06540",
+      "text": "the pain is intense especially when i go down the stairs, it feels like something has snapped inside my knee.",
+      "targetTerms": [
+        {
+          "text": "knee",
+          "canonical": "knee",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-432c568af47865840b97",
+      "text": "i have a sharp pain in my ear",
+      "targetTerms": [
+        {
+          "text": "ear",
+          "canonical": "ear",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-0dc18565e219994bc0c2",
+      "text": "i have a pain in my stomach",
+      "targetTerms": [
+        {
+          "text": "stomach",
+          "canonical": "stomach",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-e5ac219a8334fce311e4",
+      "text": "i feel a tightness in my chest",
+      "targetTerms": [
+        {
+          "text": "chest",
+          "canonical": "chest",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-113e42f64c0d2249478b",
+      "text": "i have a problem in the expiration because i have abronchial asthma",
+      "targetTerms": [
+        {
+          "text": "asthma",
+          "canonical": "asthma",
+          "category": "condition"
+        }
+      ]
+    },
+    {
+      "id": "medical-2f00543a4e1d87eb9a64",
+      "text": "i feel a tightness in my chest",
+      "targetTerms": [
+        {
+          "text": "chest",
+          "canonical": "chest",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-5493492fcab7351d49da",
+      "text": "i feel a burning sensation in my shoulder muscle.",
+      "targetTerms": [
+        {
+          "text": "shoulder",
+          "canonical": "shoulder",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-9dbb422e1e45edfdd15f",
+      "text": "my body feels weak and i tried to make it relax but it stills pain me",
+      "targetTerms": [
+        {
+          "text": "body feels weak",
+          "canonical": "body feels weak",
+          "category": "symptom"
+        }
+      ]
+    },
+    {
+      "id": "medical-223ca9207e675790444b",
+      "text": "my back got injured while i was lifting at the gym",
+      "targetTerms": [
+        {
+          "text": "back",
+          "canonical": "back",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-0686f7e9d9506ed9e11e",
+      "text": "i feel a tightness in my chest",
+      "targetTerms": [
+        {
+          "text": "chest",
+          "canonical": "chest",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-fc5f0fdde8fc8421ad7d",
+      "text": "i can't move my leg, there is pain in the joint",
+      "targetTerms": [
+        {
+          "text": "leg",
+          "canonical": "leg",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-133c83a7640864f05df5",
+      "text": "you won't believe me, but this infected wound on my hand is from a paper cut i didn't take seriously.",
+      "targetTerms": [
+        {
+          "text": "infected wound",
+          "canonical": "infected wound",
+          "category": "symptom"
+        },
+        {
+          "text": "hand",
+          "canonical": "hand",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-5536a75681e639124b63",
+      "text": "i have a pain in my stomach",
+      "targetTerms": [
+        {
+          "text": "stomach",
+          "canonical": "stomach",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-7387b04179ed345e974e",
+      "text": "when i force my eyes to view i have blurry vision.",
+      "targetTerms": [
+        {
+          "text": "blurry vision",
+          "canonical": "blurry vision",
+          "category": "symptom"
+        }
+      ]
+    },
+    {
+      "id": "medical-96fbd2835503e9edcd70",
+      "text": "my nose is congested all the time and there's this gluey secretion in my throat that makes it impossible for me to sleep. i often have to nap sitting down.",
+      "targetTerms": [
+        {
+          "text": "throat",
+          "canonical": "throat",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-f5f2eecff9be2c1b0941",
+      "text": "i have a problem in the expiration because i have abronchial asthma",
+      "targetTerms": [
+        {
+          "text": "asthma",
+          "canonical": "asthma",
+          "category": "condition"
+        }
+      ]
+    },
+    {
+      "id": "medical-81e605024c419d5841ec",
+      "text": "my infected wound caused a fever",
+      "targetTerms": [
+        {
+          "text": "infected wound",
+          "canonical": "infected wound",
+          "category": "symptom"
+        }
+      ]
+    },
+    {
+      "id": "medical-ff104a0f6f79d42069b8",
+      "text": "i have a sharp pain in my ear",
+      "targetTerms": [
+        {
+          "text": "ear",
+          "canonical": "ear",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-48d6e1eebc581565f6e3",
+      "text": "i can't really jump on my left foot because my triple fracture of the ankle left me with neverending pains.",
+      "targetTerms": [
+        {
+          "text": "foot",
+          "canonical": "foot",
+          "category": "anatomy"
+        },
+        {
+          "text": "ankle",
+          "canonical": "ankle",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-fb88dcfdc6b6b3c5b061",
+      "text": "my back got injured while i was lifting at the gym",
+      "targetTerms": [
+        {
+          "text": "back",
+          "canonical": "back",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-efe8c345a9e30f4fb2b3",
+      "text": "you won't believe me, but this infected wound on my hand is from a paper cut i didn't take seriously.",
+      "targetTerms": [
+        {
+          "text": "infected wound",
+          "canonical": "infected wound",
+          "category": "symptom"
+        },
+        {
+          "text": "hand",
+          "canonical": "hand",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-f40d3f7f0179c7144aa1",
+      "text": "i carried a heavy bag yesterday and when i get up today i felt a great shoulder pain.",
+      "targetTerms": [
+        {
+          "text": "shoulder",
+          "canonical": "shoulder",
+          "category": "anatomy"
+        },
+        {
+          "text": "shoulder pain",
+          "canonical": "shoulder pain",
+          "category": "symptom"
+        }
+      ]
+    },
+    {
+      "id": "medical-d6753168247b1608db83",
+      "text": "my ankle is hurting me",
+      "targetTerms": [
+        {
+          "text": "ankle",
+          "canonical": "ankle",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-e1e53e261dee4fab9bcd",
+      "text": "i may have overdone it with the weightlifting, because i am afraid i may have torn a muscle on my back.",
+      "targetTerms": [
+        {
+          "text": "back",
+          "canonical": "back",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-36dc279d53b11757cfab",
+      "text": "i feel hurts in my heart",
+      "targetTerms": [
+        {
+          "text": "heart",
+          "canonical": "heart",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-9156e381f91c2aaeff42",
+      "text": "my head is so heavy can't think normally",
+      "targetTerms": [
+        {
+          "text": "head",
+          "canonical": "head",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-206d96ae52c018a46cbe",
+      "text": "after walking i have some pain under my foot",
+      "targetTerms": [
+        {
+          "text": "foot",
+          "canonical": "foot",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-2572428f73bb33866601",
+      "text": "i can't move my leg, there is pain in the joint",
+      "targetTerms": [
+        {
+          "text": "leg",
+          "canonical": "leg",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-01ab24d57fee04df7f49",
+      "text": "i think my body temperature is very low.",
+      "targetTerms": [
+        {
+          "text": "temperature",
+          "canonical": "temperature",
+          "category": "measurement"
+        }
+      ]
+    },
+    {
+      "id": "medical-37ffec3bec2664a4006c",
+      "text": "my body feels weak and i tried to make it relax but it stills pain me",
+      "targetTerms": [
+        {
+          "text": "body feels weak",
+          "canonical": "body feels weak",
+          "category": "symptom"
+        }
+      ]
+    },
+    {
+      "id": "medical-75de75a9dc2b471113d3",
+      "text": "i feel hurts in my heart",
+      "targetTerms": [
+        {
+          "text": "heart",
+          "canonical": "heart",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-27a6b6476933ba45da61",
+      "text": "i have a blurry vision during my swimming training in the pool, why?",
+      "targetTerms": [
+        {
+          "text": "blurry vision",
+          "canonical": "blurry vision",
+          "category": "symptom"
+        }
+      ]
+    },
+    {
+      "id": "medical-1174cf50678cd1d0966f",
+      "text": "i broke my ankle while doing rock climbing in the carpathians.",
+      "targetTerms": [
+        {
+          "text": "ankle",
+          "canonical": "ankle",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-bcc730ceae7ec0c2e1ed",
+      "text": "i feel like there is something swollen and inflamed at the back of my knee.",
+      "targetTerms": [
+        {
+          "text": "back",
+          "canonical": "back",
+          "category": "anatomy"
+        },
+        {
+          "text": "knee",
+          "canonical": "knee",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-f9ba0941161b37c6cedd",
+      "text": "i have a cut on my foot that became infected from using the showers at the gym.",
+      "targetTerms": [
+        {
+          "text": "foot",
+          "canonical": "foot",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-560eb3d413b84703dc32",
+      "text": "my back got injured while i was lifting at the gym",
+      "targetTerms": [
+        {
+          "text": "back",
+          "canonical": "back",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-c595841a8c3d9116a032",
+      "text": "i have a cut on my foot that became infected from using the showers at the gym.",
+      "targetTerms": [
+        {
+          "text": "foot",
+          "canonical": "foot",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-5d9b03b600f70feae56f",
+      "text": "my nose is congested all the time and there's this gluey secretion in my throat that makes it impossible for me to sleep. i often have to nap sitting down.",
+      "targetTerms": [
+        {
+          "text": "throat",
+          "canonical": "throat",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-95a01a22bf931cbf3095",
+      "text": "i have a cut on my foot that became infected from using the showers at the gym.",
+      "targetTerms": [
+        {
+          "text": "foot",
+          "canonical": "foot",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-3fe1e8580c86b3c3bd0d",
+      "text": "my right shoulder clicks when i move my arm.",
+      "targetTerms": [
+        {
+          "text": "shoulder",
+          "canonical": "shoulder",
+          "category": "anatomy"
+        },
+        {
+          "text": "arm",
+          "canonical": "arm",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-d632ec34c0ddaf7fdfc8",
+      "text": "my head is so heavy can't think normally",
+      "targetTerms": [
+        {
+          "text": "head",
+          "canonical": "head",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-e44942b47f1e8e88b5a0",
+      "text": "my nose is congested all the time and there's this gluey secretion in my throat that makes it impossible for me to sleep. i often have to nap sitting down.",
+      "targetTerms": [
+        {
+          "text": "throat",
+          "canonical": "throat",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-438459cd2bfef243b688",
+      "text": "my foot had been aching since last tuesday.",
+      "targetTerms": [
+        {
+          "text": "foot",
+          "canonical": "foot",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-5a79949758253496f416",
+      "text": "my neck hurts me and i can't look down or up",
+      "targetTerms": [
+        {
+          "text": "neck",
+          "canonical": "neck",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-4be43391644ff0392cbf",
+      "text": "my right shoulder clicks when i move my arm.",
+      "targetTerms": [
+        {
+          "text": "shoulder",
+          "canonical": "shoulder",
+          "category": "anatomy"
+        },
+        {
+          "text": "arm",
+          "canonical": "arm",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-2a63bd34428e43c999d6",
+      "text": "after walking i have some pain under my foot",
+      "targetTerms": [
+        {
+          "text": "foot",
+          "canonical": "foot",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-535fb70881044ad77a8e",
+      "text": "my acne itches and oozes.",
+      "targetTerms": [
+        {
+          "text": "acne",
+          "canonical": "acne",
+          "category": "symptom"
+        }
+      ]
+    },
+    {
+      "id": "medical-bb3b434d9fdf1406ca69",
+      "text": "i can't move my leg, there is pain in the joint",
+      "targetTerms": [
+        {
+          "text": "leg",
+          "canonical": "leg",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-dd94ddf9e5969717ecb5",
+      "text": "i think my body temperature is very low.",
+      "targetTerms": [
+        {
+          "text": "temperature",
+          "canonical": "temperature",
+          "category": "measurement"
+        }
+      ]
+    },
+    {
+      "id": "medical-17214034bfc0998fff82",
+      "text": "i feel a burning sensation in my shoulder muscle.",
+      "targetTerms": [
+        {
+          "text": "shoulder",
+          "canonical": "shoulder",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-5827110fd6f4ec1bd6cd",
+      "text": "i have pain in my stomach",
+      "targetTerms": [
+        {
+          "text": "stomach",
+          "canonical": "stomach",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-1bbb0c8fea3593bc7c03",
+      "text": "there is so much pain when i move my arm.",
+      "targetTerms": [
+        {
+          "text": "arm",
+          "canonical": "arm",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-fa7463e696fe8d4675ef",
+      "text": "i have a blurry vision during my swimming training in the pool, why?",
+      "targetTerms": [
+        {
+          "text": "blurry vision",
+          "canonical": "blurry vision",
+          "category": "symptom"
+        }
+      ]
+    },
+    {
+      "id": "medical-a553839da5ce940fb12f",
+      "text": "my right shoulder clicks when i move my arm.",
+      "targetTerms": [
+        {
+          "text": "shoulder",
+          "canonical": "shoulder",
+          "category": "anatomy"
+        },
+        {
+          "text": "arm",
+          "canonical": "arm",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-fb2a5c7f125fb53b01c6",
+      "text": "pain in the large neck",
+      "targetTerms": [
+        {
+          "text": "neck",
+          "canonical": "neck",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-9bc7f7f1f95c40f7ee4f",
+      "text": "i have a cut on my foot that became infected from using the showers at the gym.",
+      "targetTerms": [
+        {
+          "text": "foot",
+          "canonical": "foot",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-fb9995f64d02db3a6e7a",
+      "text": "my acne itches and oozes.",
+      "targetTerms": [
+        {
+          "text": "acne",
+          "canonical": "acne",
+          "category": "symptom"
+        }
+      ]
+    },
+    {
+      "id": "medical-7cb1c2e82f5c10d603ae",
+      "text": "i think my body temperature is very low.",
+      "targetTerms": [
+        {
+          "text": "temperature",
+          "canonical": "temperature",
+          "category": "measurement"
+        }
+      ]
+    },
+    {
+      "id": "medical-5e08cf5878bba30577e4",
+      "text": "i feel hurts in my heart",
+      "targetTerms": [
+        {
+          "text": "heart",
+          "canonical": "heart",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-9e9b739d17adae5832b4",
+      "text": "my ankle is hurting me",
+      "targetTerms": [
+        {
+          "text": "ankle",
+          "canonical": "ankle",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-1a2d1ef509569080c9da",
+      "text": "i think my body temperature is very low.",
+      "targetTerms": [
+        {
+          "text": "temperature",
+          "canonical": "temperature",
+          "category": "measurement"
+        }
+      ]
+    },
+    {
+      "id": "medical-e3462ccd4924b421ff64",
+      "text": "i broke my ankle while doing rock climbing in the carpathians.",
+      "targetTerms": [
+        {
+          "text": "ankle",
+          "canonical": "ankle",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-0f7c78bb364e0a77e162",
+      "text": "my knee hurts when i walk",
+      "targetTerms": [
+        {
+          "text": "knee",
+          "canonical": "knee",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-256459a34a3e3abb37c2",
+      "text": "i carried a heavy bag yesterday and when i get up today i felt a great shoulder pain.",
+      "targetTerms": [
+        {
+          "text": "shoulder",
+          "canonical": "shoulder",
+          "category": "anatomy"
+        },
+        {
+          "text": "shoulder pain",
+          "canonical": "shoulder pain",
+          "category": "symptom"
+        }
+      ]
+    },
+    {
+      "id": "medical-f783cf92c941e00b3772",
+      "text": "i often get a sharp pain in my chest and i can't tell what i'm doing that might be triggering it.",
+      "targetTerms": [
+        {
+          "text": "chest",
+          "canonical": "chest",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-c5844aa053d911237907",
+      "text": "my knee hurts when i walk",
+      "targetTerms": [
+        {
+          "text": "knee",
+          "canonical": "knee",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-4bc71d392b7912909ebf",
+      "text": "i have a cut on my foot that became infected from using the showers at the gym.",
+      "targetTerms": [
+        {
+          "text": "foot",
+          "canonical": "foot",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-f8187461b98aecfee29d",
+      "text": "my foot had been aching since last tuesday.",
+      "targetTerms": [
+        {
+          "text": "foot",
+          "canonical": "foot",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-9edd773eb485830ee366",
+      "text": "i carried a heavy bag yesterday and when i get up today i felt a great shoulder pain.",
+      "targetTerms": [
+        {
+          "text": "shoulder",
+          "canonical": "shoulder",
+          "category": "anatomy"
+        },
+        {
+          "text": "shoulder pain",
+          "canonical": "shoulder pain",
+          "category": "symptom"
+        }
+      ]
+    },
+    {
+      "id": "medical-1f5dac0f5561d96d56ec",
+      "text": "there is so much pain when i move my arm.",
+      "targetTerms": [
+        {
+          "text": "arm",
+          "canonical": "arm",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-5ca27daa99aa13fc5ca3",
+      "text": "i read a book for along time and when i finished reading i feel head ache",
+      "targetTerms": [
+        {
+          "text": "head",
+          "canonical": "head",
+          "category": "anatomy"
+        },
+        {
+          "text": "head ache",
+          "canonical": "head ache",
+          "category": "symptom"
+        }
+      ]
+    },
+    {
+      "id": "medical-05a8a79c7062fefbf1a7",
+      "text": "i often get a sharp pain in my chest and i can't tell what i'm doing that might be triggering it.",
+      "targetTerms": [
+        {
+          "text": "chest",
+          "canonical": "chest",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-7f81dad9c0e04f81406e",
+      "text": "my infected wound caused a fever",
+      "targetTerms": [
+        {
+          "text": "infected wound",
+          "canonical": "infected wound",
+          "category": "symptom"
+        }
+      ]
+    },
+    {
+      "id": "medical-7043e884421593f12198",
+      "text": "i feel a burning sensation in my shoulder muscle.",
+      "targetTerms": [
+        {
+          "text": "shoulder",
+          "canonical": "shoulder",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-2d7d0e9584126b0b2f91",
+      "text": "i often get a sharp pain in my chest and i can't tell what i'm doing that might be triggering it.",
+      "targetTerms": [
+        {
+          "text": "chest",
+          "canonical": "chest",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-d3872023bcb39bf472e9",
+      "text": "i feel like there is something swollen and inflamed at the back of my knee.",
+      "targetTerms": [
+        {
+          "text": "back",
+          "canonical": "back",
+          "category": "anatomy"
+        },
+        {
+          "text": "knee",
+          "canonical": "knee",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-11fecdcf638fb5a79a08",
+      "text": "when i force my eyes to view i have blurry vision.",
+      "targetTerms": [
+        {
+          "text": "blurry vision",
+          "canonical": "blurry vision",
+          "category": "symptom"
+        }
+      ]
+    },
+    {
+      "id": "medical-6c0577a26918abb2a3dd",
+      "text": "i have a pain in my stomach",
+      "targetTerms": [
+        {
+          "text": "stomach",
+          "canonical": "stomach",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-11180fcfab4484acd0f0",
+      "text": "my back got injured while i was lifting at the gym",
+      "targetTerms": [
+        {
+          "text": "back",
+          "canonical": "back",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-2a2055e0cd8e89151e73",
+      "text": "i read a book for along time and when i finished reading i feel head ache",
+      "targetTerms": [
+        {
+          "text": "head",
+          "canonical": "head",
+          "category": "anatomy"
+        },
+        {
+          "text": "head ache",
+          "canonical": "head ache",
+          "category": "symptom"
+        }
+      ]
+    },
+    {
+      "id": "medical-6ef7f56c974cb23d4abb",
+      "text": "i have pain in my stomach",
+      "targetTerms": [
+        {
+          "text": "stomach",
+          "canonical": "stomach",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-0b95987b815eb6b1a556",
+      "text": "my infected wound caused a fever",
+      "targetTerms": [
+        {
+          "text": "infected wound",
+          "canonical": "infected wound",
+          "category": "symptom"
+        }
+      ]
+    },
+    {
+      "id": "medical-e2cef800d75a89e53741",
+      "text": "i have a problem in the expiration because i have abronchial asthma",
+      "targetTerms": [
+        {
+          "text": "asthma",
+          "canonical": "asthma",
+          "category": "condition"
+        }
+      ]
+    },
+    {
+      "id": "medical-5dd0dc2b575f3854d52e",
+      "text": "my acne itches and oozes.",
+      "targetTerms": [
+        {
+          "text": "acne",
+          "canonical": "acne",
+          "category": "symptom"
+        }
+      ]
+    },
+    {
+      "id": "medical-ead77165eebdf701bb34",
+      "text": "i feel a tightness in my chest",
+      "targetTerms": [
+        {
+          "text": "chest",
+          "canonical": "chest",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-85d266e1bfdd43f025d0",
+      "text": "my neck hurts me and i can't look down or up",
+      "targetTerms": [
+        {
+          "text": "neck",
+          "canonical": "neck",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-89ac69c09883b6232c77",
+      "text": "my ankle is hurting me",
+      "targetTerms": [
+        {
+          "text": "ankle",
+          "canonical": "ankle",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-37892c61a6f804ebb477",
+      "text": "my ankle is hurting me",
+      "targetTerms": [
+        {
+          "text": "ankle",
+          "canonical": "ankle",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-670e8996c5304d9ded59",
+      "text": "i feel a burning sensation in my shoulder muscle.",
+      "targetTerms": [
+        {
+          "text": "shoulder",
+          "canonical": "shoulder",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-cff52602e6380b3d6038",
+      "text": "my body feels weak and i tried to make it relax but it stills pain me",
+      "targetTerms": [
+        {
+          "text": "body feels weak",
+          "canonical": "body feels weak",
+          "category": "symptom"
+        }
+      ]
+    },
+    {
+      "id": "medical-85c6a8bbf4b381e951ba",
+      "text": "the pain is intense especially when i go down the stairs, it feels like something has snapped inside my knee.",
+      "targetTerms": [
+        {
+          "text": "knee",
+          "canonical": "knee",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-13ccecc20d30bbe35227",
+      "text": "i can't move my leg, there is pain in the joint",
+      "targetTerms": [
+        {
+          "text": "leg",
+          "canonical": "leg",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-cec392ec6b5fa24566f1",
+      "text": "there is so much pain when i move my arm.",
+      "targetTerms": [
+        {
+          "text": "arm",
+          "canonical": "arm",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-e19c16f5bddafd2b309d",
+      "text": "my knee hurts when i walk",
+      "targetTerms": [
+        {
+          "text": "knee",
+          "canonical": "knee",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-7e0bbad9dc1a98b10d0f",
+      "text": "i carried a heavy bag yesterday and when i get up today i felt a great shoulder pain.",
+      "targetTerms": [
+        {
+          "text": "shoulder",
+          "canonical": "shoulder",
+          "category": "anatomy"
+        },
+        {
+          "text": "shoulder pain",
+          "canonical": "shoulder pain",
+          "category": "symptom"
+        }
+      ]
+    },
+    {
+      "id": "medical-d13a2ac69d99a23ee421",
+      "text": "i knocked my foot and it really hurts.",
+      "targetTerms": [
+        {
+          "text": "foot",
+          "canonical": "foot",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-ab67e8975ddae3e63d9f",
+      "text": "the pain is intense especially when i go down the stairs, it feels like something has snapped inside my knee.",
+      "targetTerms": [
+        {
+          "text": "knee",
+          "canonical": "knee",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-a7fabd9a13e556c396f1",
+      "text": "my nose is congested all the time and there's this gluey secretion in my throat that makes it impossible for me to sleep. i often have to nap sitting down.",
+      "targetTerms": [
+        {
+          "text": "throat",
+          "canonical": "throat",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-f28679d78370c950a55f",
+      "text": "when i force my eyes to view i have blurry vision.",
+      "targetTerms": [
+        {
+          "text": "blurry vision",
+          "canonical": "blurry vision",
+          "category": "symptom"
+        }
+      ]
+    },
+    {
+      "id": "medical-ce60fefd53c8f40c17e3",
+      "text": "i have a blurry vision during my swimming training in the pool, why?",
+      "targetTerms": [
+        {
+          "text": "blurry vision",
+          "canonical": "blurry vision",
+          "category": "symptom"
+        }
+      ]
+    },
+    {
+      "id": "medical-6d1666ad3e4541cf392b",
+      "text": "after walking i have some pain under my foot",
+      "targetTerms": [
+        {
+          "text": "foot",
+          "canonical": "foot",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-2d40f2c265841309c3fc",
+      "text": "i knocked my foot and it really hurts.",
+      "targetTerms": [
+        {
+          "text": "foot",
+          "canonical": "foot",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-70e2dae0b428f4cfe35c",
+      "text": "my infected wound caused a fever",
+      "targetTerms": [
+        {
+          "text": "infected wound",
+          "canonical": "infected wound",
+          "category": "symptom"
+        }
+      ]
+    },
+    {
+      "id": "medical-5ddf9606b449fcc38860",
+      "text": "i have a sharp pain in my ear",
+      "targetTerms": [
+        {
+          "text": "ear",
+          "canonical": "ear",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-112b9a22662a8e827d99",
+      "text": "my heart hurts while i'm sad, why?",
+      "targetTerms": [
+        {
+          "text": "heart",
+          "canonical": "heart",
+          "category": "anatomy"
+        },
+        {
+          "text": "heart hurts",
+          "canonical": "heart hurts",
+          "category": "symptom"
+        }
+      ]
+    },
+    {
+      "id": "medical-8ace4c6a3b42ee61d144",
+      "text": "i have pain in my stomach",
+      "targetTerms": [
+        {
+          "text": "stomach",
+          "canonical": "stomach",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-745a8263cdcabbd4a970",
+      "text": "i broke my ankle while doing rock climbing in the carpathians.",
+      "targetTerms": [
+        {
+          "text": "ankle",
+          "canonical": "ankle",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-1f205ee2a4c12f874efd",
+      "text": "my right shoulder clicks when i move my arm.",
+      "targetTerms": [
+        {
+          "text": "shoulder",
+          "canonical": "shoulder",
+          "category": "anatomy"
+        },
+        {
+          "text": "arm",
+          "canonical": "arm",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-3de33de42e4ea6bafbb5",
+      "text": "i feel like there is something swollen and inflamed at the back of my knee.",
+      "targetTerms": [
+        {
+          "text": "back",
+          "canonical": "back",
+          "category": "anatomy"
+        },
+        {
+          "text": "knee",
+          "canonical": "knee",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-cdfba372cadb7850e170",
+      "text": "i have pain in my stomach",
+      "targetTerms": [
+        {
+          "text": "stomach",
+          "canonical": "stomach",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-bf9667fe577d8557ed0b",
+      "text": "i broke my ankle while doing rock climbing in the carpathians.",
+      "targetTerms": [
+        {
+          "text": "ankle",
+          "canonical": "ankle",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-83b900c8d6c24fec8d04",
+      "text": "you won't believe me, but this infected wound on my hand is from a paper cut i didn't take seriously.",
+      "targetTerms": [
+        {
+          "text": "infected wound",
+          "canonical": "infected wound",
+          "category": "symptom"
+        },
+        {
+          "text": "hand",
+          "canonical": "hand",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-8ed5a687fab9cb36a5a7",
+      "text": "i carried a heavy bag yesterday and when i get up today i felt a great shoulder pain.",
+      "targetTerms": [
+        {
+          "text": "shoulder",
+          "canonical": "shoulder",
+          "category": "anatomy"
+        },
+        {
+          "text": "shoulder pain",
+          "canonical": "shoulder pain",
+          "category": "symptom"
+        }
+      ]
+    },
+    {
+      "id": "medical-5125376fe49370ac5b92",
+      "text": "the pain is intense especially when i go down the stairs, it feels like something has snapped inside my knee.",
+      "targetTerms": [
+        {
+          "text": "knee",
+          "canonical": "knee",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-390d5e8284b10f17699d",
+      "text": "i may have overdone it with the weightlifting, because i am afraid i may have torn a muscle on my back.",
+      "targetTerms": [
+        {
+          "text": "back",
+          "canonical": "back",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-9418375a839e8c000a67",
+      "text": "the pain is intense especially when i go down the stairs, it feels like something has snapped inside my knee.",
+      "targetTerms": [
+        {
+          "text": "knee",
+          "canonical": "knee",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-40bb28475284835e0366",
+      "text": "i feel a burning sensation in my shoulder muscle.",
+      "targetTerms": [
+        {
+          "text": "shoulder",
+          "canonical": "shoulder",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-caf63561ea895ba5813d",
+      "text": "i have a blurry vision during my swimming training in the pool, why?",
+      "targetTerms": [
+        {
+          "text": "blurry vision",
+          "canonical": "blurry vision",
+          "category": "symptom"
+        }
+      ]
+    },
+    {
+      "id": "medical-2e2637cdb59c1b76747f",
+      "text": "my neck hurts me and i can't look down or up",
+      "targetTerms": [
+        {
+          "text": "neck",
+          "canonical": "neck",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-5a6ec9599bad9f96571c",
+      "text": "my acne itches and oozes.",
+      "targetTerms": [
+        {
+          "text": "acne",
+          "canonical": "acne",
+          "category": "symptom"
+        }
+      ]
+    },
+    {
+      "id": "medical-30701399333839312fd7",
+      "text": "you won't believe me, but this infected wound on my hand is from a paper cut i didn't take seriously.",
+      "targetTerms": [
+        {
+          "text": "infected wound",
+          "canonical": "infected wound",
+          "category": "symptom"
+        },
+        {
+          "text": "hand",
+          "canonical": "hand",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-42809eeae51ef98b89af",
+      "text": "after walking i have some pain under my foot",
+      "targetTerms": [
+        {
+          "text": "foot",
+          "canonical": "foot",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-e3a90e4200cb1eb92068",
+      "text": "i have a problem in the expiration because i have abronchial asthma",
+      "targetTerms": [
+        {
+          "text": "asthma",
+          "canonical": "asthma",
+          "category": "condition"
+        }
+      ]
+    },
+    {
+      "id": "medical-286bc6e9a67d3df597b3",
+      "text": "i read a book for along time and when i finished reading i feel head ache",
+      "targetTerms": [
+        {
+          "text": "head",
+          "canonical": "head",
+          "category": "anatomy"
+        },
+        {
+          "text": "head ache",
+          "canonical": "head ache",
+          "category": "symptom"
+        }
+      ]
+    },
+    {
+      "id": "medical-53ca906f1e7c6e910dc3",
+      "text": "i can't really jump on my left foot because my triple fracture of the ankle left me with neverending pains.",
+      "targetTerms": [
+        {
+          "text": "foot",
+          "canonical": "foot",
+          "category": "anatomy"
+        },
+        {
+          "text": "ankle",
+          "canonical": "ankle",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-2efd68b36c3db672a299",
+      "text": "there is so much pain when i move my arm.",
+      "targetTerms": [
+        {
+          "text": "arm",
+          "canonical": "arm",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-0ca77a794ae917944a6a",
+      "text": "i have pain in my stomach",
+      "targetTerms": [
+        {
+          "text": "stomach",
+          "canonical": "stomach",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-ff894954fe4adf15ea81",
+      "text": "i feel a burning sensation in my shoulder muscle.",
+      "targetTerms": [
+        {
+          "text": "shoulder",
+          "canonical": "shoulder",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-c5b691bceb3481a30b11",
+      "text": "i have a pain in my stomach",
+      "targetTerms": [
+        {
+          "text": "stomach",
+          "canonical": "stomach",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-98b6a4ab25a54d73ca51",
+      "text": "my neck hurts me and i can't look down or up",
+      "targetTerms": [
+        {
+          "text": "neck",
+          "canonical": "neck",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-aa60d004a1e90012a9b0",
+      "text": "i have a blurry vision during my swimming training in the pool, why?",
+      "targetTerms": [
+        {
+          "text": "blurry vision",
+          "canonical": "blurry vision",
+          "category": "symptom"
+        }
+      ]
+    },
+    {
+      "id": "medical-a1945cc5049cffedcd0b",
+      "text": "there is so much pain when i move my arm.",
+      "targetTerms": [
+        {
+          "text": "arm",
+          "canonical": "arm",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-8702ffe2b7a8e74a7019",
+      "text": "i often get a sharp pain in my chest and i can't tell what i'm doing that might be triggering it.",
+      "targetTerms": [
+        {
+          "text": "chest",
+          "canonical": "chest",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-ae593609f71fbb2029be",
+      "text": "i feel a tightness in my chest",
+      "targetTerms": [
+        {
+          "text": "chest",
+          "canonical": "chest",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-96f6e74790c3c7663f9b",
+      "text": "i think my body temperature is very low.",
+      "targetTerms": [
+        {
+          "text": "temperature",
+          "canonical": "temperature",
+          "category": "measurement"
+        }
+      ]
+    },
+    {
+      "id": "medical-099c10a72be017a9e5ec",
+      "text": "i can't really jump on my left foot because my triple fracture of the ankle left me with neverending pains.",
+      "targetTerms": [
+        {
+          "text": "foot",
+          "canonical": "foot",
+          "category": "anatomy"
+        },
+        {
+          "text": "ankle",
+          "canonical": "ankle",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-38ab1368adcb792654cb",
+      "text": "i carried a heavy bag yesterday and when i get up today i felt a great shoulder pain.",
+      "targetTerms": [
+        {
+          "text": "shoulder",
+          "canonical": "shoulder",
+          "category": "anatomy"
+        },
+        {
+          "text": "shoulder pain",
+          "canonical": "shoulder pain",
+          "category": "symptom"
+        }
+      ]
+    },
+    {
+      "id": "medical-1109e982e61b3b79264b",
+      "text": "you won't believe me, but this infected wound on my hand is from a paper cut i didn't take seriously.",
+      "targetTerms": [
+        {
+          "text": "infected wound",
+          "canonical": "infected wound",
+          "category": "symptom"
+        },
+        {
+          "text": "hand",
+          "canonical": "hand",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-f56894949fdc7df7508c",
+      "text": "i often get a sharp pain in my chest and i can't tell what i'm doing that might be triggering it.",
+      "targetTerms": [
+        {
+          "text": "chest",
+          "canonical": "chest",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-f809a3f80b34f2128c46",
+      "text": "my ankle is hurting me",
+      "targetTerms": [
+        {
+          "text": "ankle",
+          "canonical": "ankle",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-ea8b37cc65ea3cddb4f5",
+      "text": "i have pain in my stomach",
+      "targetTerms": [
+        {
+          "text": "stomach",
+          "canonical": "stomach",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-650da67612d7691670bf",
+      "text": "i have a cut on my foot that became infected from using the showers at the gym.",
+      "targetTerms": [
+        {
+          "text": "foot",
+          "canonical": "foot",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-0f6166b52f6192f81cfb",
+      "text": "i can't move my leg, there is pain in the joint",
+      "targetTerms": [
+        {
+          "text": "leg",
+          "canonical": "leg",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-538d01265d7ce2c141dc",
+      "text": "you won't believe me, but this infected wound on my hand is from a paper cut i didn't take seriously.",
+      "targetTerms": [
+        {
+          "text": "infected wound",
+          "canonical": "infected wound",
+          "category": "symptom"
+        },
+        {
+          "text": "hand",
+          "canonical": "hand",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-b835c42ccc63ffa5ab53",
+      "text": "my nose is congested all the time and there's this gluey secretion in my throat that makes it impossible for me to sleep. i often have to nap sitting down.",
+      "targetTerms": [
+        {
+          "text": "throat",
+          "canonical": "throat",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-cb7bad0e724e39b9fc00",
+      "text": "when i force my eyes to view i have blurry vision.",
+      "targetTerms": [
+        {
+          "text": "blurry vision",
+          "canonical": "blurry vision",
+          "category": "symptom"
+        }
+      ]
+    },
+    {
+      "id": "medical-d463e1575bacc635db3b",
+      "text": "i carried a heavy bag yesterday and when i get up today i felt a great shoulder pain.",
+      "targetTerms": [
+        {
+          "text": "shoulder",
+          "canonical": "shoulder",
+          "category": "anatomy"
+        },
+        {
+          "text": "shoulder pain",
+          "canonical": "shoulder pain",
+          "category": "symptom"
+        }
+      ]
+    },
+    {
+      "id": "medical-3c1168d74cc8181f5222",
+      "text": "there is so much pain when i move my arm.",
+      "targetTerms": [
+        {
+          "text": "arm",
+          "canonical": "arm",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-8dc3b4b711b67356df83",
+      "text": "my knee hurts when i walk",
+      "targetTerms": [
+        {
+          "text": "knee",
+          "canonical": "knee",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-28c3931af10bbf720899",
+      "text": "i have a cut on my foot that became infected from using the showers at the gym.",
+      "targetTerms": [
+        {
+          "text": "foot",
+          "canonical": "foot",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-cc303a40b4a56349bf46",
+      "text": "i feel hurts in my heart",
+      "targetTerms": [
+        {
+          "text": "heart",
+          "canonical": "heart",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-378297eb489f4dfdfe96",
+      "text": "i can't move my leg, there is pain in the joint",
+      "targetTerms": [
+        {
+          "text": "leg",
+          "canonical": "leg",
+          "category": "anatomy"
+        }
+      ]
+    },
+    {
+      "id": "medical-89084e011bba262d5b63",
+      "text": "my body feels weak and i tried to make it relax but it stills pain me",
+      "targetTerms": [
+        {
+          "text": "body feels weak",
+          "canonical": "body feels weak",
+          "category": "symptom"
+        }
+      ]
+    },
+    {
+      "id": "medical-ab73f92724b99e0d3079",
+      "text": "when i force my eyes to view i have blurry vision.",
+      "targetTerms": [
+        {
+          "text": "blurry vision",
+          "canonical": "blurry vision",
+          "category": "symptom"
+        }
+      ]
+    }
+  ],
+  "total": 350,
+  "offset": 0,
+  "limit": 100000,
+  "manifestSha256": "420aef4614578d0a451ad60c7734c4e83ae11771f8e195d9dff67fb8095d8e61"
+}

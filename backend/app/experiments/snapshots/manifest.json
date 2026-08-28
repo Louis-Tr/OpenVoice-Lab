@@ -1,0 +1,10 @@
+{
+  "schema_version": 1,
+  "generated_at": "2026-08-28T19:42:05.962157+00:00",
+  "source_commit": "926c9b9619a9ce1acb0fac74033dd81d511e0d07",
+  "files": {
+    "report.json": "fc9199d514b5205c76f544548a4f65960a0c1a0c695a457c950abf87e0b2c5f1",
+    "fixtures.json": "d8541a2f92e981b0042af04be205c693ac581cdd5d738d2886a9858df420d470",
+    "models.json": "d96f0169d96a28d76a172c0f576a79f1195ce1ee822c3793d9fd5ddc6aa4dc34"
+  }
+}

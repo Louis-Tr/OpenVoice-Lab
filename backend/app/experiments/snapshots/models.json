@@ -1,0 +1,62 @@
+[
+  {
+    "id": "speecht5-pretrained",
+    "name": "SpeechT5 Pretrained",
+    "role": "pretrained",
+    "variant": "pretrained",
+    "runtime": "PyTorch CPU",
+    "hosting": "self-hosted",
+    "revision": "30fcde30f19b87502b8435427b5f5068e401d5f6",
+    "modelSha256": "d60d28067349ef66b50d8cd643ae56b6d6b8f27def929bc4ef6fcad907954190",
+    "available": true,
+    "unavailableReason": null
+  },
+  {
+    "id": "speecht5-v1a-conservative-full",
+    "name": "V1A Conservative Full",
+    "role": "adapted",
+    "variant": "v1a-conservative-full",
+    "runtime": "PyTorch CPU",
+    "hosting": "self-hosted",
+    "revision": "30fcde30f19b87502b8435427b5f5068e401d5f6",
+    "modelSha256": "fd1e38f2d5d6956eef38cb798c2b4ab35210ad9fb6edbe7919bb2086ef54c3b6",
+    "available": true,
+    "unavailableReason": null
+  },
+  {
+    "id": "speecht5-v1b-lora",
+    "name": "V1B LoRA",
+    "role": "adapted",
+    "variant": "v1b-lora",
+    "runtime": "PyTorch CPU",
+    "hosting": "self-hosted",
+    "revision": "30fcde30f19b87502b8435427b5f5068e401d5f6",
+    "modelSha256": "c0864e2c4c482f84e8b3944a7cebad5cf7abdf335205fba8e83d390a39d3be60",
+    "available": true,
+    "unavailableReason": null
+  },
+  {
+    "id": "speecht5-v1c-gradual-unfreeze",
+    "name": "V1C Gradual Unfreeze",
+    "role": "adapted",
+    "variant": "v1c-gradual-unfreeze",
+    "runtime": "PyTorch CPU",
+    "hosting": "self-hosted",
+    "revision": "30fcde30f19b87502b8435427b5f5068e401d5f6",
+    "modelSha256": "d7b26ef71e932fbb1cd466293da71a9c60c42a3f6efcf1a6b315fe86a2713230",
+    "available": true,
+    "unavailableReason": null
+  },
+  {
+    "id": "speecht5-v1d-reduction-factor-1",
+    "name": "V1D Reduction Factor 1",
+    "role": "adapted",
+    "variant": "v1d-reduction-factor-1",
+    "runtime": "PyTorch CPU",
+    "hosting": "self-hosted",
+    "revision": "30fcde30f19b87502b8435427b5f5068e401d5f6",
+    "modelSha256": "16ec00f488a569aefcb0ff131387b12e5d5b82eed3fcda4166ddb6418691ced0",
+    "available": true,
+    "unavailableReason": null
+  }
+]

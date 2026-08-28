@@ -1,0 +1,653 @@
+{
+  "runId": "stage11-v1-approaches-20260828",
+  "experimentId": "stage11-speecht5-v1-approaches",
+  "headline": "Pretrained retained the quality lead: V1C tied domain-term accuracy, while V1B delivered the fastest inference with a measurable quality trade-off.",
+  "runtimeLabel": "Verified secure RTX 4090 shared-test evaluation",
+  "integrity": {
+    "status": "passed",
+    "datasetLockVerified": true,
+    "checkpointHashesVerified": true,
+    "finalArtifactHashesVerified": true,
+    "allPodsTerminated": true,
+    "checkpointCount": 40,
+    "stabilityGateDecision": "User-authorized approach-specific probe overrides"
+  },
+  "training": {
+    "precision": "BF16",
+    "physicalBatchSize": null,
+    "gradientAccumulationSteps": null,
+    "effectiveBatchSize": 32,
+    "maximumSteps": 250,
+    "nominalEpochs": 2,
+    "learningRate": null,
+    "warmupSteps": 25,
+    "evaluationSteps": 25,
+    "maximumGradientNorm": 1.0,
+    "gradientCheckpointing": true,
+    "earlyStoppingPatience": null,
+    "earlyStoppingThreshold": 0.001,
+    "seed": 42
+  },
+  "dataAudit": {
+    "status": "passed",
+    "uniqueAudioFiles": 6628,
+    "audioVerificationFailureCount": 0,
+    "leakageIntersectionCount": 0,
+    "leakageIdentityFields": [
+      "audio_sha256",
+      "leakage_group_id",
+      "normalized_transcript",
+      "sample_id"
+    ],
+    "sharedEvaluationManifests": true,
+    "scheduleBlockSize": 8,
+    "sourceManifestSha256": {
+      "test": "420aef4614578d0a451ad60c7734c4e83ae11771f8e195d9dff67fb8095d8e61",
+      "train": "db09b4c98c47d8b580fede75c24329c91e6182f1694dd9131be606ff7ab148fc",
+      "validation": "1bb4abc967cd05230226b4a1db1458b92e1edee14f372dec9f731bff59a8d6ae"
+    },
+    "builderSha256": "6ddd2cd3e136c75cc60c337cbe255453873f33e84d5fc41d937bb40d5a2d41f5",
+    "variantConfigSha256": "87a3214e7ff3a3fe6d31cf9111502c58da267237d588f1d4ac017887744c01ad"
+  },
+  "sharedSplits": {
+    "test": 662,
+    "train": 5303,
+    "validation": 663
+  },
+  "datasetLockSha256": "9f0adbfc69925440858711ecf9f31525482fe4037a8fda9eb4ac2b5b0fd7ed7d",
+  "configurationSha256": "297286ebb5966a03610fdc0782a6ee0d712f1351aa42a377e2711f7781acb7c7",
+  "sourceModelRevisions": {
+    "tts": "30fcde30f19b87502b8435427b5f5068e401d5f6",
+    "vocoder": "bb6f429406e86a9992357a972c0698b22043307d",
+    "speakerEncoder": "56895a2df401be4150a159f3a1c653f00051d477",
+    "asr": "e8727524f962ee844a7319d92be39ac1bd25655a"
+  },
+  "pretrainedControl": {
+    "id": "speecht5-pretrained",
+    "name": "SpeechT5 Pretrained",
+    "modelId": "microsoft/speecht5_tts",
+    "revision": "30fcde30f19b87502b8435427b5f5068e401d5f6",
+    "trainingSteps": 0,
+    "evaluatedAt": "2026-08-28T02:44:33Z",
+    "podId": "oxnfq72nezkgft",
+    "hardware": "NVIDIA GeForce RTX 4090",
+    "testManifestSha256": "420aef4614578d0a451ad60c7734c4e83ae11771f8e195d9dff67fb8095d8e61",
+    "artifactManifestSha256": "93a8bacdda70c4a682ec8421328f046114da2d24e5a0a9b4639433843e2eee04",
+    "evaluation": {
+      "caseCount": 662,
+      "failureCount": 0,
+      "domainTermsCorrect": 381,
+      "domainTermsTotal": 416,
+      "domainTermAccuracy": 0.9158653846153846,
+      "wordErrorRate": 0.11103273137697517,
+      "averageInferenceMs": 965.4528383229609,
+      "averageRealTimeFactor": 0.18384663106186241,
+      "peakGpuMemoryMb": 949.82666015625,
+      "peakProcessMemoryMb": null,
+      "successfulCases": 662,
+      "exactSentenceRate": null,
+      "synthesisVerified": true
+    }
+  },
+  "variants": [
+    {
+      "id": "v1a-conservative-full",
+      "name": "V1A Conservative Full",
+      "runId": "v1a-real-20260828-001",
+      "approach": "conservative_full_model",
+      "podId": "sbqwiot1lnnnwp",
+      "startedAt": "2026-08-28T05:29:51Z",
+      "finishedAt": "2026-08-28T06:24:33Z",
+      "finalStep": 250,
+      "bestStep": 250,
+      "bestValidationLoss": 0.7076884508132935,
+      "stoppedEarly": false,
+      "trainingSeconds": 178.7502,
+      "trainingStepsPerSecond": 1.399,
+      "trainLoss": 0.8544826164245606,
+      "checkpointSteps": [
+        25,
+        50,
+        75,
+        100,
+        125,
+        150,
+        175,
+        200,
+        225,
+        250
+      ],
+      "estimatedCostUsd": 0.6746,
+      "dataset": {
+        "strategy": "uniform",
+        "scheduledRows": 5304,
+        "uniqueSourceRows": 5303,
+        "repeatedExposures": 1,
+        "rowsWithTerms": 2907,
+        "durationHours": 6.648798,
+        "uniqueSpeakers": 123,
+        "maximumSpeakerShare": 0.01263198,
+        "sourcePoolCounts": {
+          "canonical": 5304
+        },
+        "termCategoryOccurrences": {
+          "anatomy": 2420,
+          "condition": 10,
+          "measurement": 30,
+          "symptom": 1021
+        },
+        "manifestSha256": {
+          "test": "420aef4614578d0a451ad60c7734c4e83ae11771f8e195d9dff67fb8095d8e61",
+          "train": "6e610a77bbef8b462700cf5b08214b00c6eea5218dffbb42e1f87d92d281880e",
+          "validation": "1bb4abc967cd05230226b4a1db1458b92e1edee14f372dec9f731bff59a8d6ae"
+        }
+      },
+      "trainingConfig": {
+        "type": "conservative_full_model",
+        "physicalBatchSize": 16,
+        "gradientAccumulationSteps": 2,
+        "effectiveBatchSize": 32,
+        "learningRate": 1e-06,
+        "earlyStoppingEnabled": true,
+        "earlyStoppingPatience": 4,
+        "reductionFactor": 2
+      },
+      "validationHistory": [
+        {
+          "step": 25,
+          "epoch": 0.15060240963855423,
+          "evaluationLoss": 0.7603669762611389
+        },
+        {
+          "step": 50,
+          "epoch": 0.30120481927710846,
+          "evaluationLoss": 0.7467465400695801
+        },
+        {
+          "step": 75,
+          "epoch": 0.45180722891566266,
+          "evaluationLoss": 0.7343945503234863
+        },
+        {
+          "step": 100,
+          "epoch": 0.6024096385542169,
+          "evaluationLoss": 0.7267543077468872
+        },
+        {
+          "step": 125,
+          "epoch": 0.7530120481927711,
+          "evaluationLoss": 0.7198126912117004
+        },
+        {
+          "step": 150,
+          "epoch": 0.9036144578313253,
+          "evaluationLoss": 0.7176374793052673
+        },
+        {
+          "step": 175,
+          "epoch": 1.0542168674698795,
+          "evaluationLoss": 0.7119579315185547
+        },
+        {
+          "step": 200,
+          "epoch": 1.2048192771084336,
+          "evaluationLoss": 0.7090519666671753
+        },
+        {
+          "step": 225,
+          "epoch": 1.355421686746988,
+          "evaluationLoss": 0.7092759013175964
+        },
+        {
+          "step": 250,
+          "epoch": 1.5060240963855422,
+          "evaluationLoss": 0.7076884508132935
+        }
+      ],
+      "evaluation": {
+        "caseCount": 662,
+        "failureCount": 0,
+        "domainTermsCorrect": 371,
+        "domainTermsTotal": 416,
+        "domainTermAccuracy": 0.8918269230769231,
+        "wordErrorRate": 0.22531038374717832,
+        "averageInferenceMs": 1097.1119996720188,
+        "averageRealTimeFactor": 0.18925442203749238,
+        "peakGpuMemoryMb": 1058.052734375,
+        "peakProcessMemoryMb": 4921.1953125,
+        "successfulCases": 662,
+        "exactSentenceRate": 0.5196374622356495,
+        "synthesisVerified": true
+      },
+      "selectedModelSha256": "fd1e38f2d5d6956eef38cb798c2b4ab35210ad9fb6edbe7919bb2086ef54c3b6",
+      "artifactManifestSha256": "0ed3d368a6bf699fc1bd43cb084c029f731e16bac2662137e7d0f40a1a7b62b4",
+      "selectedStep": 25,
+      "selectionStatus": "eligible_checkpoint_selected"
+    },
+    {
+      "id": "v1b-lora",
+      "name": "V1B LoRA",
+      "runId": "v1b-real-20260828-001",
+      "approach": "peft_lora",
+      "podId": "yaepph4ix9oz57",
+      "startedAt": "2026-08-28T05:29:45Z",
+      "finishedAt": "2026-08-28T06:25:07Z",
+      "finalStep": 250,
+      "bestStep": 250,
+      "bestValidationLoss": 0.7062814831733704,
+      "stoppedEarly": false,
+      "trainingSeconds": 108.0661,
+      "trainingStepsPerSecond": 2.313,
+      "trainLoss": 0.8649571619033813,
+      "checkpointSteps": [
+        25,
+        50,
+        75,
+        100,
+        125,
+        150,
+        175,
+        200,
+        225,
+        250
+      ],
+      "estimatedCostUsd": 0.6829,
+      "dataset": {
+        "strategy": "uniform",
+        "scheduledRows": 5304,
+        "uniqueSourceRows": 5303,
+        "repeatedExposures": 1,
+        "rowsWithTerms": 2907,
+        "durationHours": 6.648798,
+        "uniqueSpeakers": 123,
+        "maximumSpeakerShare": 0.01263198,
+        "sourcePoolCounts": {
+          "canonical": 5304
+        },
+        "termCategoryOccurrences": {
+          "anatomy": 2420,
+          "condition": 10,
+          "measurement": 30,
+          "symptom": 1021
+        },
+        "manifestSha256": {
+          "test": "420aef4614578d0a451ad60c7734c4e83ae11771f8e195d9dff67fb8095d8e61",
+          "train": "6e610a77bbef8b462700cf5b08214b00c6eea5218dffbb42e1f87d92d281880e",
+          "validation": "1bb4abc967cd05230226b4a1db1458b92e1edee14f372dec9f731bff59a8d6ae"
+        }
+      },
+      "trainingConfig": {
+        "type": "peft_lora",
+        "physicalBatchSize": 16,
+        "gradientAccumulationSteps": 2,
+        "effectiveBatchSize": 32,
+        "learningRate": 5e-05,
+        "earlyStoppingEnabled": false,
+        "earlyStoppingPatience": 3,
+        "reductionFactor": 2
+      },
+      "validationHistory": [
+        {
+          "step": 25,
+          "epoch": 0.15060240963855423,
+          "evaluationLoss": 0.7982163429260254
+        },
+        {
+          "step": 50,
+          "epoch": 0.30120481927710846,
+          "evaluationLoss": 0.757716953754425
+        },
+        {
+          "step": 75,
+          "epoch": 0.45180722891566266,
+          "evaluationLoss": 0.746402382850647
+        },
+        {
+          "step": 100,
+          "epoch": 0.6024096385542169,
+          "evaluationLoss": 0.7375565767288208
+        },
+        {
+          "step": 125,
+          "epoch": 0.7530120481927711,
+          "evaluationLoss": 0.7269090414047241
+        },
+        {
+          "step": 150,
+          "epoch": 0.9036144578313253,
+          "evaluationLoss": 0.7231613993644714
+        },
+        {
+          "step": 175,
+          "epoch": 1.0542168674698795,
+          "evaluationLoss": 0.7138064503669739
+        },
+        {
+          "step": 200,
+          "epoch": 1.2048192771084336,
+          "evaluationLoss": 0.7101466655731201
+        },
+        {
+          "step": 225,
+          "epoch": 1.355421686746988,
+          "evaluationLoss": 0.7081750631332397
+        },
+        {
+          "step": 250,
+          "epoch": 1.5060240963855422,
+          "evaluationLoss": 0.7062814831733704
+        }
+      ],
+      "evaluation": {
+        "caseCount": 662,
+        "failureCount": 0,
+        "domainTermsCorrect": 375,
+        "domainTermsTotal": 416,
+        "domainTermAccuracy": 0.9014423076923077,
+        "wordErrorRate": 0.1369920993227991,
+        "averageInferenceMs": 900.7795875272334,
+        "averageRealTimeFactor": 0.1666541951412357,
+        "peakGpuMemoryMb": 1083.9619140625,
+        "peakProcessMemoryMb": 4806.1171875,
+        "successfulCases": 662,
+        "exactSentenceRate": 0.5785498489425982,
+        "synthesisVerified": true
+      },
+      "selectedModelSha256": "c0864e2c4c482f84e8b3944a7cebad5cf7abdf335205fba8e83d390a39d3be60",
+      "artifactManifestSha256": "fc8f8ee3cb7d08ab1e4edc0e9310e7e6326c8720b21da481a7a77982352636b9",
+      "selectedStep": 25,
+      "selectionStatus": "best_available_no_checkpoint_met_all_guardrails"
+    },
+    {
+      "id": "v1c-gradual-unfreeze",
+      "name": "V1C Gradual Unfreeze",
+      "runId": "v1c-real-20260828-001",
+      "approach": "gradual_unfreeze",
+      "podId": "rulc9al8ywsrrp",
+      "startedAt": "2026-08-28T05:29:45Z",
+      "finishedAt": "2026-08-28T06:14:39Z",
+      "finalStep": 250,
+      "bestStep": 250,
+      "bestValidationLoss": 0.7490143775939941,
+      "stoppedEarly": false,
+      "trainingSeconds": 123.911,
+      "trainingStepsPerSecond": 2.018,
+      "trainLoss": 0.9229744453430175,
+      "checkpointSteps": [
+        25,
+        50,
+        75,
+        100,
+        125,
+        150,
+        175,
+        200,
+        225,
+        250
+      ],
+      "estimatedCostUsd": 0.5538,
+      "dataset": {
+        "strategy": "uniform",
+        "scheduledRows": 5304,
+        "uniqueSourceRows": 5303,
+        "repeatedExposures": 1,
+        "rowsWithTerms": 2907,
+        "durationHours": 6.648798,
+        "uniqueSpeakers": 123,
+        "maximumSpeakerShare": 0.01263198,
+        "sourcePoolCounts": {
+          "canonical": 5304
+        },
+        "termCategoryOccurrences": {
+          "anatomy": 2420,
+          "condition": 10,
+          "measurement": 30,
+          "symptom": 1021
+        },
+        "manifestSha256": {
+          "test": "420aef4614578d0a451ad60c7734c4e83ae11771f8e195d9dff67fb8095d8e61",
+          "train": "6e610a77bbef8b462700cf5b08214b00c6eea5218dffbb42e1f87d92d281880e",
+          "validation": "1bb4abc967cd05230226b4a1db1458b92e1edee14f372dec9f731bff59a8d6ae"
+        }
+      },
+      "trainingConfig": {
+        "type": "gradual_unfreeze",
+        "physicalBatchSize": 16,
+        "gradientAccumulationSteps": 2,
+        "effectiveBatchSize": 32,
+        "learningRate": 1e-06,
+        "earlyStoppingEnabled": true,
+        "earlyStoppingPatience": 3,
+        "reductionFactor": 2
+      },
+      "validationHistory": [
+        {
+          "step": 25,
+          "epoch": 0.15060240963855423,
+          "evaluationLoss": 0.8035464286804199
+        },
+        {
+          "step": 50,
+          "epoch": 0.30120481927710846,
+          "evaluationLoss": 0.7939685583114624
+        },
+        {
+          "step": 75,
+          "epoch": 0.45180722891566266,
+          "evaluationLoss": 0.7712205052375793
+        },
+        {
+          "step": 100,
+          "epoch": 0.6024096385542169,
+          "evaluationLoss": 0.7644438743591309
+        },
+        {
+          "step": 125,
+          "epoch": 0.7530120481927711,
+          "evaluationLoss": 0.759240984916687
+        },
+        {
+          "step": 150,
+          "epoch": 0.9036144578313253,
+          "evaluationLoss": 0.7587132453918457
+        },
+        {
+          "step": 175,
+          "epoch": 1.0542168674698795,
+          "evaluationLoss": 0.7529562711715698
+        },
+        {
+          "step": 200,
+          "epoch": 1.2048192771084336,
+          "evaluationLoss": 0.7512367963790894
+        },
+        {
+          "step": 225,
+          "epoch": 1.355421686746988,
+          "evaluationLoss": 0.7517060041427612
+        },
+        {
+          "step": 250,
+          "epoch": 1.5060240963855422,
+          "evaluationLoss": 0.7490143775939941
+        }
+      ],
+      "evaluation": {
+        "caseCount": 662,
+        "failureCount": 0,
+        "domainTermsCorrect": 381,
+        "domainTermsTotal": 416,
+        "domainTermAccuracy": 0.9158653846153846,
+        "wordErrorRate": 0.13783860045146726,
+        "averageInferenceMs": 1036.167622237182,
+        "averageRealTimeFactor": 0.19104079650131078,
+        "peakGpuMemoryMb": 964.20263671875,
+        "peakProcessMemoryMb": 4931.17578125,
+        "successfulCases": 662,
+        "exactSentenceRate": 0.5725075528700906,
+        "synthesisVerified": true
+      },
+      "selectedModelSha256": "d7b26ef71e932fbb1cd466293da71a9c60c42a3f6efcf1a6b315fe86a2713230",
+      "artifactManifestSha256": "c22d7389ed49f1ac6ff10b65c8f5470f7be9c6c2e122651bedf871746ff3c0ff",
+      "selectedStep": 25,
+      "selectionStatus": "eligible_checkpoint_selected"
+    },
+    {
+      "id": "v1d-reduction-factor-1",
+      "name": "V1D Reduction Factor 1",
+      "runId": "v1d-real-20260828-001",
+      "approach": "reduction_factor",
+      "podId": "wvmsaq1mu1kgxg",
+      "startedAt": "2026-08-28T05:29:57Z",
+      "finishedAt": "2026-08-28T07:14:18Z",
+      "finalStep": 250,
+      "bestStep": 225,
+      "bestValidationLoss": 5.227897644042969,
+      "stoppedEarly": false,
+      "trainingSeconds": 284.53,
+      "trainingStepsPerSecond": 0.879,
+      "trainLoss": 5.511743782043457,
+      "checkpointSteps": [
+        25,
+        50,
+        75,
+        100,
+        125,
+        150,
+        175,
+        200,
+        225,
+        250
+      ],
+      "estimatedCostUsd": 1.287,
+      "dataset": {
+        "strategy": "uniform",
+        "scheduledRows": 5304,
+        "uniqueSourceRows": 5303,
+        "repeatedExposures": 1,
+        "rowsWithTerms": 2907,
+        "durationHours": 6.648798,
+        "uniqueSpeakers": 123,
+        "maximumSpeakerShare": 0.01263198,
+        "sourcePoolCounts": {
+          "canonical": 5304
+        },
+        "termCategoryOccurrences": {
+          "anatomy": 2420,
+          "condition": 10,
+          "measurement": 30,
+          "symptom": 1021
+        },
+        "manifestSha256": {
+          "test": "420aef4614578d0a451ad60c7734c4e83ae11771f8e195d9dff67fb8095d8e61",
+          "train": "6e610a77bbef8b462700cf5b08214b00c6eea5218dffbb42e1f87d92d281880e",
+          "validation": "1bb4abc967cd05230226b4a1db1458b92e1edee14f372dec9f731bff59a8d6ae"
+        }
+      },
+      "trainingConfig": {
+        "type": "reduction_factor",
+        "physicalBatchSize": 8,
+        "gradientAccumulationSteps": 4,
+        "effectiveBatchSize": 32,
+        "learningRate": 1e-06,
+        "earlyStoppingEnabled": true,
+        "earlyStoppingPatience": 4,
+        "reductionFactor": 1
+      },
+      "validationHistory": [
+        {
+          "step": 25,
+          "epoch": 0.15082956259426847,
+          "evaluationLoss": 5.811019420623779
+        },
+        {
+          "step": 50,
+          "epoch": 0.30165912518853694,
+          "evaluationLoss": 5.721087455749512
+        },
+        {
+          "step": 75,
+          "epoch": 0.45248868778280543,
+          "evaluationLoss": 5.637709140777588
+        },
+        {
+          "step": 100,
+          "epoch": 0.6033182503770739,
+          "evaluationLoss": 5.557470321655273
+        },
+        {
+          "step": 125,
+          "epoch": 0.7541478129713424,
+          "evaluationLoss": 5.474096775054932
+        },
+        {
+          "step": 150,
+          "epoch": 0.9049773755656109,
+          "evaluationLoss": 5.390225410461426
+        },
+        {
+          "step": 175,
+          "epoch": 1.0558069381598794,
+          "evaluationLoss": 5.324065685272217
+        },
+        {
+          "step": 200,
+          "epoch": 1.2066365007541477,
+          "evaluationLoss": 5.26680326461792
+        },
+        {
+          "step": 225,
+          "epoch": 1.3574660633484164,
+          "evaluationLoss": 5.227897644042969
+        },
+        {
+          "step": 250,
+          "epoch": 1.5082956259426847,
+          "evaluationLoss": 5.233303546905518
+        }
+      ],
+      "evaluation": {
+        "caseCount": 662,
+        "failureCount": 68,
+        "domainTermsCorrect": 0,
+        "domainTermsTotal": 348,
+        "domainTermAccuracy": 0.0,
+        "wordErrorRate": 0.9882798413270826,
+        "averageInferenceMs": 4675.606442515045,
+        "averageRealTimeFactor": 0.3205094058625696,
+        "peakGpuMemoryMb": 1094.38037109375,
+        "peakProcessMemoryMb": 3718.9453125,
+        "successfulCases": 594,
+        "exactSentenceRate": 0.0,
+        "synthesisVerified": true
+      },
+      "selectedModelSha256": "16ec00f488a569aefcb0ff131387b12e5d5b82eed3fcda4166ddb6418691ced0",
+      "artifactManifestSha256": "48d3fa20126be13951aabad23c5abd028036c4b0065682af5c9bab4e07cc53e4",
+      "selectedStep": 200,
+      "selectionStatus": "best_available_no_checkpoint_met_all_guardrails"
+    }
+  ],
+  "incidents": [
+    {
+      "id": "v1b-lora-compatibility-gate",
+      "variants": [
+        "v1b-lora"
+      ],
+      "impact": "3 pre-training compatibility probe attempts failed; model training had not started.",
+      "resolution": "The reusable compatibility probe was repaired and passed before the training process launched.",
+      "trainingRestart": false
+    },
+    {
+      "id": "v1d-reduction-factor-1-compatibility-gate",
+      "variants": [
+        "v1d-reduction-factor-1"
+      ],
+      "impact": "1 pre-training compatibility probe attempt failed; model training had not started.",
+      "resolution": "The reusable compatibility probe was repaired and passed before the training process launched.",
+      "trainingRestart": false
+    }
+  ],
+  "trainingResumptions": [],
+  "totalGpuHours": 4.321944444444444,
+  "estimatedTotalCostUsd": 3.1982999999999997
+}
