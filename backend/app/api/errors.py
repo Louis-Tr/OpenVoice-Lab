@@ -12,7 +12,7 @@ from app.experiments.common import (
     ExperimentModelNotFoundError,
     ExperimentQueueFullError,
 )
-from app.inference.base import InferenceError, UnsupportedVoiceError
+from app.inference.base import InferenceError, InputTooLongError, UnsupportedVoiceError
 from app.metrics.collector import MetricsCollectionError
 from app.models.loader import ModelLoadError
 from app.models.registry import ModelNotFoundError
@@ -71,10 +71,11 @@ def register_error_handlers(application: FastAPI) -> None:
         )
 
     @application.exception_handler(UnsupportedVoiceError)
+    @application.exception_handler(InputTooLongError)
     @application.exception_handler(TextProcessingError)
     async def invalid_synthesis_input(
         _request: Request,
-        error: UnsupportedVoiceError | TextProcessingError,
+        error: UnsupportedVoiceError | InputTooLongError | TextProcessingError,
     ) -> JSONResponse:
         return JSONResponse(
             status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,

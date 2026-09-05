@@ -3,7 +3,7 @@
 OpenVoice Lab ships a root `Dockerfile` for Google Cloud source builds. It
 produces one container: Angular is compiled during the build, FastAPI serves the
 SPA and API on Cloud Run's injected `PORT`, and the three Kokoro ONNX variants
-plus Audio8 INT4 ONNX and pretrained SpeechT5 CPU are downloaded and SHA-256
+plus pretrained SpeechT5 CPU are downloaded and SHA-256
 verified before entering the final image.
 
 ## Continuous deployment settings
@@ -40,8 +40,6 @@ only below `/tmp/openvoice`.
 ## What the cloud image exposes
 
 - Kokoro FP32, FP16, and INT8 are available for live synthesis.
-- Audio8 uses the official INT4 ONNX export on CPU with the API voice
-  `unconditioned`; its optional voice-registration model is not packaged.
 - The pretrained SpeechT5 control runs on CPU with a pinned model, vocoder, and
   CMU speaker embedding.
 - The SpeechT5 experiment tab serves a committed, SHA-256-verified snapshot of
@@ -52,8 +50,8 @@ only below `/tmp/openvoice`.
   load it.
 
 The product model loader retains only one engine in this 4 GiB deployment.
-Switching models may therefore incur a cold load, but avoids retaining Audio8,
-SpeechT5, and Kokoro sessions together. Keep concurrency at `1`; these CPU
+Switching models may therefore incur a cold load, but avoids retaining
+SpeechT5 and Kokoro sessions together. Keep concurrency at `1`; these CPU
 variants are portfolio-scale interactive paths, not high-throughput serving.
 
 If no remote model origin is configured, the snapshot remains available and the

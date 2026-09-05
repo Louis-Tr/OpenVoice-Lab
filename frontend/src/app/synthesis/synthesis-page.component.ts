@@ -49,10 +49,11 @@ import {
 
           <ovl-synthesis-form
             [text]="text()"
-            [error]="textError()"
+            [error]="textError() || inputLimitError()"
+            [maxLength]="inputLimit()"
             [disabled]="isSubmitting()"
             [submitting]="isSubmitting()"
-            [canSubmit]="modelState() === 'ready'"
+            [canSubmit]="modelState() === 'ready' && !inputLimitError()"
             [sanitizeText]="sanitizeText()"
             [normalizeText]="normalizeText()"
             (textChange)="setText($event)"
@@ -123,6 +124,13 @@ export class SynthesisPageComponent implements OnInit, OnDestroy {
     this.models().find((model) => model.id === this.selectedModelId()),
   );
 
+  readonly inputLimit = computed(() => this.selectedModel()?.maxInputCharacters ?? 5000);
+  readonly inputLimitError = computed(() =>
+    this.text().length > this.inputLimit()
+      ? `${this.selectedModel()?.name ?? 'This model'} accepts up to ${this.inputLimit()} characters. Shorten the text or choose another model.`
+      : '',
+  );
+
   readonly processedTextPreview = computed(() => this.result()?.normalizedText ?? null);
 
   @ViewChild(SynthesisFormComponent) private synthesisForm?: SynthesisFormComponent;
@@ -189,6 +197,10 @@ export class SynthesisPageComponent implements OnInit, OnDestroy {
   }
 
   submit(): void {
+    if (this.inputLimitError()) {
+      this.synthesisForm?.focusText();
+      return;
+    }
     const text = this.text().trim();
     if (!text) {
       this.textError.set('Enter text before generating speech.');
@@ -239,6 +251,9 @@ export class SynthesisPageComponent implements OnInit, OnDestroy {
       return 'Backend unavailable. Keep this text, restart FastAPI, and submit again.';
     }
     if (error.status === 422) {
+      if (typeof error.error?.detail === 'string') {
+        return error.error.detail;
+      }
       return 'The backend rejected this text or selection. Review the fields and submit again.';
     }
     if (error.status === 404) {

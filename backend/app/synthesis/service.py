@@ -3,6 +3,7 @@
 import asyncio
 
 from app.audio.service import AudioService
+from app.inference.base import InputTooLongError
 from app.metrics.collector import MetricsCollector
 from app.models.loader import ModelLoader
 from app.models.registry import ModelRegistry
@@ -39,6 +40,12 @@ class SynthesisService:
         )
         try:
             model = self._model_registry.get(request.model_id)
+            if len(request.text) > model.max_input_characters:
+                raise InputTooLongError(
+                    f"{model.display_name} accepts at most {model.max_input_characters} "
+                    f"characters; received {len(request.text)}. Shorten the text or choose "
+                    "another model."
+                )
             artifact_key = "\0".join(
                 (
                     model.label,

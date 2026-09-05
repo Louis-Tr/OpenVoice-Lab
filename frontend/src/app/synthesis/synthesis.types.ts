@@ -28,6 +28,8 @@ export interface SynthesisResult {
 }
 
 export interface ModelSummary {
+  readonly maxInputCharacters?: number;
+  readonly maxInputTokens?: number | null;
   readonly id: string;
   readonly name: string;
   readonly precision: string;

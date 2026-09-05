@@ -15,6 +15,10 @@ class UnsupportedVoiceError(InferenceError):
     """Raised when an engine does not expose the requested voice."""
 
 
+class InputTooLongError(InferenceError):
+    """Raised when input exceeds a selected model's supported length."""
+
+
 @dataclass(frozen=True, slots=True)
 class AudioResult:
     """Raw mono audio returned by an inference engine."""

@@ -58,6 +58,51 @@ function createApi(overrides: Partial<SynthesisApiService> = {}): SynthesisApiSe
 }
 
 describe('SynthesisPageComponent', () => {
+  it('updates the limit on model switches and preserves an overlength draft', () => {
+    const speechT5: ModelSummary = {
+      ...model,
+      id: 'speecht5-pretrained',
+      name: 'SpeechT5',
+      maxInputCharacters: 599,
+      maxInputTokens: 600,
+    };
+    const api = createApi({ listModels: vi.fn(() => of([model, speechT5])) });
+    const component = new SynthesisPageComponent(api);
+    component.ngOnInit();
+    component.setText('a'.repeat(600));
+    expect(component.inputLimit()).toBe(5000);
+    expect(component.inputLimitError()).toBe('');
+
+    component.setModelSelection({ modelId: speechT5.id });
+    expect(component.inputLimit()).toBe(599);
+    expect(component.inputLimitError()).toContain('SpeechT5 accepts up to 599');
+    expect(component.text()).toHaveLength(600);
+    component.submit();
+    expect(api.synthesize).not.toHaveBeenCalled();
+
+    component.setText('a'.repeat(599));
+    expect(component.inputLimitError()).toBe('');
+    component.submit();
+    expect(api.synthesize).toHaveBeenCalledTimes(1);
+
+    component.setModelSelection({ modelId: model.id });
+    expect(component.inputLimit()).toBe(5000);
+  });
+
+  it('shows the backend token limit message when cleanup expands the input', () => {
+    const detail = 'SpeechT5 accepts at most 600 tokens after text cleanup; received 643.';
+    const api = createApi({
+      synthesize: vi.fn(() => throwError(() => new HttpErrorResponse({
+        status: 422, error: { detail },
+      }))),
+    });
+    const component = new SynthesisPageComponent(api);
+    component.ngOnInit();
+    component.setText('A short input.');
+    component.submit();
+    expect(component.requestError()).toBe(detail);
+  });
+
   it('loads available models for a fresh session', () => {
     const component = new SynthesisPageComponent(createApi());
 

@@ -9,6 +9,7 @@ import numpy as np
 from app.inference.base import (
     AudioResult,
     InferenceError,
+    InputTooLongError,
     TTSInferenceEngine,
     UnsupportedVoiceError,
 )
@@ -72,7 +73,18 @@ class SpeechT5InferenceEngine(TTSInferenceEngine):
         try:
             with self._inference_lock:
                 self._torch.manual_seed(42)
-                inputs = self._processor(text=text, return_tensors="pt")
+                inputs = self._processor(text=text, return_tensors="pt", verbose=False)
+                token_count = inputs["input_ids"].shape[-1]
+                token_limit = min(
+                    self._processor.tokenizer.model_max_length,
+                    self._model.config.max_text_positions,
+                )
+                if token_count > token_limit:
+                    raise InputTooLongError(
+                        f"SpeechT5 accepts at most {token_limit} tokens after text cleanup; "
+                        f"received {token_count}. Shorten the text, disable text cleanup, "
+                        "or choose another model."
+                    )
                 with self._torch.inference_mode():
                     waveform: Any = self._model.generate_speech(
                         inputs["input_ids"],
@@ -81,6 +93,8 @@ class SpeechT5InferenceEngine(TTSInferenceEngine):
                         attention_mask=inputs.get("attention_mask"),
                     )
             samples = waveform.detach().float().cpu().numpy().astype(np.float32)
+        except InputTooLongError:
+            raise
         except Exception as error:
             raise InferenceError(f"SpeechT5 synthesis failed: {error}") from error
         if samples.ndim != 1 or samples.size == 0 or not np.isfinite(samples).all():

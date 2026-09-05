@@ -1,4 +1,4 @@
-"""Real integration acceptance for CPU-compatible Audio8 and SpeechT5."""
+"""Real integration acceptance for CPU-compatible SpeechT5."""
 
 import asyncio
 import importlib.util
@@ -13,7 +13,7 @@ from app.schemas.synthesis import SynthesisRequest
 
 
 @pytest.mark.integration
-def test_audio8_int4_and_speecht5_generate_playable_cpu_audio(tmp_path: Path) -> None:
+def test_speecht5_generates_playable_cpu_audio(tmp_path: Path) -> None:
     required_modules = ("onnxruntime", "tokenizers", "torch", "transformers", "sentencepiece")
     if not all(importlib.util.find_spec(module) for module in required_modules):
         pytest.skip("Install the serving dependency profile and CPU PyTorch.")
@@ -21,8 +21,6 @@ def test_audio8_int4_and_speecht5_generate_playable_cpu_audio(tmp_path: Path) ->
     defaults = Settings(environment="test")
     artifact_root = resolve_backend_path(defaults.model_artifact_dir)
     required_artifacts = (
-        artifact_root / defaults.audio8_model_dirname / "runtime_manifest.json",
-        artifact_root / defaults.audio8_model_dirname / "slow_ar_int4.onnx.data",
         artifact_root / defaults.speecht5_model_dirname / "pytorch_model.bin",
         artifact_root / defaults.speecht5_vocoder_dirname / "pytorch_model.bin",
         artifact_root / defaults.speecht5_speaker_filename,
@@ -49,15 +47,6 @@ def test_audio8_int4_and_speecht5_generate_playable_cpu_audio(tmp_path: Path) ->
     async def synthesize(request: SynthesisRequest):
         return await app.state.synthesis_service.synthesize(request)
 
-    audio8 = asyncio.run(
-        synthesize(
-            SynthesisRequest(
-                text="Hello from Audio eight.",
-                model_id="audio8-0.6b",
-                voice_id="unconditioned",
-            )
-        )
-    )
     speecht5 = asyncio.run(
         synthesize(
             SynthesisRequest(
@@ -68,15 +57,12 @@ def test_audio8_int4_and_speecht5_generate_playable_cpu_audio(tmp_path: Path) ->
         )
     )
 
-    assert audio8.status == speecht5.status == "ok"
-    assert audio8.metrics.model_variant == "audio8"
+    assert speecht5.status == "ok"
     assert speecht5.metrics.model_variant == "pretrained"
-    for result, expected_rate in ((audio8, 44_100), (speecht5, 16_000)):
-        assert result.audio_url is not None
-        audio_path = output / Path(result.audio_url).name
-        assert audio_path.is_file()
-        with wave.open(str(audio_path), "rb") as audio_file:
-            assert audio_file.getframerate() == expected_rate
-            assert audio_file.getnframes() > 0
-    assert app.state.model_loader.load_count("audio8-0.6b") == 1
+    assert speecht5.audio_url is not None
+    audio_path = output / Path(speecht5.audio_url).name
+    assert audio_path.is_file()
+    with wave.open(str(audio_path), "rb") as audio_file:
+        assert audio_file.getframerate() == 16_000
+        assert audio_file.getnframes() > 0
     assert app.state.model_loader.load_count("speecht5-pretrained") == 1

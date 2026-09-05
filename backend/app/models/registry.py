@@ -35,6 +35,8 @@ class ModelDefinition:
     enabled: bool = True
     unavailable_reason: str | None = None
     description: str = "Local open-weight text-to-speech model."
+    max_input_characters: int = 5_000
+    max_input_tokens: int | None = None
 
     @property
     def key(self) -> str:
@@ -100,6 +102,8 @@ class ModelRegistry:
                 available=model.artifacts_available,
                 unavailable_reason=model.resolved_unavailable_reason,
                 description=model.description,
+                max_input_characters=model.max_input_characters,
+                max_input_tokens=model.max_input_tokens,
             )
             for model in self._models.values()
         ]

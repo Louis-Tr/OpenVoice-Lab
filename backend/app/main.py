@@ -53,7 +53,6 @@ def create_app(
     resolved_settings = settings or Settings()
     health_service = HealthService()
     model_artifact_root = resolve_backend_path(resolved_settings.model_artifact_dir)
-    audio8_dependencies_ready = dependencies_available("onnxruntime", "tokenizers")
     speecht5_dependencies_ready = dependencies_available("torch", "transformers", "sentencepiece")
     resolved_registry = model_registry or ModelRegistry(
         (
@@ -104,56 +103,6 @@ def create_app(
                 description="Weight-quantized Kokoro for the smallest local footprint.",
             ),
             ModelDefinition(
-                model_id=resolved_settings.audio8_model_id,
-                display_name="Audio8 0.6B",
-                precision="INT4",
-                variant="audio8",
-                model_version="818569c6b832118ad68d61bbd873abe250fcd68a",
-                model_path=(
-                    model_artifact_root / resolved_settings.audio8_model_dirname
-                ),
-                voices_path=None,
-                voices=(resolved_settings.audio8_voice_id,),
-                runtime="ONNX Runtime CPU",
-                engine="audio8-onnx",
-                availability_markers=(
-                    model_artifact_root
-                    / resolved_settings.audio8_model_dirname
-                    / "runtime_manifest.json",
-                    model_artifact_root
-                    / resolved_settings.audio8_model_dirname
-                    / "slow_ar_int4.onnx",
-                    model_artifact_root
-                    / resolved_settings.audio8_model_dirname
-                    / "slow_ar_int4.onnx.data",
-                    model_artifact_root
-                    / resolved_settings.audio8_model_dirname
-                    / "fast_ar_int4.onnx",
-                    model_artifact_root
-                    / resolved_settings.audio8_model_dirname
-                    / "fast_ar_int4.onnx.data",
-                    model_artifact_root
-                    / resolved_settings.audio8_model_dirname
-                    / "codec_decoder_fp16.onnx",
-                    model_artifact_root
-                    / resolved_settings.audio8_model_dirname
-                    / "codec_decoder_fp16.onnx.data",
-                    model_artifact_root
-                    / resolved_settings.audio8_model_dirname
-                    / "tokenizer"
-                    / "tokenizer.json",
-                ),
-                enabled=audio8_dependencies_ready,
-                unavailable_reason=(
-                    None
-                    if audio8_dependencies_ready
-                    else "Audio8 INT4 requires ONNX Runtime and the local tokenizer runtime."
-                ),
-                description=(
-                    "Official INT4 Audio8 export using deterministic, unconditioned CPU inference."
-                ),
-            ),
-            ModelDefinition(
                 model_id=resolved_settings.speecht5_model_id,
                 display_name="SpeechT5",
                 precision="FP32",
@@ -164,6 +113,8 @@ def create_app(
                 voices=(resolved_settings.speecht5_voice_id,),
                 runtime="PyTorch CPU",
                 engine="speecht5-transformers",
+                max_input_characters=599,
+                max_input_tokens=600,
                 additional_artifacts=(
                     model_artifact_root / resolved_settings.speecht5_vocoder_dirname,
                 ),

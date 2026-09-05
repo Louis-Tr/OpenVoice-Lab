@@ -19,3 +19,5 @@ class ModelSummary(ApiSchema):
     available: bool
     unavailable_reason: str | None = None
     description: str = "Local open-weight text-to-speech model."
+    max_input_characters: int = 5_000
+    max_input_tokens: int | None = None

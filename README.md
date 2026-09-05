@@ -7,12 +7,13 @@ Angular + FastAPI architecture.
 
 ### Current synthesis catalog
 
-The main Synthesis tab is driven entirely by `GET /api/models` and exposes five
+The main Synthesis tab is driven entirely by `GET /api/models` and exposes four
 concrete configurations: **Kokoro FP32**, **Kokoro FP16**, **Kokoro INT8**,
-**Audio8 INT4**, and **SpeechT5 CPU**. All five are self-hosted and provisioned
-from checksum-pinned artifacts. Audio8 uses the official INT4 ONNX CPU export;
+and **SpeechT5 CPU**. All four are self-hosted and provisioned
+from checksum-pinned artifacts. Audio8 has been removed from the active catalog
+and default model downloads; historical benchmark results remain readable.
 SpeechT5 uses the pinned Microsoft model, vocoder, and CMU speaker profile.
-Neither path calls an external inference API or executes remote model code.
+Synthesis does not call an external inference API or execute remote model code.
 
 Real CPU acceptance on 2026-08-28 produced playable WAVs through the complete
 `SynthesisService` path: Audio8 generated 1.765 seconds of audio in 4.966
@@ -592,7 +593,7 @@ and models remain in named volumes so restarts do not require reprovisioning.
 ## Deploy one service to Google Cloud Run
 
 The root [`Dockerfile`](Dockerfile) packages the Angular production build,
-FastAPI, three Kokoro variants, Audio8 INT4 ONNX, and SpeechT5 CPU behind one
+FastAPI, three Kokoro variants, and SpeechT5 CPU behind one
 Cloud Run URL. The constrained deployment retains at most one heavyweight
 engine in memory and serializes requests through Cloud Run concurrency `1`.
 For repository-triggered builds, select branch `main`, build type **Dockerfile**,

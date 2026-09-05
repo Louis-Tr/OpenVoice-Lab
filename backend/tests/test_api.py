@@ -171,6 +171,8 @@ def test_model_listing(harness: ApiHarness) -> None:
             "available": True,
             "unavailableReason": None,
             "description": "Local open-weight text-to-speech model.",
+            "maxInputCharacters": 5000,
+            "maxInputTokens": None,
         },
         {
             "id": "kokoro-q8",
@@ -185,6 +187,8 @@ def test_model_listing(harness: ApiHarness) -> None:
             "available": True,
             "unavailableReason": None,
             "description": "Local open-weight text-to-speech model.",
+            "maxInputCharacters": 5000,
+            "maxInputTokens": None,
         },
     ]
 
@@ -204,7 +208,8 @@ def test_default_catalog_exposes_all_model_options_without_claiming_missing_arti
         experiment_model_cache_dir=tmp_path / "model-cache",
         experiment_speaker_profile_dir=tmp_path / "speaker-profile",
     )
-    response = request(create_app(settings), "GET", "/api/models")
+    app = create_app(settings)
+    response = request(app, "GET", "/api/models")
 
     assert response.status_code == 200
     models = response.json()
@@ -212,18 +217,28 @@ def test_default_catalog_exposes_all_model_options_without_claiming_missing_arti
         "kokoro-fp32",
         "kokoro-fp16",
         "kokoro-q8",
-        "audio8-0.6b",
         "speecht5-pretrained",
     ]
     assert not any(model["available"] for model in models)
-    audio8 = next(model for model in models if model["id"] == "audio8-0.6b")
-    assert audio8["precision"] == "INT4"
-    assert audio8["runtime"] == "ONNX Runtime CPU"
-    assert audio8["voices"] == ["unconditioned"]
-    assert "remote model code" not in audio8["unavailableReason"]
     speecht5 = next(model for model in models if model["id"] == "speecht5-pretrained")
     assert speecht5["runtime"] == "PyTorch CPU"
     assert speecht5["voices"] == ["cmu-slt"]
+    assert speecht5["maxInputCharacters"] == 599
+    assert speecht5["maxInputTokens"] == 600
+    assert models[0]["maxInputCharacters"] == 5000
+    removed = request(app, "POST", "/api/synthesis", {
+        "text": "Hello.", "modelId": "audio8-0.6b", "voiceId": "unconditioned",
+    })
+    assert removed.status_code == 404
+
+    # Reject overlength requests before trying to load even missing model weights.
+    rejected = request(app, "POST", "/api/synthesis", {
+        "text": "a" * 600,
+        "modelId": "speecht5-pretrained",
+        "voiceId": "cmu-slt",
+    })
+    assert rejected.status_code == 422
+    assert "599 characters; received 600" in rejected.json()["detail"]
 
 
 def test_single_container_serves_angular_routes_without_swallowing_api_404s(

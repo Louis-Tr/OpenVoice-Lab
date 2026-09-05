@@ -1,4 +1,4 @@
-"""Provision checksum-pinned CPU model artifacts for Audio8 and SpeechT5."""
+"""Provision checksum-pinned CPU model artifacts for SpeechT5."""
 
 from __future__ import annotations
 
@@ -12,8 +12,6 @@ from urllib.request import Request, urlopen
 
 ARTIFACT_ROOT = Path(__file__).resolve().parents[1] / "model-artifacts"
 
-AUDIO8_REPOSITORY = "Audio8/Audio8-TTS-Preview-0.6B-ONNX-INT4"
-AUDIO8_REVISION = "818569c6b832118ad68d61bbd873abe250fcd68a"
 SPEECHT5_REPOSITORY = "microsoft/speecht5_tts"
 SPEECHT5_REVISION = "30fcde30f19b87502b8435427b5f5068e401d5f6"
 VOCODER_REPOSITORY = "microsoft/speecht5_hifigan"
@@ -42,70 +40,6 @@ class RemoteArtifact:
 
 
 ARTIFACTS = (
-    RemoteArtifact(
-        AUDIO8_REPOSITORY,
-        AUDIO8_REVISION,
-        "codec_decoder_fp16.onnx",
-        "audio8-tts-preview-0.6b-int4/codec_decoder_fp16.onnx",
-        "6e379be31db6c1b0c111e0e3d2aeb10717ee96b197462b926de411e75a1fd019",
-        "Apache-2.0",
-    ),
-    RemoteArtifact(
-        AUDIO8_REPOSITORY,
-        AUDIO8_REVISION,
-        "codec_decoder_fp16.onnx.data",
-        "audio8-tts-preview-0.6b-int4/codec_decoder_fp16.onnx.data",
-        "18838f686aa7c1528fb69ec11e1ab404fdc4dc823d13219abfd4b327988527c0",
-        "Apache-2.0",
-    ),
-    RemoteArtifact(
-        AUDIO8_REPOSITORY,
-        AUDIO8_REVISION,
-        "fast_ar_int4.onnx",
-        "audio8-tts-preview-0.6b-int4/fast_ar_int4.onnx",
-        "808c5a0c95c28d90337d925a9a8f6075f7ff8eb7b3080d2b34c4133479a6dc94",
-        "Apache-2.0",
-    ),
-    RemoteArtifact(
-        AUDIO8_REPOSITORY,
-        AUDIO8_REVISION,
-        "fast_ar_int4.onnx.data",
-        "audio8-tts-preview-0.6b-int4/fast_ar_int4.onnx.data",
-        "183be0c9f26b27c605b92a0875beb93f8f98b771f27f65cab133c73610868325",
-        "Apache-2.0",
-    ),
-    RemoteArtifact(
-        AUDIO8_REPOSITORY,
-        AUDIO8_REVISION,
-        "slow_ar_int4.onnx",
-        "audio8-tts-preview-0.6b-int4/slow_ar_int4.onnx",
-        "0cf7701d6da81f888b49ba6e752445d9786a9915ba30dcf084f7743bdda96834",
-        "Apache-2.0",
-    ),
-    RemoteArtifact(
-        AUDIO8_REPOSITORY,
-        AUDIO8_REVISION,
-        "slow_ar_int4.onnx.data",
-        "audio8-tts-preview-0.6b-int4/slow_ar_int4.onnx.data",
-        "bb217f654039692204386b7e5b74d98e9268863bb664a849aa123a9053d6c824",
-        "Apache-2.0",
-    ),
-    RemoteArtifact(
-        AUDIO8_REPOSITORY,
-        AUDIO8_REVISION,
-        "runtime_manifest.json",
-        "audio8-tts-preview-0.6b-int4/runtime_manifest.json",
-        "6473ae7d0106a2e369e442c72a71d2d46d8fbd3fe18c80d80b1b46e4aa241930",
-        "Apache-2.0",
-    ),
-    RemoteArtifact(
-        AUDIO8_REPOSITORY,
-        AUDIO8_REVISION,
-        "tokenizer/tokenizer.json",
-        "audio8-tts-preview-0.6b-int4/tokenizer/tokenizer.json",
-        "f24e08099d45a8adf3f52f5f0b03276e433bb9d689bb15fcbcc48ce58744588b",
-        "Apache-2.0",
-    ),
     RemoteArtifact(
         SPEECHT5_REPOSITORY,
         SPEECHT5_REVISION,

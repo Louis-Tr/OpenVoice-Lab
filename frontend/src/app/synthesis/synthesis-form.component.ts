@@ -23,7 +23,7 @@ import {
         id="synthesis-text"
         name="text"
         rows="6"
-        maxlength="5000"
+        [attr.maxlength]="maxLength"
         autocomplete="off"
         placeholder="OpenVoice Lab is running locally."
         [value]="text"
@@ -34,7 +34,7 @@ import {
       ></textarea>
       <div class="text-meta">
         <p id="synthesis-text-help">Enter the exact words to generate.</p>
-        <span>{{ text.length }} / 5000</span>
+        <span aria-live="polite">{{ text.length }} / {{ maxLength }} characters</span>
       </div>
       @if (error) {
         <p id="synthesis-text-error" class="field-error" role="alert">{{ error }}</p>
@@ -102,6 +102,7 @@ import {
   `,
 })
 export class SynthesisFormComponent {
+  @Input() maxLength = 5000;
   @Input() text = '';
   @Input() error = '';
   @Input() disabled = false;

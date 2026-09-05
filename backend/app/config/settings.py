@@ -33,9 +33,6 @@ class Settings(BaseSettings):
     kokoro_model_version: str = "1.0"
     kokoro_language: str = "en-us"
     kokoro_speed: float = 1.0
-    audio8_model_id: str = "audio8-0.6b"
-    audio8_model_dirname: str = "audio8-tts-preview-0.6b-int4"
-    audio8_voice_id: str = "unconditioned"
     speecht5_model_id: str = "speecht5-pretrained"
     speecht5_model_dirname: str = "speecht5-tts"
     speecht5_vocoder_dirname: str = "speecht5-hifigan"

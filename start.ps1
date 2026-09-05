@@ -15,7 +15,6 @@ $modelPath = Join-Path $backendPath 'model-artifacts\kokoro-v1.0.onnx'
 $fp16ModelPath = Join-Path $backendPath 'model-artifacts\kokoro-v1.0.fp16.onnx'
 $quantizedModelPath = Join-Path $backendPath 'model-artifacts\kokoro-v1.0.int8.onnx'
 $voicesPath = Join-Path $backendPath 'model-artifacts\voices-v1.0.bin'
-$audio8Path = Join-Path $backendPath 'model-artifacts\audio8-tts-preview-0.6b-int4\runtime_manifest.json'
 $speechT5Path = Join-Path $backendPath 'model-artifacts\speecht5-tts\pytorch_model.bin'
 $speechT5VocoderPath = Join-Path $backendPath 'model-artifacts\speecht5-hifigan\pytorch_model.bin'
 $speechT5SpeakerPath = Join-Path $backendPath 'model-artifacts\speecht5-speakers\cmu-slt.npy'
@@ -72,32 +71,26 @@ Download the local voice artifacts:
   $backendPython scripts\download_models.py
 "@
 
-Assert-RequiredFile -LiteralPath $audio8Path -SetupHint @"
-Download the CPU-compatible Audio8 and SpeechT5 artifacts:
-  cd $backendPath
-  $backendPython scripts\download_cpu_models.py
-"@
-
 Assert-RequiredFile -LiteralPath $speechT5Path -SetupHint @"
-Download the CPU-compatible Audio8 and SpeechT5 artifacts:
+Download the CPU-compatible SpeechT5 artifacts:
   cd $backendPath
   $backendPython scripts\download_cpu_models.py
 "@
 
 Assert-RequiredFile -LiteralPath $speechT5VocoderPath -SetupHint @"
-Download the CPU-compatible Audio8 and SpeechT5 artifacts:
+Download the CPU-compatible SpeechT5 artifacts:
   cd $backendPath
   $backendPython scripts\download_cpu_models.py
 "@
 
 Assert-RequiredFile -LiteralPath $speechT5SpeakerPath -SetupHint @"
-Download the CPU-compatible Audio8 and SpeechT5 artifacts:
+Download the CPU-compatible SpeechT5 artifacts:
   cd $backendPath
   $backendPython scripts\download_cpu_models.py
 "@
 
 Write-Host 'OpenVoice Lab prerequisites are ready.' -ForegroundColor Green
-Write-Host 'Audio8 INT4 and SpeechT5 CPU synthesis are enabled.' -ForegroundColor Green
+Write-Host 'Kokoro and SpeechT5 CPU synthesis are enabled.' -ForegroundColor Green
 
 if ($CheckOnly) {
     Write-Host 'Check complete. No servers were started.'
