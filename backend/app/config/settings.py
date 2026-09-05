@@ -3,6 +3,7 @@
 from pathlib import Path
 from typing import Literal
 
+from pydantic import SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -53,5 +54,11 @@ class Settings(BaseSettings):
     experiment_maximum_queued_jobs: int = 2
     experiment_maximum_cached_models: int = 2
     experiment_cpu_threads: int | None = None
+    experiment_model_base_url: str | None = None
+    experiment_model_access_token: SecretStr | None = None
+    experiment_remote_manifest_path: Path = Path(
+        "app/experiments/snapshots/remote_models.json"
+    )
+    experiment_asr_dirname: str = "whisper-small-en"
     speecht5_revision: str = "30fcde30f19b87502b8435427b5f5068e401d5f6"
     speecht5_vocoder_revision: str = "bb6f429406e86a9992357a972c0698b22043307d"

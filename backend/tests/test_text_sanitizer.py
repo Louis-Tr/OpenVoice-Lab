@@ -29,7 +29,8 @@ def test_sanitizer_removes_noise_without_damaging_useful_punctuation(
 def test_sanitizer_normalizes_unicode_controls_and_whitespace() -> None:
     sanitizer = TextSanitizer()
 
-    assert sanitizer.sanitize("Ａ clean\u200b\tline\nnow\x00") == "A clean line now"
+    # Paragraph/line boundaries are now retained deliberately, not flattened.
+    assert sanitizer.sanitize("Ａ clean\u200b\tline\nnow\x00") == "A clean line\nnow"
 
 
 def test_processing_rejects_input_without_speakable_content() -> None:

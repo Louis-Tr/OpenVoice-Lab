@@ -86,12 +86,30 @@ import {
           <legend>Models to compare</legend>
           <div class="model-grid">
             @for (model of models; track model.id) {
-              <label [class.unavailable]="!model.available" [class.control]="model.role === 'pretrained'">
+              <label
+                [class.unavailable]="!model.available"
+                [class.control]="model.role === 'pretrained'"
+                [attr.aria-disabled]="!model.available"
+                [attr.title]="model.unavailableReason"
+              >
                 <input type="checkbox" [disabled]="isRunning() || !model.available" [checked]="isSelected(model.id)" (change)="toggleModel(model.id, $any($event.target).checked)" />
-                <span><strong>{{ model.name }}</strong><small>{{ model.role === 'pretrained' ? 'unadapted control' : 'adapted candidate' }} · {{ model.runtime }}</small></span>
+                <span>
+                  <strong>{{ model.name }}</strong>
+                  <small>{{ model.role === 'pretrained' ? 'unadapted control' : 'adapted candidate' }} · {{ model.runtime }}</small>
+                  @if (!model.available) {
+                    <small class="readiness-label">Not provisioned</small>
+                  }
+                </span>
               </label>
             }
           </div>
+          @if (availableModelCount() < 2) {
+            <div id="comparison-readiness" class="capability-state" role="status" aria-live="polite">
+              <strong>Live comparison is not ready on this deployment.</strong>
+              <p>{{ unavailableSummary() }}</p>
+              <span>The verified training statistics above remain available.</span>
+            </div>
+          }
         </fieldset>
 
         @if (validationError(); as error) {
@@ -99,7 +117,12 @@ import {
         }
 
         <div class="action-row">
-          <button class="primary" type="submit" [disabled]="isRunning() || selectedModels().length < 2">
+          <button
+            class="primary"
+            type="submit"
+            [disabled]="isRunning() || selectedModels().length < 2"
+            [attr.aria-describedby]="availableModelCount() < 2 ? 'comparison-readiness' : null"
+          >
             {{ isRunning() ? 'Comparison running' : 'Compare models' }}
           </button>
           @if (isRunning()) {
@@ -238,6 +261,21 @@ export class LiveComparisonComponent implements OnDestroy {
 
   modelFor(modelId: ExperimentModelId): ExperimentModelSummary | undefined {
     return this.models.find((model) => model.id === modelId);
+  }
+
+  availableModelCount(): number {
+    return this.models.filter((model) => model.available).length;
+  }
+
+  unavailableSummary(): string {
+    const reasons = [
+      ...new Set(
+        this.models
+          .filter((model) => !model.available && model.unavailableReason)
+          .map((model) => model.unavailableReason as string),
+      ),
+    ];
+    return reasons[0] ?? 'At least two verified model artifacts are required.';
   }
 
   hasScoredResults(job: ExperimentComparisonJob): boolean {

@@ -26,13 +26,18 @@ class ExperimentModelDefinition:
     source: Path
     revision: str
     model_sha256: str | None
+    remote_available: bool = False
 
     @property
-    def available(self) -> bool:
+    def local_available(self) -> bool:
         return self.source.is_dir() and any(
             (self.source / name).is_file()
             for name in ("model.safetensors", "pytorch_model.bin")
         )
+
+    @property
+    def available(self) -> bool:
+        return self.local_available or self.remote_available
 
 
 class ExperimentModelRegistry:
@@ -132,6 +137,54 @@ class ExperimentModelRegistry:
             )
         return cls(definitions)
 
+    @classmethod
+    def from_snapshot_models(
+        cls,
+        summaries: Iterable[ExperimentModelSummary],
+        *,
+        pretrained_root: Path,
+        remote_cache_root: Path,
+        remote_model_ids: frozenset[str],
+    ) -> "ExperimentModelRegistry":
+        """Build the cloud catalog from verified snapshot metadata and remote inventory."""
+        definitions = []
+        for summary in summaries:
+            is_pretrained = summary.role == "pretrained"
+            source = (
+                pretrained_root.resolve()
+                if is_pretrained
+                else (remote_cache_root / summary.id).resolve()
+            )
+            model_sha256 = summary.model_sha256
+            if is_pretrained:
+                weight = next(
+                    (
+                        source / name
+                        for name in ("model.safetensors", "pytorch_model.bin")
+                        if (source / name).is_file()
+                    ),
+                    None,
+                )
+                local_sha256 = sha256_file(weight) if weight is not None else None
+                if local_sha256 != model_sha256:
+                    raise ExperimentEvidenceError(
+                        "The packaged pretrained model differs from the experiment snapshot."
+                    )
+                model_sha256 = local_sha256
+            definitions.append(
+                ExperimentModelDefinition(
+                    id=summary.id,
+                    name=summary.name,
+                    role=summary.role,
+                    variant=summary.variant,
+                    source=source,
+                    revision=summary.revision,
+                    model_sha256=model_sha256,
+                    remote_available=(not is_pretrained and summary.id in remote_model_ids),
+                )
+            )
+        return cls(definitions)
+
     def get(self, model_id: str) -> ExperimentModelDefinition:
         try:
             return self._definitions[model_id]  # type: ignore[index]
@@ -151,7 +204,9 @@ class ExperimentModelRegistry:
                 model_sha256=item.model_sha256,
                 available=item.available,
                 unavailable_reason=(
-                    None if item.available else "Pinned model artifacts have not been provisioned."
+                    None
+                    if item.available
+                    else "Pinned model artifacts have not been provisioned."
                 ),
             )
             for item in self._definitions.values()

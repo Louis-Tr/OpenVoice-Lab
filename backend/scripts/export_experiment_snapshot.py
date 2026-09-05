@@ -60,6 +60,7 @@ def main() -> None:
     report_path = OUTPUT_ROOT / "report.json"
     fixtures_path = OUTPUT_ROOT / "fixtures.json"
     models_path = OUTPUT_ROOT / "models.json"
+    remote_models_path = OUTPUT_ROOT / "remote_models.json"
     write_json(report_path, service.report().model_dump(mode="json", by_alias=True))
     write_json(
         fixtures_path,
@@ -83,7 +84,12 @@ def main() -> None:
             "source_commit": source_commit(),
             "files": {
                 path.name: file_sha256(path)
-                for path in (report_path, fixtures_path, models_path)
+                for path in (
+                    report_path,
+                    fixtures_path,
+                    models_path,
+                    remote_models_path,
+                )
             },
         },
     )

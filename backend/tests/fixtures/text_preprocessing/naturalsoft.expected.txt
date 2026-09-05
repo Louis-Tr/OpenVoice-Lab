@@ -1,0 +1,37 @@
+Yes. For this Natural Soft meeting, owning Open Voice Lab is probably the single highest-priority preparation task.
+
+Not memorizing every file. Owning the repo means you can explain and defend:
+
+what problem each module solves.
+why the architecture is split that way.
+what happens end-to-end on a request.
+why each model was chosen.
+how model loading/caching works.
+how benchmarking is controlled.
+how the Speech T five experiment was designed.
+why the first fine-tuning attempts failed.
+why the pretrained control won.
+why Docker/Cloud Run were chosen.
+what you would change for production scale.
+and what parts Codex generated versus what decisions you personally made.
+
+Given the laptop request, I'd assume they may ask you to open the repo and walk through code live. So the best preparation is to know maybe 8–10 files extremely well, not 100 files shallowly.
+
+If I were prioritizing, I'd learn these first:
+
+backend slash app slash synthesis slash service dot P Y.
+backend slash app slash models slash registry dot P Y.
+backend slash app slash models slash loader dot P Y.
+inference interface + one concrete engine.
+benchmark runner/evaluator.
+Speech T five experiment/training pipeline.
+Fast A P I synthesis endpoint.
+Angular synthesis flow.
+Dockerfile / deployment path.
+config/settings.
+
+The key test is:
+
+If they point at any one of those files and ask “why is this here?” or “what happens if this fails?”, you should be able to answer immediately.
+
+That matters more than rehearsing another 30 behavioral questions.

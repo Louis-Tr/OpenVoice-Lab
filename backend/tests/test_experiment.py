@@ -23,13 +23,17 @@ from app.experiments.model_registry import (
     ExperimentModelDefinition,
     ExperimentModelRegistry,
 )
+from app.experiments.remote_artifacts import (
+    ExperimentModelProvisioner,
+    RemoteModelCatalog,
+)
 from app.experiments.scorer import score_terms, word_error_rate
 from app.experiments.service import ExperimentService
 from app.experiments.snapshot import DEFAULT_SNAPSHOT_ROOT, SnapshotExperimentService
 from app.experiments.store import ExperimentJobStore
 from app.experiments.v1_approach_report import V1ApproachReportService
 from app.inference.speecht5_cpu import SpeechT5SynthesisOutput
-from app.schemas.experiment import ExperimentComparisonRequest
+from app.schemas.experiment import ExperimentComparisonRequest, ExperimentModelSummary
 from app.text_processing.service import TextProcessingService
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
@@ -702,7 +706,153 @@ def test_cloud_snapshot_preserves_evidence_but_disables_live_models() -> None:
     assert report.integrity.final_artifact_hashes_verified
     assert fixtures.items
     assert all(not model.available for model in service.models())
-    assert all("not packaged" in model.unavailable_reason for model in service.models())
+    assert all("not provisioned" in model.unavailable_reason for model in service.models())
+
+
+def test_remote_model_provisioning_is_atomic_and_hash_verified(tmp_path: Path) -> None:
+    model_id = "speecht5-v1a-conservative-full"
+    remote_root = tmp_path / "remote" / model_id
+    remote_root.mkdir(parents=True)
+    files = {
+        "config.json": b"{}",
+        "model.safetensors": b"verified model weights",
+    }
+    inventory = []
+    for name, content in files.items():
+        path = remote_root / name
+        path.write_bytes(content)
+        inventory.append(
+            {"path": name, "bytes": len(content), "sha256": hashlib.sha256(content).hexdigest()}
+        )
+    manifest_path = tmp_path / "remote_models.json"
+    write_json(
+        manifest_path,
+        {"schema_version": 1, "models": [{"id": model_id, "files": inventory}]},
+    )
+    expected_weight = next(
+        item["sha256"] for item in inventory if item["path"] == "model.safetensors"
+    )
+    definition = ExperimentModelDefinition(
+        id=model_id,
+        name="Remote test",
+        role="adapted",
+        variant="v1-baseline",
+        source=tmp_path / "cache" / model_id,
+        revision="revision",
+        model_sha256=expected_weight,
+        remote_available=True,
+    )
+    def copy_download(url: str, destination: Path, _token: str | None, _timeout: int) -> None:
+        relative = url.split(f"/{model_id}/", 1)[1]
+        shutil.copyfile(remote_root / relative, destination)
+
+    provisioner = ExperimentModelProvisioner(
+        base_url="https://models.example",
+        catalog=RemoteModelCatalog.from_path(manifest_path),
+        download_file=copy_download,
+    )
+
+    result = provisioner.ensure(definition)
+
+    assert result == definition.source
+    assert definition.local_available
+    assert (result / "openvoice-remote-manifest.json").is_file()
+    assert not list(result.parent.glob("*.download"))
+
+    (result / "config.json").write_text("tampered", encoding="utf-8")
+    with pytest.raises(ExperimentEvidenceError, match="verification failed"):
+        provisioner.ensure(definition)
+
+
+def test_remote_model_manifest_rejects_path_traversal(tmp_path: Path) -> None:
+    manifest = tmp_path / "unsafe.json"
+    write_json(
+        manifest,
+        {
+            "schema_version": 1,
+            "models": [
+                {
+                    "id": "speecht5-v1a-conservative-full",
+                    "files": [
+                        {
+                            "path": "../model.safetensors",
+                            "bytes": 1,
+                            "sha256": "a" * 64,
+                        }
+                    ],
+                }
+            ],
+        },
+    )
+
+    with pytest.raises(ExperimentEvidenceError, match="metadata is invalid"):
+        RemoteModelCatalog.from_path(manifest)
+
+
+def test_cloud_registry_advertises_only_verified_local_or_remote_models(
+    tmp_path: Path,
+) -> None:
+    pretrained = tmp_path / "pretrained"
+    pretrained.mkdir()
+    weight = pretrained / "pytorch_model.bin"
+    weight.write_bytes(b"pinned pretrained weights")
+    pretrained_sha256 = sha256(weight)
+    write_json(
+        pretrained / "openvoice-model-manifest.json",
+        {"weight_sha256": pretrained_sha256},
+    )
+    summaries = [
+        ExperimentModelSummary(
+            id="speecht5-pretrained",
+            name="SpeechT5 Pretrained",
+            role="pretrained",
+            variant="pretrained",
+            revision="pinned",
+            model_sha256=pretrained_sha256,
+            available=False,
+        ),
+        ExperimentModelSummary(
+            id="speecht5-v1a-conservative-full",
+            name="V1A Conservative Full",
+            role="adapted",
+            variant="v1a-conservative-full",
+            revision="pinned",
+            model_sha256="a" * 64,
+            available=False,
+        ),
+        ExperimentModelSummary(
+            id="speecht5-v1b-lora",
+            name="V1B LoRA",
+            role="adapted",
+            variant="v1b-lora",
+            revision="pinned",
+            model_sha256="b" * 64,
+            available=False,
+        ),
+    ]
+
+    registry = ExperimentModelRegistry.from_snapshot_models(
+        summaries,
+        pretrained_root=pretrained,
+        remote_cache_root=tmp_path / "cache",
+        remote_model_ids=frozenset({"speecht5-v1a-conservative-full"}),
+    )
+    readiness = {model.id: model.available for model in registry.list()}
+
+    assert readiness == {
+        "speecht5-pretrained": True,
+        "speecht5-v1a-conservative-full": True,
+        "speecht5-v1b-lora": False,
+    }
+
+    weight.write_bytes(b"different pretrained weights")
+    with pytest.raises(ExperimentEvidenceError, match="differs"):
+        ExperimentModelRegistry.from_snapshot_models(
+            summaries,
+            pretrained_root=pretrained,
+            remote_cache_root=tmp_path / "cache",
+            remote_model_ids=frozenset(),
+        )
 
 
 def test_cloud_snapshot_fails_closed_when_a_hash_changes(tmp_path: Path) -> None:

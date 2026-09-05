@@ -123,13 +123,7 @@ export class SynthesisPageComponent implements OnInit, OnDestroy {
     this.models().find((model) => model.id === this.selectedModelId()),
   );
 
-  readonly processedTextPreview = computed(() => {
-    const result = this.result();
-    if (!result || result.normalizedText === result.text) {
-      return null;
-    }
-    return result.normalizedText;
-  });
+  readonly processedTextPreview = computed(() => this.result()?.normalizedText ?? null);
 
   @ViewChild(SynthesisFormComponent) private synthesisForm?: SynthesisFormComponent;
 

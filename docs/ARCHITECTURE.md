@@ -341,10 +341,13 @@ binds to the platform-supplied `PORT`, runs as a non-root user, and writes only
 ephemeral output below `/tmp/openvoice`.
 
 Ignored Stage 11 training artifacts are not available to a Git source build.
-Instead, the experiment service verifies and serves a committed snapshot of the
-measured report and fixture catalog. Snapshot mode disables all live SpeechT5
-models and rejects live comparison jobs explicitly; it preserves historical
-evidence without presenting unavailable weights as a running capability.
+The experiment service therefore verifies a committed snapshot of the measured
+report, fixture catalog, model identities, and remote-file hashes. When a remote
+artifact origin is configured, adapted SpeechT5 weights are provisioned lazily
+into an instance-local cache, verified file by file, and atomically promoted
+before inference. Without that origin, snapshot mode disables live models and
+rejects comparison jobs explicitly; historical evidence remains visible without
+presenting unavailable weights as a running capability.
 
 This deployment intentionally uses one instance because generated audio and job
 coordination are local to the process. Its model loader uses a one-entry LRU:

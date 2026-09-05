@@ -23,6 +23,11 @@ Cloud Run benchmarks.
 This README is a cumulative build record. New stages extend the story; completed
 stages stay visible as evidence of how the system evolved.
 
+Preparing for a technical discussion? Read the
+[complete technical interview guide](docs/TECHNICAL_INTERVIEW_GUIDE.md) for the
+architecture, model-serving design, data pipeline, training mechanics, measured
+experiments, deployment trade-offs, and interview questions.
+
 ## Stage 0 — Architecture-first repository
 
 > “I designed a modular architecture for evaluating and deploying open-weight

@@ -111,4 +111,17 @@ describe('LiveComparisonComponent', () => {
     expect(component.selectedModels()).toContain('speecht5-pretrained');
     expect(component.hasScoredResults(queued)).toBe(false);
   });
+
+  it('explains when deployment artifacts are unavailable instead of silently disabling them', () => {
+    const component = new LiveComparisonComponent(api());
+    component.models = models.map((model) => ({
+      ...model,
+      available: false,
+      unavailableReason: 'Verified remote weights are not configured.',
+    }));
+
+    expect(component.availableModelCount()).toBe(0);
+    expect(component.selectedModels()).toEqual([]);
+    expect(component.unavailableSummary()).toBe('Verified remote weights are not configured.');
+  });
 });

@@ -40,7 +40,7 @@ its public contract, but it should not absorb the other module's responsibility.
 | --- | --- |
 | `backend/Dockerfile` | Digest-pinned, dependency-locked, non-root Python/ONNX runtime. |
 | `frontend/Dockerfile` | Reproducible Angular production build and Nginx runtime. |
-| Root `Dockerfile` | Single-container Cloud Run source build: Angular, FastAPI, five verified product model configurations, bounded lifecycle, and snapshot evidence. |
+| Root `Dockerfile` | Single-container Cloud Run source build: Angular, FastAPI, five verified product model configurations, pinned experiment ASR, bounded lifecycle, snapshot evidence, and lazy adapted-model provisioning. |
 | `frontend/nginx.conf` | SPA delivery and same-origin proxy for API, Kokoro/experiment audio, and health. |
 | `model-init` | Download and checksum-verify external model dependencies. |
 | `docker-compose.yml` | Startup ordering, ports, health checks, and persistent volumes. |
@@ -76,15 +76,15 @@ The connected vertical slice is intentionally narrow:
   SpeechT5 runtime → progressive WAV → pinned Whisper → term/WER scoring.
 - Implemented Cloud Run path: root source build → one non-root FastAPI process →
   API/static route separation → live five-model product synthesis + verified
-  read-only experiment snapshot.
+  experiment snapshot + optional checksum-verified remote model provisioning.
 - Current experiment presentation: one measured pretrained control → four V1
   update strategies on identical locked manifests → aggregate and live comparison.
 - Implemented live-job durability: atomic request/status/result storage,
   cancellation, restart recovery, partial per-model failure, and terminal
   SHA-256 manifest.
-- Still deferred: durable cloud experiment-job coordination and retention, live
-  adapted-model/ASR experiment packaging, broader language-aware normalization, and
-  statistically powered human evaluation.
+- Still deferred: durable cloud experiment-job coordination and retention,
+  broader language-aware normalization, and statistically powered human
+  evaluation.
 
 ## Boundary enforcement
 

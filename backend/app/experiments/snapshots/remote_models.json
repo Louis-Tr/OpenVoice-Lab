@@ -1,0 +1,205 @@
+{
+  "models": [
+    {
+      "files": [
+        {
+          "bytes": 40,
+          "path": "added_tokens.json",
+          "sha256": "74be21ecff0a1fb1f304fe7c72ab21e4f0c046f8359fdf2852eb1b80967069ad"
+        },
+        {
+          "bytes": 2212,
+          "path": "config.json",
+          "sha256": "047b890c2e3234b8cbe27ec3363f24a935e842c290ff2a917a062a7f44430a78"
+        },
+        {
+          "bytes": 185,
+          "path": "generation_config.json",
+          "sha256": "b8ca21a534ca84763ed4552051ce80e11a328980359773fdfb3708880bfb1e4e"
+        },
+        {
+          "bytes": 577789320,
+          "path": "model.safetensors",
+          "sha256": "fd1e38f2d5d6956eef38cb798c2b4ab35210ad9fb6edbe7919bb2086ef54c3b6"
+        },
+        {
+          "bytes": 458,
+          "path": "preprocessor_config.json",
+          "sha256": "10d99213ddec28d60d84ffe9a3bc0cde226f75bbcd43cec8bdb61616739e295c"
+        },
+        {
+          "bytes": 252,
+          "path": "selection.json",
+          "sha256": "70c4ea9e3e6882e11401fd489c104d69f7be1c2d713ddadcc4f4f58331a4be87"
+        },
+        {
+          "bytes": 690,
+          "path": "special_tokens_map.json",
+          "sha256": "e2d72b5997392bddef3db132f475947250111de763920b00d7c5b98902fec160"
+        },
+        {
+          "bytes": 238473,
+          "path": "spm_char.model",
+          "sha256": "7fcc48f3e225f627b1641db410ceb0c8649bd2b0c982e150b03f8be3728ab560"
+        },
+        {
+          "bytes": 1358,
+          "path": "tokenizer_config.json",
+          "sha256": "5e2baa8eec3e48db106624f59cb63be493f400a2a1fa01897303980d13277af7"
+        }
+      ],
+      "id": "speecht5-v1a-conservative-full"
+    },
+    {
+      "files": [
+        {
+          "bytes": 40,
+          "path": "added_tokens.json",
+          "sha256": "74be21ecff0a1fb1f304fe7c72ab21e4f0c046f8359fdf2852eb1b80967069ad"
+        },
+        {
+          "bytes": 2102,
+          "path": "config.json",
+          "sha256": "25fcf888a038d804d7ef713587450914fa2ab76cb89ea9fef1df55178580711e"
+        },
+        {
+          "bytes": 185,
+          "path": "generation_config.json",
+          "sha256": "b8ca21a534ca84763ed4552051ce80e11a328980359773fdfb3708880bfb1e4e"
+        },
+        {
+          "bytes": 577789320,
+          "path": "model.safetensors",
+          "sha256": "c0864e2c4c482f84e8b3944a7cebad5cf7abdf335205fba8e83d390a39d3be60"
+        },
+        {
+          "bytes": 458,
+          "path": "preprocessor_config.json",
+          "sha256": "10d99213ddec28d60d84ffe9a3bc0cde226f75bbcd43cec8bdb61616739e295c"
+        },
+        {
+          "bytes": 271,
+          "path": "selection.json",
+          "sha256": "3c5ce986f6ec31f6e371aa08130c35f935a5678fbccdd049df156826bb97a1ab"
+        },
+        {
+          "bytes": 690,
+          "path": "special_tokens_map.json",
+          "sha256": "e2d72b5997392bddef3db132f475947250111de763920b00d7c5b98902fec160"
+        },
+        {
+          "bytes": 238473,
+          "path": "spm_char.model",
+          "sha256": "7fcc48f3e225f627b1641db410ceb0c8649bd2b0c982e150b03f8be3728ab560"
+        },
+        {
+          "bytes": 1358,
+          "path": "tokenizer_config.json",
+          "sha256": "5e2baa8eec3e48db106624f59cb63be493f400a2a1fa01897303980d13277af7"
+        }
+      ],
+      "id": "speecht5-v1b-lora"
+    },
+    {
+      "files": [
+        {
+          "bytes": 40,
+          "path": "added_tokens.json",
+          "sha256": "74be21ecff0a1fb1f304fe7c72ab21e4f0c046f8359fdf2852eb1b80967069ad"
+        },
+        {
+          "bytes": 2211,
+          "path": "config.json",
+          "sha256": "7d0f096b241e03f5b63aa58c4320fbdef6ce4e6f7be2d623fac287bcc2b6b8b6"
+        },
+        {
+          "bytes": 185,
+          "path": "generation_config.json",
+          "sha256": "b8ca21a534ca84763ed4552051ce80e11a328980359773fdfb3708880bfb1e4e"
+        },
+        {
+          "bytes": 577789320,
+          "path": "model.safetensors",
+          "sha256": "d7b26ef71e932fbb1cd466293da71a9c60c42a3f6efcf1a6b315fe86a2713230"
+        },
+        {
+          "bytes": 458,
+          "path": "preprocessor_config.json",
+          "sha256": "10d99213ddec28d60d84ffe9a3bc0cde226f75bbcd43cec8bdb61616739e295c"
+        },
+        {
+          "bytes": 252,
+          "path": "selection.json",
+          "sha256": "d4a838f576c8650f39d1ead35180012a6993f0b36e01bcf0abbbe43c429e314c"
+        },
+        {
+          "bytes": 690,
+          "path": "special_tokens_map.json",
+          "sha256": "e2d72b5997392bddef3db132f475947250111de763920b00d7c5b98902fec160"
+        },
+        {
+          "bytes": 238473,
+          "path": "spm_char.model",
+          "sha256": "7fcc48f3e225f627b1641db410ceb0c8649bd2b0c982e150b03f8be3728ab560"
+        },
+        {
+          "bytes": 1358,
+          "path": "tokenizer_config.json",
+          "sha256": "5e2baa8eec3e48db106624f59cb63be493f400a2a1fa01897303980d13277af7"
+        }
+      ],
+      "id": "speecht5-v1c-gradual-unfreeze"
+    },
+    {
+      "files": [
+        {
+          "bytes": 40,
+          "path": "added_tokens.json",
+          "sha256": "74be21ecff0a1fb1f304fe7c72ab21e4f0c046f8359fdf2852eb1b80967069ad"
+        },
+        {
+          "bytes": 2214,
+          "path": "config.json",
+          "sha256": "214bbeaed8b57ab33a32ab9abe6fd06a5dde7e8a50b446758c4d2846c116c5e7"
+        },
+        {
+          "bytes": 185,
+          "path": "generation_config.json",
+          "sha256": "b8ca21a534ca84763ed4552051ce80e11a328980359773fdfb3708880bfb1e4e"
+        },
+        {
+          "bytes": 577540164,
+          "path": "model.safetensors",
+          "sha256": "16ec00f488a569aefcb0ff131387b12e5d5b82eed3fcda4166ddb6418691ced0"
+        },
+        {
+          "bytes": 458,
+          "path": "preprocessor_config.json",
+          "sha256": "10d99213ddec28d60d84ffe9a3bc0cde226f75bbcd43cec8bdb61616739e295c"
+        },
+        {
+          "bytes": 273,
+          "path": "selection.json",
+          "sha256": "bf29a8d5ce1a410c7cb7751f63c51db633f5fcdeeae13b6e5265132655b4340f"
+        },
+        {
+          "bytes": 690,
+          "path": "special_tokens_map.json",
+          "sha256": "e2d72b5997392bddef3db132f475947250111de763920b00d7c5b98902fec160"
+        },
+        {
+          "bytes": 238473,
+          "path": "spm_char.model",
+          "sha256": "7fcc48f3e225f627b1641db410ceb0c8649bd2b0c982e150b03f8be3728ab560"
+        },
+        {
+          "bytes": 1358,
+          "path": "tokenizer_config.json",
+          "sha256": "5e2baa8eec3e48db106624f59cb63be493f400a2a1fa01897303980d13277af7"
+        }
+      ],
+      "id": "speecht5-v1d-reduction-factor-1"
+    }
+  ],
+  "schema_version": 1
+}

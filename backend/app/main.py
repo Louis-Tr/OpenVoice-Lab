@@ -11,9 +11,9 @@ from app.api.errors import register_error_handlers
 from app.audio.service import AudioService
 from app.benchmark.service import BenchmarkJobService
 from app.config.settings import Settings
+from app.experiments.cloud import create_cloud_experiment_service
 from app.experiments.common import ExperimentEvidenceError
 from app.experiments.service import ExperimentService, create_experiment_service
-from app.experiments.snapshot import SnapshotExperimentService
 from app.health.service import HealthService
 from app.metrics.collector import MetricsCollector
 from app.models.loader import ModelLoader
@@ -245,10 +245,42 @@ def create_app(
                 cpu_threads=resolved_settings.experiment_cpu_threads,
             )
         except ExperimentEvidenceError:
-            # Lightweight deployments retain hash-verified historical evidence without
-            # packaging multi-gigabyte training and live-comparison model artifacts.
+            # Cloud source builds retain verified evidence and can lazily provision the
+            # adapted models from a private, checksum-verified artifact origin.
             try:
-                resolved_experiments = SnapshotExperimentService()
+                access_token = resolved_settings.experiment_model_access_token
+                resolved_experiments = create_cloud_experiment_service(
+                    model_base_url=resolved_settings.experiment_model_base_url,
+                    model_access_token=(
+                        access_token.get_secret_value() if access_token is not None else None
+                    ),
+                    remote_manifest_path=resolve_backend_path(
+                        resolved_settings.experiment_remote_manifest_path
+                    ).resolve(),
+                    pretrained_root=(
+                        model_artifact_root / resolved_settings.speecht5_model_dirname
+                    ).resolve(),
+                    vocoder_root=(
+                        model_artifact_root / resolved_settings.speecht5_vocoder_dirname
+                    ).resolve(),
+                    asr_root=(
+                        model_artifact_root / resolved_settings.experiment_asr_dirname
+                    ).resolve(),
+                    speaker_embedding_path=(
+                        model_artifact_root / resolved_settings.speecht5_speaker_filename
+                    ).resolve(),
+                    stage12_root=stage12_root,
+                    remote_cache_root=resolve_backend_path(
+                        resolved_settings.experiment_model_cache_dir
+                    ).resolve()
+                    / "adapted",
+                    text_processing=resolved_text_processing,
+                    audio_url_prefix=resolved_settings.experiment_audio_url_prefix,
+                    vocoder_revision=resolved_settings.speecht5_vocoder_revision,
+                    maximum_queued_jobs=resolved_settings.experiment_maximum_queued_jobs,
+                    maximum_cached_models=resolved_settings.experiment_maximum_cached_models,
+                    cpu_threads=resolved_settings.experiment_cpu_threads,
+                )
             except ExperimentEvidenceError:
                 resolved_experiments = None
 

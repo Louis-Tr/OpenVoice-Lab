@@ -46,17 +46,56 @@ only below `/tmp/openvoice`.
   CMU speaker embedding.
 - The SpeechT5 experiment tab serves a committed, SHA-256-verified snapshot of
   the measured training report and its 350 fixtures.
-- Live adapted-model comparisons remain unavailable because the selected
-  multi-gigabyte Stage 11 checkpoints and ASR evaluator are not packaged.
+- The pinned Whisper evaluator is packaged for live experiment scoring.
+- Adapted SpeechT5 models are downloaded only when selected. Every file is
+  checked against the committed remote-model inventory before the runtime can
+  load it.
 
 The product model loader retains only one engine in this 4 GiB deployment.
 Switching models may therefore incur a cold load, but avoids retaining Audio8,
 SpeechT5, and Kokoro sessions together. Keep concurrency at `1`; these CPU
 variants are portfolio-scale interactive paths, not high-throughput serving.
 
-The snapshot preserves measured evidence; it does not manufacture live model
-availability. The API returns an explicit capability error for unsupported live
-experiment runs.
+If no remote model origin is configured, the snapshot remains available and the
+UI explains that live comparisons are not provisioned. It does not imply that a
+disabled model is runnable.
+
+## Provision live Stage 11 comparisons
+
+The Git repository intentionally contains model identities and hashes, not the
+adapted weights. Prepare an upload tree from the four verified selected models:
+
+```powershell
+python backend/scripts/export_experiment_remote_models.py --stage-files
+```
+
+Upload the contents of `artifacts/stage12/remote-models/models/` to private
+object storage without changing its directory layout:
+
+```text
+<origin>/
+  speecht5-v1a-conservative-full/model.safetensors
+  speecht5-v1b-lora/model.safetensors
+  speecht5-v1c-gradual-unfreeze/model.safetensors
+  speecht5-v1d-reduction-factor-1/model.safetensors
+  ...the remaining files listed for each model...
+```
+
+Configure these Cloud Run environment variables:
+
+| Variable | Value |
+| --- | --- |
+| `OPENVOICE_EXPERIMENT_MODEL_BASE_URL` | HTTPS root containing the four model directories above |
+| `OPENVOICE_EXPERIMENT_MODEL_ACCESS_TOKEN` | Optional bearer token for a private origin |
+
+Store the access token in Secret Manager and expose it to Cloud Run as a secret;
+never put it in source, image layers, build arguments, or ordinary environment
+configuration committed to Git. A public origin can omit the token.
+
+At runtime the service downloads into a temporary directory, verifies byte
+counts and SHA-256 digests from `remote_models.json`, writes a completion
+marker, and atomically promotes the model into the instance-local cache. An
+interrupted or corrupt download is never presented as an available local model.
 
 ## Persistence limits
 

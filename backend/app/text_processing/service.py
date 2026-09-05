@@ -1,6 +1,6 @@
 """Application service for optional synthesis text preprocessing."""
 
-from app.text_processing.normalizer import TextNormalizer
+from app.text_processing.normalizer import TextNormalizationError, TextNormalizer
 from app.text_processing.sanitizer import TextSanitizer
 
 
@@ -30,13 +30,16 @@ class TextProcessingService:
         normalize_text: bool,
     ) -> str:
         """Return the exact string that the inference engine should receive."""
-        processed = self._normalizer.normalize(text) if normalize_text else text
+        try:
+            processed = self._normalizer.normalize(text) if normalize_text else text
+        except TextNormalizationError as error:
+            # Existing HTTP adapters already map this domain error to 422.
+            raise TextProcessingError(str(error)) from error
         processed = self._sanitizer.sanitize(processed) if sanitize_text else processed
 
         if sanitize_text and not any(character.isalnum() for character in processed):
             raise TextProcessingError(
-                "Sanitization removed all speakable content. "
-                "Enter words or disable sanitization."
+                "Sanitization removed all speakable content. Enter words or disable sanitization."
             )
         if len(processed) > self._max_output_length:
             raise TextProcessingError(

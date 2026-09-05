@@ -136,7 +136,7 @@ class SpeechT5CpuRuntime:
         if cached is not None:
             self._models[definition.id] = cached
             return cached
-        if not definition.available:
+        if not definition.local_available:
             raise ExperimentEvidenceError(f"Model artifacts are unavailable for {definition.id}.")
         processor = model_types["SpeechT5Processor"].from_pretrained(
             definition.source, local_files_only=True

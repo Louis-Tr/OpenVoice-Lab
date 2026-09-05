@@ -4,22 +4,38 @@ import asyncio
 from datetime import UTC, datetime
 from pathlib import Path
 from threading import Event, Lock
+from typing import Protocol
 from uuid import uuid4
 
 from app.experiments.common import ExperimentQueueFullError, read_json
-from app.experiments.fixtures import ExperimentFixtureService
-from app.experiments.model_registry import ExperimentModelRegistry
+from app.experiments.model_registry import (
+    ExperimentModelDefinition,
+    ExperimentModelRegistry,
+)
 from app.experiments.scorer import score_terms, word_error_rate
 from app.experiments.store import TERMINAL_STAGES, ExperimentJobStore
 from app.inference.speecht5_cpu import ExperimentInferenceRuntime
 from app.schemas.experiment import (
     ExperimentComparisonJob,
     ExperimentComparisonRequest,
+    ExperimentFixture,
     ExperimentModelResult,
     ExperimentResultProvenance,
     ExperimentRuntimeMetrics,
 )
 from app.text_processing.service import TextProcessingService
+
+
+class ExperimentArtifactProvisioner(Protocol):
+    """Materialize a selected experiment model before the runtime loads it."""
+
+    def ensure(self, definition: ExperimentModelDefinition) -> Path: ...
+
+
+class ExperimentFixtureCatalog(Protocol):
+    """Resolve an immutable fixture by its public ID."""
+
+    def get(self, fixture_id: str) -> ExperimentFixture: ...
 
 
 def utc_now() -> datetime:
@@ -32,7 +48,7 @@ class ExperimentJobService:
     def __init__(
         self,
         *,
-        fixtures: ExperimentFixtureService,
+        fixtures: ExperimentFixtureCatalog,
         models: ExperimentModelRegistry,
         runtime: ExperimentInferenceRuntime,
         text_processing: TextProcessingService,
@@ -41,6 +57,7 @@ class ExperimentJobService:
         vocoder_revision: str,
         speaker_profile_path: Path,
         maximum_queued_jobs: int = 2,
+        provisioner: ExperimentArtifactProvisioner | None = None,
     ) -> None:
         self._fixtures = fixtures
         self._models = models
@@ -52,6 +69,7 @@ class ExperimentJobService:
         profile = read_json(speaker_profile_path)
         self._speaker_profile_sha256 = str(profile["embedding_sha256"])
         self._maximum_queued_jobs = maximum_queued_jobs
+        self._provisioner = provisioner
         self._tasks: set[asyncio.Task[None]] = set()
         self._cancellations: dict[str, Event] = {}
         self._guard = Lock()
@@ -160,14 +178,20 @@ class ExperimentJobService:
                     stage="loading_model",
                     progress_percent=self._progress(index, 0, len(job.model_ids)),
                 )
-                output = self._store.directory(job_id) / "audio" / f"{model_id}.wav"
-                job = self._set_result(job, index, status="synthesizing")
-                job = self._update(
-                    job,
-                    stage="synthesizing",
-                    progress_percent=self._progress(index, 1, len(job.model_ids)),
-                )
                 try:
+                    if self._provisioner is not None and not definition.local_available:
+                        await asyncio.to_thread(self._provisioner.ensure, definition)
+                    if not definition.local_available:
+                        raise RuntimeError(
+                            f"Experiment model '{model_id}' could not be provisioned."
+                        )
+                    output = self._store.directory(job_id) / "audio" / f"{model_id}.wav"
+                    job = self._set_result(job, index, status="synthesizing")
+                    job = self._update(
+                        job,
+                        stage="synthesizing",
+                        progress_percent=self._progress(index, 1, len(job.model_ids)),
+                    )
                     audio = await asyncio.to_thread(
                         self._runtime.synthesize, definition, processed, output
                     )

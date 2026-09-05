@@ -5,6 +5,7 @@
   "files": {
     "report.json": "fc9199d514b5205c76f544548a4f65960a0c1a0c695a457c950abf87e0b2c5f1",
     "fixtures.json": "d8541a2f92e981b0042af04be205c693ac581cdd5d738d2886a9858df420d470",
-    "models.json": "d96f0169d96a28d76a172c0f576a79f1195ce1ee822c3793d9fd5ddc6aa4dc34"
+    "models.json": "d96f0169d96a28d76a172c0f576a79f1195ce1ee822c3793d9fd5ddc6aa4dc34",
+    "remote_models.json": "5390d31ee2737bc736e382e8d53d242297a4001d86c6ce1bc2b39a3c3a2b77e5"
   }
 }

@@ -188,7 +188,7 @@ describe('SynthesisPageComponent', () => {
     },
   );
 
-  it('shows processed text only when the backend changed the inference input', () => {
+  it('shows the inference input after synthesis whether or not preprocessing changed it', () => {
     const component = new SynthesisPageComponent(createApi());
 
     expect(component.processedTextPreview()).toBeNull();
@@ -211,7 +211,7 @@ describe('SynthesisPageComponent', () => {
       audioUrl: '/audio/unchanged.wav',
       metrics,
     });
-    expect(component.processedTextPreview()).toBeNull();
+    expect(component.processedTextPreview()).toBe('Natural speech.');
   });
 
   it('gives a recovery path when the backend is unavailable', () => {

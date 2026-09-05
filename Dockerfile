@@ -41,12 +41,14 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     OPENVOICE_STAGE12_ARTIFACT_ROOT=/tmp/openvoice/stage12 \
     OPENVOICE_EXPERIMENT_MODEL_CACHE_DIR=/tmp/openvoice/stage12/model-cache \
     OPENVOICE_EXPERIMENT_SPEAKER_PROFILE_DIR=/tmp/openvoice/stage12/serving-profile \
+    OPENVOICE_EXPERIMENT_MAXIMUM_CACHED_MODELS=1 \
+    OPENVOICE_EXPERIMENT_CPU_THREADS=2 \
     OPENVOICE_PRODUCT_MAXIMUM_CACHED_MODELS=1 \
     OPENVOICE_PRODUCT_CPU_THREADS=2 \
     OPENVOICE_FRONTEND_DIST_DIR=/app/frontend
 
 RUN apt-get update \
-    && apt-get install --yes --no-install-recommends ca-certificates libgomp1 \
+    && apt-get install --yes --no-install-recommends ca-certificates libgomp1 libsndfile1 \
     && rm -rf /var/lib/apt/lists/* \
     && groupadd --system --gid 10001 openvoice \
     && useradd --system --uid 10001 --gid openvoice --home-dir /app openvoice

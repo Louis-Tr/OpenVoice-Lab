@@ -50,6 +50,10 @@ legend { padding: 0 8px; }
 .model-grid label.unavailable { cursor: not-allowed; opacity: 0.48; }
 .model-grid span { display: grid; gap: 3px; }
 .model-grid input { width: 18px; height: 18px; accent-color: var(--color-accent); }
+.model-grid .readiness-label { color: var(--color-error); font-family: var(--font-mono); text-transform: uppercase; letter-spacing: 0.05em; }
+.capability-state { display: grid; gap: 6px; margin-top: 12px; padding: 14px; color: var(--color-foreground); background: var(--color-error-surface); border: 1px solid rgb(255 123 123 / 45%); border-radius: var(--radius-sm); }
+.capability-state strong { font-size: var(--font-size-sm); }
+.capability-state p, .capability-state span { margin: 0; color: var(--color-muted-foreground); font-size: var(--font-size-sm); line-height: 1.5; }
 
 .form-error { margin: 8px 0 0; padding: 12px; color: var(--color-error); font-size: var(--font-size-sm); background: var(--color-error-surface); border: 1px solid rgb(255 123 123 / 45%); border-radius: var(--radius-sm); }
 .action-row { display: flex; gap: 10px; margin-top: 10px; }
