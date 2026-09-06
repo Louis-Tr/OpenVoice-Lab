@@ -6,7 +6,7 @@ from pathlib import Path
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 
-from app.api import benchmarks, experiments, health, models, synthesis
+from app.api import benchmarks, experiments, health, models, resources, synthesis, synthesis_jobs
 from app.api.errors import register_error_handlers
 from app.audio.service import AudioService
 from app.benchmark.service import BenchmarkJobService
@@ -15,9 +15,15 @@ from app.experiments.cloud import create_cloud_experiment_service
 from app.experiments.common import ExperimentEvidenceError
 from app.experiments.service import ExperimentService, create_experiment_service
 from app.health.service import HealthService
+from app.inference.runtime import configure_cpu_runtime
 from app.metrics.collector import MetricsCollector
 from app.models.loader import ModelLoader
 from app.models.registry import ModelDefinition, ModelRegistry
+from app.resources.manager import ResourceManager
+from app.resources.probe import ResourceProbe
+from app.resources.profiles import ResourceProfileRegistry
+from app.scheduling.service import ProcessingScheduler
+from app.synthesis.jobs import SynthesisJobService
 from app.synthesis.service import SynthesisService
 from app.text_processing.service import TextProcessingService
 from app.web import AngularStaticFiles
@@ -48,9 +54,11 @@ def create_app(
     benchmark_job_service: BenchmarkJobService | None = None,
     text_processing_service: TextProcessingService | None = None,
     experiment_service: ExperimentService | None = None,
+    processing_scheduler: ProcessingScheduler | None = None,
 ) -> FastAPI:
     """Create the API and compose controllers with application services."""
     resolved_settings = settings or Settings()
+    configure_cpu_runtime(resolved_settings.product_cpu_threads)
     health_service = HealthService()
     model_artifact_root = resolve_backend_path(resolved_settings.model_artifact_dir)
     speecht5_dependencies_ready = dependencies_available("torch", "transformers", "sentencepiece")
@@ -161,9 +169,42 @@ def create_app(
         resolved_metrics,
         resolved_text_processing,
     )
+    resource_profiles = ResourceProfileRegistry()
+    resolved_scheduler = processing_scheduler
+    if resolved_scheduler is None:
+        probe = ResourceProbe(
+            memory_limit_mb=resolved_settings.scheduler_memory_limit_mb,
+            cpu_limit_cores=resolved_settings.scheduler_cpu_limit_cores,
+        )
+        resource_manager = ResourceManager(
+            probe,
+            memory_headroom_mb=resolved_settings.scheduler_memory_headroom_mb,
+            maximum_active_jobs=resolved_settings.scheduler_maximum_active_jobs,
+            cpu_pressure_percent=resolved_settings.scheduler_cpu_pressure_percent,
+        )
+        resolved_scheduler = ProcessingScheduler(
+            resource_manager,
+            aging_threshold_seconds=resolved_settings.scheduler_aging_threshold_seconds,
+            queue_capacity=resolved_settings.scheduler_queue_capacity,
+            maximum_payload_bytes=resolved_settings.scheduler_maximum_payload_bytes,
+            sample_interval_seconds=resolved_settings.scheduler_sample_interval_seconds,
+            queue_wait_timeout_seconds=(
+                resolved_settings.scheduler_queue_wait_timeout_seconds
+            ),
+            maximum_workers=resolved_settings.scheduler_maximum_active_jobs,
+        )
+    synthesis_job_service = SynthesisJobService(
+        synthesis_service,
+        resolved_scheduler,
+        resource_profiles,
+        retention_seconds=resolved_settings.scheduler_completed_retention_seconds,
+        maximum_retained_jobs=resolved_settings.scheduler_maximum_retained_jobs,
+    )
     resolved_benchmark_jobs = benchmark_job_service or BenchmarkJobService(
         resolved_registry,
         result_dir=resolve_backend_path(resolved_settings.benchmark_result_dir),
+        scheduler=resolved_scheduler,
+        resource_demand=resource_profiles.benchmark(),
     )
     stage12_root = resolve_backend_path(resolved_settings.stage12_artifact_root).resolve()
     stage12_root.mkdir(parents=True, exist_ok=True)
@@ -194,6 +235,7 @@ def create_app(
                 maximum_queued_jobs=resolved_settings.experiment_maximum_queued_jobs,
                 maximum_cached_models=resolved_settings.experiment_maximum_cached_models,
                 cpu_threads=resolved_settings.experiment_cpu_threads,
+                scheduler=resolved_scheduler,
             )
         except ExperimentEvidenceError:
             # Cloud source builds retain verified evidence and can lazily provision the
@@ -231,6 +273,7 @@ def create_app(
                     maximum_queued_jobs=resolved_settings.experiment_maximum_queued_jobs,
                     maximum_cached_models=resolved_settings.experiment_maximum_cached_models,
                     cpu_threads=resolved_settings.experiment_cpu_threads,
+                    scheduler=resolved_scheduler,
                 )
             except ExperimentEvidenceError:
                 resolved_experiments = None
@@ -243,13 +286,19 @@ def create_app(
             "SpeechT5, deterministic text processing, and measured experiments."
         ),
     )
-    application.include_router(synthesis.create_router(synthesis_service), prefix="/api")
+    application.include_router(synthesis.create_router(synthesis_job_service), prefix="/api")
+    application.include_router(synthesis_jobs.create_router(synthesis_job_service), prefix="/api")
+    application.include_router(
+        resources.create_router(resolved_scheduler, git_sha=resolved_settings.git_sha),
+        prefix="/api",
+    )
     application.include_router(models.create_router(resolved_registry), prefix="/api")
     application.include_router(
         benchmarks.create_router(resolved_benchmark_jobs),
         prefix="/api",
     )
     application.include_router(health.create_router(health_service))
+    application.router.add_event_handler("shutdown", resolved_scheduler.close)
     if resolved_experiments is not None:
         application.include_router(
             experiments.create_router(resolved_experiments),
@@ -285,6 +334,8 @@ def create_app(
     application.state.model_registry = resolved_registry
     application.state.metrics_collector = resolved_metrics
     application.state.synthesis_service = synthesis_service
+    application.state.synthesis_job_service = synthesis_job_service
+    application.state.processing_scheduler = resolved_scheduler
     application.state.text_processing_service = resolved_text_processing
     application.state.benchmark_job_service = resolved_benchmark_jobs
     application.state.experiment_service = resolved_experiments

@@ -27,6 +27,33 @@ export interface SynthesisResult {
   readonly metrics: InferenceMetrics;
 }
 
+export type SynthesisJobState =
+  | 'queued'
+  | 'reserved'
+  | 'loading'
+  | 'running'
+  | 'saving'
+  | 'completed'
+  | 'failed'
+  | 'cancelled';
+
+export interface SynthesisJob {
+  readonly id: string;
+  readonly state: SynthesisJobState;
+  readonly request: SynthesisRequest;
+  readonly normalizedText: string;
+  readonly queuedAt: string;
+  readonly updatedAt: string;
+  readonly startedAt: string | null;
+  readonly completedAt: string | null;
+  readonly queueWaitMs: number | null;
+  readonly processingMs: number | null;
+  readonly waitingReason: string | null;
+  readonly cancellationRequested: boolean;
+  readonly result: SynthesisResult | null;
+  readonly error: { readonly code: string; readonly message: string } | null;
+}
+
 export interface ModelSummary {
   readonly maxInputCharacters?: number;
   readonly maxInputTokens?: number | null;

@@ -5,7 +5,7 @@ import { Subject, of, throwError } from 'rxjs';
 import { describe, expect, it, vi } from 'vitest';
 
 import { SynthesisApiService } from '../api/synthesis-api.service';
-import { ModelSummary, SynthesisResult } from './synthesis.types';
+import { ModelSummary, SynthesisJob, SynthesisResult } from './synthesis.types';
 import { SynthesisPageComponent } from './synthesis-page.component';
 
 const model: ModelSummary = {
@@ -40,19 +40,47 @@ const metrics = {
   modelVariant: 'fp32' as const,
 };
 
+const completedResult: SynthesisResult = {
+  status: 'ok',
+  model: 'kokoro-fp32',
+  text: 'Hello',
+  normalizedText: 'Hello',
+  audioUrl: '/audio/hello.wav',
+  metrics,
+};
+
+function completedJob(result: SynthesisResult = completedResult): SynthesisJob {
+  return {
+    id: 'job-one',
+    state: 'completed',
+    request: {
+      text: result.text,
+      modelId: result.model,
+      voiceId: 'voice-one',
+      sanitizeText: true,
+      normalizeText: true,
+    },
+    normalizedText: result.normalizedText,
+    queuedAt: '2026-09-05T00:00:00Z',
+    updatedAt: '2026-09-05T00:00:01Z',
+    startedAt: '2026-09-05T00:00:00Z',
+    completedAt: '2026-09-05T00:00:01Z',
+    queueWaitMs: 0,
+    processingMs: 1000,
+    waitingReason: null,
+    cancellationRequested: false,
+    result,
+    error: null,
+  };
+}
+
 function createApi(overrides: Partial<SynthesisApiService> = {}): SynthesisApiService {
   return {
     listModels: vi.fn(() => of([model, quantizedModel])),
-    synthesize: vi.fn(() =>
-      of({
-        status: 'ok',
-        model: 'kokoro-fp32',
-        text: 'Hello',
-        normalizedText: 'Hello',
-        audioUrl: '/audio/hello.wav',
-        metrics,
-      } satisfies SynthesisResult),
-    ),
+    synthesize: vi.fn(() => of(completedResult)),
+    enqueue: vi.fn(() => of(completedJob())),
+    getJob: vi.fn(() => of(completedJob())),
+    cancelJob: vi.fn(() => of(completedJob())),
     ...overrides,
   } as unknown as SynthesisApiService;
 }
@@ -78,12 +106,12 @@ describe('SynthesisPageComponent', () => {
     expect(component.inputLimitError()).toContain('SpeechT5 accepts up to 599');
     expect(component.text()).toHaveLength(600);
     component.submit();
-    expect(api.synthesize).not.toHaveBeenCalled();
+    expect(api.enqueue).not.toHaveBeenCalled();
 
     component.setText('a'.repeat(599));
     expect(component.inputLimitError()).toBe('');
     component.submit();
-    expect(api.synthesize).toHaveBeenCalledTimes(1);
+    expect(api.enqueue).toHaveBeenCalledTimes(1);
 
     component.setModelSelection({ modelId: model.id });
     expect(component.inputLimit()).toBe(5000);
@@ -92,7 +120,7 @@ describe('SynthesisPageComponent', () => {
   it('shows the backend token limit message when cleanup expands the input', () => {
     const detail = 'SpeechT5 accepts at most 600 tokens after text cleanup; received 643.';
     const api = createApi({
-      synthesize: vi.fn(() => throwError(() => new HttpErrorResponse({
+      enqueue: vi.fn(() => throwError(() => new HttpErrorResponse({
         status: 422, error: { detail },
       }))),
     });
@@ -141,12 +169,12 @@ describe('SynthesisPageComponent', () => {
     component.submit();
 
     expect(component.textError()).toBe('Enter text before generating speech.');
-    expect(api.synthesize).not.toHaveBeenCalled();
+    expect(api.enqueue).not.toHaveBeenCalled();
   });
 
   it('keeps the loading state active until synthesis completes', () => {
-    const response = new Subject<SynthesisResult>();
-    const api = createApi({ synthesize: vi.fn(() => response.asObservable()) });
+    const response = new Subject<SynthesisJob>();
+    const api = createApi({ enqueue: vi.fn(() => response.asObservable()) });
     const component = new SynthesisPageComponent(api);
     component.ngOnInit();
     component.setText('Generate this');
@@ -154,14 +182,14 @@ describe('SynthesisPageComponent', () => {
     component.submit();
     expect(component.isSubmitting()).toBe(true);
 
-    response.next({
+    response.next(completedJob({
       status: 'ok',
       model: 'kokoro-fp32',
       text: 'Generate this',
       normalizedText: 'Generate this',
       audioUrl: '/audio/generated.wav',
       metrics,
-    });
+    }));
     response.complete();
 
     expect(component.isSubmitting()).toBe(false);
@@ -181,13 +209,13 @@ describe('SynthesisPageComponent', () => {
 
     component.submit();
 
-    expect(api.synthesize).toHaveBeenCalledWith({
+    expect(api.enqueue).toHaveBeenCalledWith({
       text: 'Run the quantized configuration',
       modelId: 'kokoro-q8',
       voiceId: 'voice-one',
       sanitizeText: true,
       normalizeText: true,
-    });
+    }, expect.any(String));
   });
 
   it('defaults both processing options on and sends independent option states', () => {
@@ -201,13 +229,13 @@ describe('SynthesisPageComponent', () => {
     component.sanitizeText.set(false);
     component.submit();
 
-    expect(api.synthesize).toHaveBeenCalledWith({
+    expect(api.enqueue).toHaveBeenCalledWith({
       text: 'Keep ./ -- $25 exactly.',
       modelId: 'kokoro-fp32',
       voiceId: 'voice-one',
       sanitizeText: false,
       normalizeText: true,
-    });
+    }, expect.any(String));
   });
 
   it.each([
@@ -227,8 +255,9 @@ describe('SynthesisPageComponent', () => {
 
       component.submit();
 
-      expect(api.synthesize).toHaveBeenCalledWith(
+      expect(api.enqueue).toHaveBeenCalledWith(
         expect.objectContaining({ sanitizeText, normalizeText }),
+        expect.any(String),
       );
     },
   );
@@ -276,7 +305,7 @@ describe('SynthesisPageComponent', () => {
 
   it('reports inference failure without fabricating an audio result', () => {
     const api = createApi({
-      synthesize: vi.fn(() =>
+      enqueue: vi.fn(() =>
         throwError(() => new HttpErrorResponse({ status: 500, statusText: 'Error' })),
       ),
     });

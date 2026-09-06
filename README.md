@@ -594,8 +594,10 @@ and models remain in named volumes so restarts do not require reprovisioning.
 
 The root [`Dockerfile`](Dockerfile) packages the Angular production build,
 FastAPI, three Kokoro variants, and SpeechT5 CPU behind one
-Cloud Run URL. The constrained deployment retains at most one heavyweight
-engine in memory and serializes requests through Cloud Run concurrency `1`.
+Cloud Run URL. A resource-aware in-process queue admits work from live CPU and
+memory budgets, permits safe backfilling, and gives the oldest waiter strict
+next-start priority after 30 seconds. Cloud Run HTTP concurrency remains higher
+than compute concurrency so submissions, polling, audio, and health stay responsive.
 For repository-triggered builds, select branch `main`, build type **Dockerfile**,
 and source location `/Dockerfile`.
 

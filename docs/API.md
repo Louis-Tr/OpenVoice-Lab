@@ -84,7 +84,28 @@ Measurement semantics:
 - `warm`: whether the engine was already loaded before this request.
 - `modelVariant`: the measured deployed precision variant.
 
-TODO: define artifact retention and cancellation.
+The compatibility endpoint now validates and enqueues through the same resource
+scheduler as asynchronous jobs, then waits for that job's result.
+
+## Asynchronous synthesis jobs
+
+`POST /api/synthesis/jobs` accepts the same request as `POST /api/synthesis`
+and returns `202 Accepted`. The response includes an instance-local job ID,
+state, the immutable request, `normalizedText`, queue timing, waiting reason,
+and eventually the normal `SynthesisResult`. Clients may send an
+`Idempotency-Key` header; reusing it with the same payload returns the existing
+job, while reuse with a different payload returns `409`.
+
+Use `GET /api/synthesis/jobs/{id}` to poll. States are `queued`, `reserved`,
+`loading`, `running`, `saving`, `completed`, `failed`, and `cancelled`.
+`reserved` means the request is next to start after admitted work releases
+enough capacity. Use `POST /api/synthesis/jobs/{id}/cancel` to remove queued
+work or request cancellation of active work. Native inference retains its
+resource lease until it actually returns.
+
+`GET /api/resources` exposes aggregate CPU, memory, reservation, active-job,
+and queue counts without exposing request text. Queue overflow returns `429`;
+a valid request that can never fit the configured instance returns `503`.
 
 ## `GET /api/models`
 
@@ -100,16 +121,14 @@ Current catalog:
 | `kokoro-fp32` | Kokoro | FP32 | ONNX Runtime | Ready with verified artifact |
 | `kokoro-fp16` | Kokoro | FP16 | ONNX Runtime | Ready with verified artifact |
 | `kokoro-q8` | Kokoro | INT8 | ONNX Runtime | Ready with verified artifact |
-| `audio8-0.6b` | Audio8 0.6B | INT4 | ONNX Runtime CPU | Ready with pinned official export |
 | `speecht5-pretrained` | SpeechT5 | FP32 | PyTorch CPU | Ready with pinned model, vocoder, and speaker profile |
 
 Every item also returns `variant`, `voices`, `modelVersion`, `hosting`,
 `externalInferenceApis`, `available`, `unavailableReason`, and `description`.
 Listing metadata does not load an inference engine.
 
-Audio8 exposes the fixed `unconditioned` voice; SpeechT5 exposes `cmu-slt`.
-These are product-serving contracts. Audio8 voice cloning and adapted SpeechT5
-experiment checkpoints are intentionally outside `POST /api/synthesis`.
+SpeechT5 exposes the fixed `cmu-slt` speaker profile. Adapted SpeechT5
+experiment checkpoints remain outside `POST /api/synthesis`.
 
 TODO: define richer capabilities, readiness policy, and pagination.
 
@@ -125,7 +144,6 @@ Request:
     "kokoro-fp32",
     "kokoro-fp16",
     "kokoro-q8",
-    "audio8-0.6b",
     "speecht5-pretrained"
   ],
   "sanitizeText": true,
@@ -140,8 +158,8 @@ Current `202 Accepted` response:
   "benchmarkId": "benchmark-2026-08-26T11-18-24-802081Z",
   "status": "pending",
   "testCaseCount": 8,
-  "modelCount": 5,
-  "totalEvaluations": 40,
+  "modelCount": 4,
+  "totalEvaluations": 32,
   "completedEvaluations": 0,
   "progressPercent": 0.0,
   "result": null,
@@ -170,20 +188,18 @@ Describe the fixed browser workload without loading a model.
   "corpusVersion": "1.0.0",
   "corpusSha256": "eaf6215e4cf13e670e0b3cfb56f33b6a50939a61e30a2b3296ed7c44d1d9cb98",
   "testCaseCount": 8,
-  "modelCount": 5,
-  "totalEvaluations": 40,
+  "modelCount": 4,
+  "totalEvaluations": 32,
   "modelIds": [
     "kokoro-fp32",
     "kokoro-fp16",
     "kokoro-q8",
-    "audio8-0.6b",
     "speecht5-pretrained"
   ],
   "modelVoiceIds": {
     "kokoro-fp32": "af_heart",
     "kokoro-fp16": "af_heart",
     "kokoro-q8": "af_heart",
-    "audio8-0.6b": "unconditioned",
     "speecht5-pretrained": "cmu-slt"
   },
   "defaultVoiceId": null

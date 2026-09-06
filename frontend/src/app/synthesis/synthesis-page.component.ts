@@ -8,7 +8,7 @@ import {
   signal,
   ViewChild,
 } from '@angular/core';
-import { finalize, Subscription } from 'rxjs';
+import { finalize, retry, Subscription, switchMap, takeWhile, timer } from 'rxjs';
 
 import { AudioPlayerComponent } from '../audio-player/audio-player.component';
 import { SynthesisApiService } from '../api/synthesis-api.service';
@@ -18,6 +18,8 @@ import { SynthesisFormComponent } from './synthesis-form.component';
 import {
   ModelSelection,
   ModelSummary,
+  SynthesisJob,
+  SynthesisJobState,
   SynthesisResult,
 } from './synthesis.types';
 
@@ -86,6 +88,43 @@ import {
         </section>
 
         <div class="output-stack">
+          @if (jobs().length) {
+            <section class="job-list" aria-labelledby="job-list-heading">
+              <div class="job-list-heading">
+                <div>
+                  <p class="card-index">02 / QUEUE</p>
+                  <h3 id="job-list-heading">Your requests</h3>
+                </div>
+                <span>{{ activeJobCount() }} active</span>
+              </div>
+              <div class="job-items">
+                @for (job of jobs(); track job.id) {
+                  <article
+                    class="job-item"
+                    [class.selected]="job.id === selectedJobId()"
+                    (click)="selectJob(job)"
+                  >
+                    <button type="button" class="job-select" (click)="selectJob(job)">
+                      <strong>{{ modelName(job.request.modelId) }}</strong>
+                      <span>{{ stateLabel(job.state) }}</span>
+                      <small>{{ job.request.text }}</small>
+                    </button>
+                    @if (job.state === 'reserved') {
+                      <p>Next to run; waiting for current work to finish.</p>
+                    }
+                    @if (isActive(job.state)) {
+                      <button
+                        type="button"
+                        class="cancel-job"
+                        [disabled]="job.cancellationRequested"
+                        (click)="cancelJob(job, $event)"
+                      >Cancel</button>
+                    }
+                  </article>
+                }
+              </div>
+            </section>
+          }
           <ovl-audio-player [result]="result()" />
           @if (processedTextPreview(); as processedText) {
             <section class="processed-preview" aria-labelledby="processed-text-heading">
@@ -119,6 +158,8 @@ export class SynthesisPageComponent implements OnInit, OnDestroy {
   readonly sanitizeText = signal(true);
   readonly normalizeText = signal(true);
   readonly result = signal<SynthesisResult | null>(null);
+  readonly jobs = signal<readonly SynthesisJob[]>([]);
+  readonly selectedJobId = signal('');
 
   readonly selectedModel = computed(() =>
     this.models().find((model) => model.id === this.selectedModelId()),
@@ -131,7 +172,15 @@ export class SynthesisPageComponent implements OnInit, OnDestroy {
       : '',
   );
 
-  readonly processedTextPreview = computed(() => this.result()?.normalizedText ?? null);
+  readonly selectedJob = computed(() =>
+    this.jobs().find((job) => job.id === this.selectedJobId()),
+  );
+  readonly activeJobCount = computed(
+    () => this.jobs().filter((job) => this.isActive(job.state)).length,
+  );
+  readonly processedTextPreview = computed(
+    () => this.selectedJob()?.normalizedText ?? this.result()?.normalizedText ?? null,
+  );
 
   @ViewChild(SynthesisFormComponent) private synthesisForm?: SynthesisFormComponent;
 
@@ -222,21 +271,98 @@ export class SynthesisPageComponent implements OnInit, OnDestroy {
 
     this.subscriptions.add(
       this.synthesisApi
-        .synthesize({
+        .enqueue({
           text,
           modelId: model.id,
           voiceId: this.selectedVoiceId(),
           sanitizeText: this.sanitizeText(),
           normalizeText: this.normalizeText(),
-        })
+        }, this.idempotencyKey())
         .pipe(finalize(() => this.isSubmitting.set(false)))
         .subscribe({
-          next: (result) => this.result.set(result),
+          next: (job) => {
+            this.updateJob(job);
+            this.selectedJobId.set(job.id);
+            this.result.set(job.result);
+            if (this.isActive(job.state)) {
+              this.poll(job.id);
+            }
+          },
           error: (error: HttpErrorResponse) => {
             this.requestError.set(this.describeSynthesisError(error));
           },
         }),
     );
+  }
+
+  selectJob(job: SynthesisJob): void {
+    this.selectedJobId.set(job.id);
+    this.result.set(job.result);
+  }
+
+  cancelJob(job: SynthesisJob, event: Event): void {
+    event.stopPropagation();
+    this.subscriptions.add(
+      this.synthesisApi.cancelJob(job.id).subscribe({
+        next: (updated) => this.updateJob(updated),
+        error: (error: HttpErrorResponse) => {
+          this.requestError.set(this.describeSynthesisError(error));
+        },
+      }),
+    );
+  }
+
+  isActive(state: SynthesisJobState): boolean {
+    return ['queued', 'reserved', 'loading', 'running', 'saving'].includes(state);
+  }
+
+  stateLabel(state: SynthesisJobState): string {
+    return state === 'reserved' ? 'next to run' : state;
+  }
+
+  modelName(modelId: string): string {
+    return this.models().find((model) => model.id === modelId)?.name ?? modelId;
+  }
+
+  private poll(jobId: string): void {
+    this.subscriptions.add(
+      timer(250, 750)
+        .pipe(
+          switchMap(() => this.synthesisApi.getJob(jobId)),
+          retry({ count: 5, delay: (_error, count) => timer(Math.min(5000, count * 750)) }),
+          takeWhile((job) => this.isActive(job.state), true),
+        )
+        .subscribe({
+          next: (job) => this.updateJob(job),
+          error: () => {
+            this.requestError.set(
+              'Queue status could not be refreshed. Your accepted request may still be running.',
+            );
+          },
+        }),
+    );
+  }
+
+  private updateJob(job: SynthesisJob): void {
+    this.jobs.update((jobs) => {
+      const existing = jobs.findIndex((item) => item.id === job.id);
+      if (existing === -1) {
+        return [job, ...jobs];
+      }
+      const updated = [...jobs];
+      updated[existing] = job;
+      return updated;
+    });
+    if (this.selectedJobId() === job.id) {
+      this.result.set(job.result);
+      if (job.error) {
+        this.requestError.set(job.error.message);
+      }
+    }
+  }
+
+  private idempotencyKey(): string {
+    return globalThis.crypto?.randomUUID?.() ?? `request-${Date.now()}-${Math.random()}`;
   }
 
   private describeModelError(error: HttpErrorResponse): string {
@@ -260,7 +386,12 @@ export class SynthesisPageComponent implements OnInit, OnDestroy {
       return 'That model is no longer available. Reload the page to refresh model choices.';
     }
     if (error.status === 503) {
-      return 'The local model is not ready. Provision its artifacts, then submit again.';
+      return typeof error.error?.detail === 'string'
+        ? error.error.detail
+        : 'The local model is not ready. Provision its artifacts, then submit again.';
+    }
+    if (error.status === 429) {
+      return 'The processing queue is full. Keep this draft and retry after a request starts.';
     }
     return 'Inference failed before audio was created. Check the backend logs and submit again.';
   }

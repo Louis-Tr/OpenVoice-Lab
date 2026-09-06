@@ -16,6 +16,8 @@ from app.benchmark.runner import (
     utc_now,
 )
 from app.models.registry import ModelRegistry
+from app.resources.profiles import ResourceDemand
+from app.scheduling.service import ProcessingScheduler
 from app.schemas.benchmark import (
     BenchmarkConfig,
     BenchmarkJobStatus,
@@ -41,12 +43,22 @@ class BenchmarkJobService:
         result_dir: Path = DEFAULT_RESULT_DIR,
         coordinator: BenchmarkCoordinator = run_isolated_benchmark,
         default_voice_id: str | None = None,
+        scheduler: ProcessingScheduler | None = None,
+        resource_demand: ResourceDemand | None = None,
     ) -> None:
         self._model_registry = model_registry
         self._corpus_path = corpus_path
         self._result_dir = result_dir
         self._coordinator = coordinator
         self._default_voice_id = default_voice_id
+        self._scheduler = scheduler
+        self._resource_demand = resource_demand or ResourceDemand(
+            memory_mb=2048.0,
+            cpu_cores=2.0,
+            resource_key="benchmark",
+            exclusive=True,
+            profile_name="benchmark",
+        )
         self._jobs: dict[str, BenchmarkJobStatus] = {}
         self._latest_identifier: str | None = None
         self._tasks: set[asyncio.Task[None]] = set()
@@ -113,7 +125,8 @@ class BenchmarkJobService:
         return self.get(identifier)
 
     async def _execute(self, identifier: str, request: BenchmarkRequest) -> None:
-        self._update(identifier, status="running")
+        if self._scheduler is None:
+            self._update(identifier, status="running")
 
         def report_progress(completed: int, total: int) -> None:
             percent = round((completed / total) * 100, 1) if total else 0
@@ -124,17 +137,32 @@ class BenchmarkJobService:
             )
 
         try:
-            result, _path = await asyncio.to_thread(
-                self._coordinator,
-                model_ids=request.model_ids,
-                voice_id=request.voice_id,
-                sanitize_text=request.sanitize_text,
-                normalize_text=request.normalize_text,
-                corpus_path=self._corpus_path,
-                result_dir=self._result_dir,
-                run_id=identifier,
-                progress_callback=report_progress,
-            )
+            def coordinate() -> tuple[BenchmarkResult, Path]:
+                return self._coordinator(
+                    model_ids=request.model_ids,
+                    voice_id=request.voice_id,
+                    sanitize_text=request.sanitize_text,
+                    normalize_text=request.normalize_text,
+                    corpus_path=self._corpus_path,
+                    result_dir=self._result_dir,
+                    run_id=identifier,
+                    progress_callback=report_progress,
+                )
+
+            if self._scheduler is None:
+                result, _path = await asyncio.to_thread(coordinate)
+            else:
+                scheduled = await self._scheduler.run(
+                    job_id=f"benchmark-work-{identifier}",
+                    demand=self._resource_demand,
+                    work=coordinate,
+                    on_state=lambda state, _reason: (
+                        self._update(identifier, status="running")
+                        if state == "running"
+                        else None
+                    ),
+                )
+                result, _path = scheduled
         except Exception as error:  # noqa: BLE001 - job failures are public state.
             self._update(identifier, status="failed", error=str(error))
             return

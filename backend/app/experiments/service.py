@@ -10,6 +10,7 @@ from app.experiments.model_registry import ExperimentModelRegistry
 from app.experiments.store import ExperimentJobStore
 from app.experiments.v1_approach_report import V1ApproachReportService
 from app.inference.speecht5_cpu import SpeechT5CpuRuntime
+from app.scheduling.service import ProcessingScheduler
 from app.schemas.experiment import (
     ExperimentComparisonJob,
     ExperimentComparisonRequest,
@@ -96,6 +97,7 @@ def create_experiment_service(
     maximum_queued_jobs: int,
     maximum_cached_models: int,
     cpu_threads: int | None,
+    scheduler: ProcessingScheduler | None = None,
 ) -> ExperimentService:
     """Compose lightweight evidence services and optional live CPU execution."""
     reports = V1ApproachReportService(
@@ -143,6 +145,7 @@ def create_experiment_service(
             vocoder_revision=vocoder_revision,
             speaker_profile_path=profile_json,
             maximum_queued_jobs=maximum_queued_jobs,
+            scheduler=scheduler,
         )
     else:
         unavailable_reason = (

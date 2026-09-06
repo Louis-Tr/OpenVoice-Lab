@@ -16,6 +16,11 @@ from app.inference.base import InferenceError, InputTooLongError, UnsupportedVoi
 from app.metrics.collector import MetricsCollectionError
 from app.models.loader import ModelLoadError
 from app.models.registry import ModelNotFoundError
+from app.scheduling.service import ProcessingQueueFullError, ResourceUnavailableError
+from app.synthesis.jobs import (
+    IdempotencyConflictError,
+    SynthesisJobNotFoundError,
+)
 from app.text_processing.service import TextProcessingError
 
 
@@ -51,12 +56,33 @@ def register_error_handlers(application: FastAPI) -> None:
         )
 
     @application.exception_handler(ExperimentQueueFullError)
+    @application.exception_handler(ProcessingQueueFullError)
     async def experiment_queue_full(
         _request: Request,
-        error: ExperimentQueueFullError,
+        error: ExperimentQueueFullError | ProcessingQueueFullError,
     ) -> JSONResponse:
         return JSONResponse(
             status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            content={"detail": str(error)},
+        )
+
+    @application.exception_handler(IdempotencyConflictError)
+    async def idempotency_conflict(
+        _request: Request,
+        error: IdempotencyConflictError,
+    ) -> JSONResponse:
+        return JSONResponse(
+            status_code=status.HTTP_409_CONFLICT,
+            content={"detail": str(error)},
+        )
+
+    @application.exception_handler(SynthesisJobNotFoundError)
+    async def synthesis_job_not_found(
+        _request: Request,
+        error: SynthesisJobNotFoundError,
+    ) -> JSONResponse:
+        return JSONResponse(
+            status_code=status.HTTP_404_NOT_FOUND,
             content={"detail": str(error)},
         )
 
@@ -83,9 +109,10 @@ def register_error_handlers(application: FastAPI) -> None:
         )
 
     @application.exception_handler(ModelLoadError)
+    @application.exception_handler(ResourceUnavailableError)
     async def model_unavailable(
         _request: Request,
-        error: ModelLoadError,
+        error: ModelLoadError | ResourceUnavailableError,
     ) -> JSONResponse:
         return JSONResponse(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,

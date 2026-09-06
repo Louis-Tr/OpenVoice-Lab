@@ -25,13 +25,13 @@ Use this initial Cloud Run service configuration:
 
 | Setting | Recommended value | Reason |
 | --- | --- | --- |
-| CPU | 2 vCPU | CPU-hosted ONNX inference benefits from parallel execution. |
-| Memory | 4 GiB | Leaves headroom for the service, one bounded model session, and generated audio. |
+| CPU | 4 vCPU | Allows two measured two-core inference commitments when memory also fits. |
+| Memory | 8 GiB | Leaves explicit headroom for cached engines, overlapping work, and audio buffers. |
 | Request timeout | 600 seconds | Allows long synthesis requests without using the 60-minute platform maximum. |
 | Billing | Instance-based | Benchmark work continues outside the request that starts a job. |
 | Minimum instances | 0 | Avoids paying continuously when the portfolio is idle. |
 | Maximum instances | 1 | Keeps in-process jobs and ephemeral audio on one instance. |
-| Concurrency | 1 | Prevents simultaneous model loads or synthesis calls from multiplying memory pressure. |
+| Concurrency | 8 | Lets enqueue, polling, audio, and health requests proceed while the in-process scheduler bounds compute. |
 
 The application health endpoint is `/health`. The container runs as an
 unprivileged user and writes generated audio, benchmark output, and job state
@@ -49,10 +49,17 @@ only below `/tmp/openvoice`.
   checked against the committed remote-model inventory before the runtime can
   load it.
 
-The product model loader retains only one engine in this 4 GiB deployment.
-Switching models may therefore incur a cold load, but avoids retaining
-SpeechT5 and Kokoro sessions together. Keep concurrency at `1`; these CPU
-variants are portfolio-scale interactive paths, not high-throughput serving.
+The product model loader retains up to two idle engines in this 8 GiB profile.
+Every synthesis, benchmark, experiment inference, and experiment ASR operation
+must first acquire an in-process resource reservation. HTTP concurrency is set
+above one so job submission and status polling remain responsive; it does not
+set model concurrency. Keep one Uvicorn worker and a maximum of one Cloud Run
+instance while queue state and generated audio remain instance-local.
+
+The default queue backfills fitting requests for up to 30 seconds. At that
+boundary, the oldest request reserves the next compute start and later work no
+longer bypasses it. Cloud Run should use instance-based billing because accepted
+asynchronous work continues after the submit response returns.
 
 If no remote model origin is configured, the snapshot remains available and the
 UI explains that live comparisons are not provisioned. It does not imply that a

@@ -71,3 +71,28 @@ def test_bounded_loader_evicts_lru_engine_and_reloads_on_demand(tmp_path: Path) 
     loader.load(first)
     assert created[1].closed is True
     assert loader.load_count("first") == 2
+
+
+def test_loader_module_keeps_leased_engines_and_shares_lifecycle_state(tmp_path: Path) -> None:
+    created: list[CloseableEngine] = []
+
+    def create(model: ModelDefinition) -> CloseableEngine:
+        engine = CloseableEngine(model.model_id)
+        created.append(engine)
+        return engine
+
+    first = definition("first", tmp_path / "leased-first.bin")
+    second = definition("second", tmp_path / "leased-second.bin")
+    loader = ModelLoader(engine_factory=create, maximum_cached_engines=1)
+
+    with loader.lease_with_state(first) as first_lease:
+        assert first_lease.warm is False
+        with loader.lease_with_state(first) as shared:
+            assert shared.warm is True
+            assert shared.engine is first_lease.engine
+        with loader.lease_with_state(second):
+            assert created[0].closed is False
+            assert loader.engine_states()["first"] == "busy"
+        assert created[1].closed is True
+    assert created[0].closed is False
+    assert loader.engine_states() == {"first": "idle"}

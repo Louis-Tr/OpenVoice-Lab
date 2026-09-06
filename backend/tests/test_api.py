@@ -342,6 +342,52 @@ def test_valid_synthesis_request_returns_playable_wav(harness: ApiHarness) -> No
         assert audio_file.getnframes() == 2_400
 
 
+def test_async_synthesis_job_contract_retains_normalized_text_and_result(
+    harness: ApiHarness,
+) -> None:
+    async def scenario() -> None:
+        transport = httpx.ASGITransport(app=harness.app)
+        async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
+            submitted = await client.post(
+                "/api/synthesis/jobs",
+                json={
+                    "text": "Save 15% today.",
+                    "modelId": "kokoro-fp32",
+                    "voiceId": "af_heart",
+                },
+                headers={"Idempotency-Key": "browser-retry-1"},
+            )
+            assert submitted.status_code == 202
+            initial = submitted.json()
+            assert initial["normalizedText"] == "Save 15 percent today."
+            job_id = initial["id"]
+
+            duplicate = await client.post(
+                "/api/synthesis/jobs",
+                json={
+                    "text": "Save 15% today.",
+                    "modelId": "kokoro-fp32",
+                    "voiceId": "af_heart",
+                },
+                headers={"Idempotency-Key": "browser-retry-1"},
+            )
+            assert duplicate.json()["id"] == job_id
+
+            payload = initial
+            for _ in range(100):
+                response = await client.get(f"/api/synthesis/jobs/{job_id}")
+                payload = response.json()
+                if payload["state"] in {"completed", "failed"}:
+                    break
+                await asyncio.sleep(0.01)
+            assert payload["state"] == "completed"
+            assert payload["result"]["normalizedText"] == "Save 15 percent today."
+            assert payload["queueWaitMs"] >= 0
+            assert payload["processingMs"] >= 0
+
+    asyncio.run(scenario())
+
+
 def test_invalid_synthesis_request_is_rejected(harness: ApiHarness) -> None:
     response = request(
         harness.app,

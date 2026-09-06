@@ -1,6 +1,7 @@
 """Durable, concurrency-limited Stage 12 comparison orchestration."""
 
 import asyncio
+from collections.abc import Callable
 from datetime import UTC, datetime
 from pathlib import Path
 from threading import Event, Lock
@@ -15,6 +16,8 @@ from app.experiments.model_registry import (
 from app.experiments.scorer import score_terms, word_error_rate
 from app.experiments.store import TERMINAL_STAGES, ExperimentJobStore
 from app.inference.speecht5_cpu import ExperimentInferenceRuntime
+from app.resources.profiles import ResourceDemand
+from app.scheduling.service import ProcessingScheduler
 from app.schemas.experiment import (
     ExperimentComparisonJob,
     ExperimentComparisonRequest,
@@ -58,6 +61,7 @@ class ExperimentJobService:
         speaker_profile_path: Path,
         maximum_queued_jobs: int = 2,
         provisioner: ExperimentArtifactProvisioner | None = None,
+        scheduler: ProcessingScheduler | None = None,
     ) -> None:
         self._fixtures = fixtures
         self._models = models
@@ -70,8 +74,10 @@ class ExperimentJobService:
         self._speaker_profile_sha256 = str(profile["embedding_sha256"])
         self._maximum_queued_jobs = maximum_queued_jobs
         self._provisioner = provisioner
+        self._scheduler = scheduler
         self._tasks: set[asyncio.Task[None]] = set()
         self._cancellations: dict[str, Event] = {}
+        self._current_work: dict[str, str] = {}
         self._guard = Lock()
 
     async def start(self, request: ExperimentComparisonRequest) -> ExperimentComparisonJob:
@@ -123,6 +129,12 @@ class ExperimentJobService:
             return job
         event = self._cancellations.setdefault(job_id, Event())
         event.set()
+        work_id = self._current_work.get(job_id)
+        if work_id is not None and self._scheduler is not None:
+            try:
+                asyncio.get_running_loop().create_task(self._cancel_work(work_id))
+            except RuntimeError:
+                pass
         cancelled = self._update(
             job,
             stage="cancelled",
@@ -160,7 +172,11 @@ class ExperimentJobService:
                 self._store.write_manifest(job_id)
                 return
             job = self._update(job, normalized_text=processed)
-            await asyncio.to_thread(self._runtime.prepare)
+            await self._run_compute(
+                f"{job_id}:prepare",
+                "experiment:shared-runtime",
+                self._runtime.prepare,
+            )
             if cancellation.is_set():
                 self._store.write_manifest(job_id)
                 return
@@ -192,8 +208,13 @@ class ExperimentJobService:
                         stage="synthesizing",
                         progress_percent=self._progress(index, 1, len(job.model_ids)),
                     )
-                    audio = await asyncio.to_thread(
-                        self._runtime.synthesize, definition, processed, output
+                    audio = await self._run_compute(
+                        f"{job_id}:synthesis:{model_id}",
+                        f"experiment:model:{model_id}",
+                        self._runtime.synthesize,
+                        definition,
+                        processed,
+                        output,
                     )
                     if cancellation.is_set():
                         self._store.write_manifest(job_id)
@@ -219,7 +240,12 @@ class ExperimentJobService:
                     )
                     job = self._set_result(job, index, status="transcribing")
                     job = self._update(job, stage="transcribing")
-                    transcript, asr_ms = await asyncio.to_thread(self._runtime.transcribe, output)
+                    transcript, asr_ms = await self._run_compute(
+                        f"{job_id}:asr:{model_id}",
+                        "experiment:asr",
+                        self._runtime.transcribe,
+                        output,
+                    )
                     if cancellation.is_set():
                         self._store.write_manifest(job_id)
                         return
@@ -248,6 +274,9 @@ class ExperimentJobService:
                         metrics=metrics,
                     )
                 except Exception as error:  # noqa: BLE001 - preserve per-model failures.
+                    if cancellation.is_set():
+                        self._store.write_manifest(job_id)
+                        return
                     job = self._set_result(
                         job,
                         index,
@@ -271,6 +300,9 @@ class ExperimentJobService:
             )
             self._store.write_manifest(job.id)
         except Exception as error:  # noqa: BLE001 - public durable failure state.
+            if cancellation.is_set():
+                self._store.write_manifest(job_id)
+                return
             job = self._store.get(job_id)
             self._update(
                 job,
@@ -287,6 +319,40 @@ class ExperimentJobService:
         assert request.text is not None
         assert request.target_terms is not None
         return request.text, request.target_terms
+
+    async def _run_compute(
+        self,
+        work_id: str,
+        resource_key: str,
+        function: Callable[..., object],
+        *args: object,
+    ) -> object:
+        invoke = lambda: function(*args)
+        job_id = work_id.split(":", maxsplit=1)[0]
+        with self._guard:
+            self._current_work[job_id] = work_id
+        try:
+            if self._scheduler is None:
+                return await asyncio.to_thread(invoke)
+            return await self._scheduler.run(
+                job_id=work_id,
+                demand=ResourceDemand(
+                    memory_mb=1536.0,
+                    cpu_cores=2.0,
+                    resource_key=resource_key,
+                    profile_name="experiment",
+                ),
+                work=invoke,
+            )
+        finally:
+            with self._guard:
+                self._current_work.pop(job_id, None)
+
+    async def _cancel_work(self, work_id: str) -> None:
+        try:
+            await self._scheduler.cancel(work_id)  # type: ignore[union-attr]
+        except Exception:  # noqa: BLE001 - the stage may have completed concurrently.
+            return
 
     def _update(self, job: ExperimentComparisonJob, **changes: object) -> ExperimentComparisonJob:
         changes["updated_at"] = utc_now()

@@ -26,7 +26,7 @@ its public contract, but it should not absorb the other module's responsibility.
 | `synthesis` | Orchestration of the complete synthesis workflow. |
 | `text_processing` | Ordered, optional English normalization, sanitization, and processed-text validation. |
 | `models` | Model registry, model loading and lifecycle. |
-| `inference` | Abstract TTS inference interface plus Kokoro ONNX, Audio8 INT4 ONNX, and pinned SpeechT5 CPU adapters. |
+| `inference` | Abstract TTS inference interface plus active Kokoro ONNX and pinned SpeechT5 CPU adapters; the retired Audio8 adapter remains only for historical evidence. |
 | `audio` | Encoding, duration and audio-file handling. |
 | `metrics` | Latency, process memory, RTF and cold/warm metrics. |
 | `benchmark` | Predefined test execution and result aggregation. |
@@ -54,9 +54,12 @@ The connected vertical slice is intentionally narrow:
   `audio-player` + `metrics`.
 - Implemented backend path: `api` → `synthesis` → `models` → `inference` →
   `metrics` → `audio`.
-- Implemented variants: API-discovered Kokoro FP32/FP16/INT8, Audio8 INT4
+- Implemented variants: API-discovered Kokoro FP32/FP16/INT8
   ONNX CPU, and pretrained SpeechT5 CPU configurations. Constrained deployment
-  uses a one-engine LRU lifecycle and independent measurements.
+  uses lease-safe LRU retention behind resource-aware admission.
+- Implemented compute control: `resources` probes cgroup/host budgets and
+  `scheduling` applies bounded FIFO backfilling with 30-second next-start aging
+  across synthesis, benchmarks, experiment inference, and ASR.
 - Implemented benchmark CLI: hashed corpus → isolated model workers →
   `SynthesisService` → raw outcomes → aggregates → timestamped JSON.
 - Implemented benchmark product path: Angular trigger → FastAPI job service →

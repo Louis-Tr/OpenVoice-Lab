@@ -17,6 +17,7 @@ class Settings(BaseSettings):
     )
 
     environment: Literal["development", "test", "production"] = "development"
+    git_sha: str = "unknown"
     model_artifact_dir: Path = Path("model-artifacts")
     generated_audio_dir: Path = Path("artifacts/audio")
     benchmark_result_dir: Path = Path("benchmark-results")
@@ -40,6 +41,18 @@ class Settings(BaseSettings):
     speecht5_voice_id: str = "cmu-slt"
     product_maximum_cached_models: int | None = None
     product_cpu_threads: int | None = None
+    scheduler_aging_threshold_seconds: float = 30.0
+    scheduler_queue_capacity: int = 32
+    scheduler_maximum_payload_bytes: int = 160_000
+    scheduler_sample_interval_seconds: float = 1.0
+    scheduler_queue_wait_timeout_seconds: float = 300.0
+    scheduler_maximum_active_jobs: int = 4
+    scheduler_memory_limit_mb: float | None = None
+    scheduler_cpu_limit_cores: float | None = None
+    scheduler_memory_headroom_mb: float | None = None
+    scheduler_cpu_pressure_percent: float = 92.0
+    scheduler_completed_retention_seconds: float = 3_600.0
+    scheduler_maximum_retained_jobs: int = 200
     audio_url_prefix: str = "/audio"
     stage11_artifact_root: Path = Path("../artifacts/stage11/full-training")
     stage11_approach_run_root: Path = Path("../artifacts/stage11/agent-runs")

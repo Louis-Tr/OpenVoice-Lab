@@ -65,6 +65,87 @@ h2 span {
   gap: 24px;
 }
 
+.job-list {
+  padding: 22px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+}
+
+.job-list-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.job-list-heading h3 {
+  margin: 8px 0 16px;
+}
+
+.job-list-heading > span {
+  color: var(--color-muted-foreground);
+  font: 700 var(--font-size-xs)/1.5 var(--font-mono);
+  text-transform: uppercase;
+}
+
+.job-items {
+  display: grid;
+  gap: 10px;
+}
+
+.job-item {
+  position: relative;
+  padding: 12px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+}
+
+.job-item.selected {
+  border-color: var(--color-accent);
+}
+
+.job-select {
+  display: grid;
+  width: 100%;
+  padding: 0 64px 0 0;
+  color: inherit;
+  text-align: left;
+  background: none;
+  border: 0;
+  cursor: pointer;
+}
+
+.job-select span {
+  color: var(--color-accent);
+  font: 700 var(--font-size-xs)/1.5 var(--font-mono);
+  text-transform: uppercase;
+}
+
+.job-select small {
+  overflow: hidden;
+  color: var(--color-muted-foreground);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.job-item > p {
+  margin: 8px 0 0;
+  color: var(--color-muted-foreground);
+  font-size: var(--font-size-xs);
+}
+
+.cancel-job {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  color: var(--color-error);
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+}
+
 .processed-preview {
   min-width: 0;
   padding: 18px 20px;

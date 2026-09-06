@@ -127,7 +127,7 @@ def test_real_kokoro_audio_is_playable_reproducible_and_warm() -> None:
     assert synthetic.status_code == 200
     synthetic_payload = synthetic.json()
     assert synthetic_payload["normalizedText"] == (
-        "Email dev dot team at example dot com—open docs slash api guide dot M D. "
+        "Email dev dot team at example dot com—open docs slash api guide dot M D.\n"
         "The price is 25 dollars, with a 15 percent discount."
     )
     synthetic_audio = request(app, "GET", synthetic_payload["audioUrl"])

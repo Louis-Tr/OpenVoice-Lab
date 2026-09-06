@@ -13,6 +13,7 @@ from app.experiments.remote_artifacts import (
 from app.experiments.snapshot import DEFAULT_SNAPSHOT_ROOT, SnapshotExperimentService
 from app.experiments.store import ExperimentJobStore
 from app.inference.speecht5_cpu import SpeechT5CpuRuntime
+from app.scheduling.service import ProcessingScheduler
 from app.text_processing.service import TextProcessingService
 
 
@@ -34,6 +35,7 @@ def create_cloud_experiment_service(
     maximum_cached_models: int,
     cpu_threads: int | None,
     snapshot_root: Path = DEFAULT_SNAPSHOT_ROOT,
+    scheduler: ProcessingScheduler | None = None,
 ) -> SnapshotExperimentService:
     """Enable live jobs only when every shared dependency and remote source is real."""
     snapshot = SnapshotExperimentService(snapshot_root)
@@ -96,5 +98,6 @@ def create_cloud_experiment_service(
         speaker_profile_path=profile_path,
         maximum_queued_jobs=maximum_queued_jobs,
         provisioner=provisioner,
+        scheduler=scheduler,
     )
     return SnapshotExperimentService(snapshot_root, models=models, jobs=jobs)
