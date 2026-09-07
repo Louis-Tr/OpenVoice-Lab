@@ -5,8 +5,8 @@ import asyncio
 from app.audio.service import AudioService
 from app.inference.base import InputTooLongError
 from app.metrics.collector import MetricsCollector
-from app.models.loader import ModelLoader
 from app.models.registry import ModelRegistry
+from app.models.scheduler import EngineScheduler
 from app.schemas.synthesis import SynthesisMetrics, SynthesisRequest, SynthesisResult
 from app.text_processing.service import TextProcessingService
 
@@ -17,13 +17,13 @@ class SynthesisService:
     def __init__(
         self,
         model_registry: ModelRegistry,
-        model_loader: ModelLoader,
+        engine_scheduler: EngineScheduler,
         audio_service: AudioService,
         metrics_collector: MetricsCollector,
         text_processing_service: TextProcessingService,
     ) -> None:
         self._model_registry = model_registry
-        self._model_loader = model_loader
+        self._engine_scheduler = engine_scheduler
         self._audio_service = audio_service
         self._metrics_collector = metrics_collector
         self._text_processing_service = text_processing_service
@@ -55,26 +55,25 @@ class SynthesisService:
                     normalized_text,
                 )
             )
-            loaded = self._metrics_collector.measure_model_load(
-                lambda: self._model_loader.load_with_state(model)
-            )
-            measured = self._metrics_collector.measure(
-                lambda: loaded.value.engine.synthesize(
-                    normalized_text,
-                    request.voice_id,
-                    speed=model.speed,
-                    language=model.language,
-                ),
-                model_load_ms=loaded.elapsed_ms,
-                warm=loaded.value.warm,
-                model_variant=model.variant,
-            )
-            artifact = self._audio_service.create_artifact(
-                measured.audio,
-                model=model.label,
-                voice=request.voice_id,
-                artifact_key=artifact_key,
-            )
+            with self._engine_scheduler.acquire(model) as lease:
+                measured = self._metrics_collector.measure(
+                    lambda: lease.loaded.value.synthesize(
+                        normalized_text,
+                        request.voice_id,
+                        speed=model.speed,
+                        language=model.language,
+                    ),
+                    model_id=model.model_id,
+                    model_load=lease.loaded,
+                    warm=lease.warm,
+                    model_variant=model.variant,
+                )
+                artifact = self._audio_service.create_artifact(
+                    measured.audio,
+                    model=model.label,
+                    voice=request.voice_id,
+                    artifact_key=artifact_key,
+                )
         except Exception as error:
             error.normalized_text = normalized_text
             raise

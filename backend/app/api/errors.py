@@ -16,6 +16,7 @@ from app.inference.base import InferenceError, InputTooLongError, UnsupportedVoi
 from app.metrics.collector import MetricsCollectionError
 from app.models.loader import ModelLoadError
 from app.models.registry import ModelNotFoundError
+from app.models.resources import ResourceUnavailableError
 from app.text_processing.service import TextProcessingError
 
 
@@ -83,9 +84,10 @@ def register_error_handlers(application: FastAPI) -> None:
         )
 
     @application.exception_handler(ModelLoadError)
+    @application.exception_handler(ResourceUnavailableError)
     async def model_unavailable(
         _request: Request,
-        error: ModelLoadError,
+        error: ModelLoadError | ResourceUnavailableError,
     ) -> JSONResponse:
         return JSONResponse(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,

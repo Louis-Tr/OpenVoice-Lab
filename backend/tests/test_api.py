@@ -18,6 +18,7 @@ from app.main import create_app
 from app.metrics.collector import MetricsCollector
 from app.models.loader import ModelLoader
 from app.models.registry import ModelDefinition, ModelRegistry
+from app.models.resources import ResourceManager
 
 
 class FakeInferenceEngine(TTSInferenceEngine):
@@ -123,6 +124,10 @@ def harness(tmp_path: Path) -> ApiHarness:
         model_loader=loader,
         audio_service=audio,
         metrics_collector=metrics,
+        resource_manager=ResourceManager(
+            profiles={"kokoro-fp32": 1, "kokoro-q8": 1},
+            memory_reader=lambda: 100_000, cpu_threads=1,
+        ),
     )
     return ApiHarness(app=app, loader=loader, engines=engines, audio_dir=audio_dir)
 
@@ -573,3 +578,31 @@ def test_unknown_model_returns_useful_error(harness: ApiHarness) -> None:
 
     assert response.status_code == 404
     assert response.json() == {"detail": "Model 'unknown' is not registered."}
+
+
+def test_capacity_rejection_is_503_without_loading(harness: ApiHarness) -> None:
+    resources = harness.app.state.resource_manager
+    resources._memory_reader = lambda: 0
+    response = request(harness.app, "POST", "/api/synthesis", {
+        "text": "Hello world", "modelId": "kokoro-fp32", "voiceId": "af_heart",
+    })
+    assert response.status_code == 503
+    assert "Insufficient memory" in response.json()["detail"]
+    assert harness.loader.load_count("kokoro-fp32") == 0
+
+
+def test_default_catalog_disables_int8_even_when_artifacts_exist(tmp_path: Path) -> None:
+    settings = Settings(model_artifact_dir=tmp_path, generated_audio_dir=tmp_path / "audio",
+                        stage12_artifact_root=tmp_path / "stage12")
+    (tmp_path / settings.kokoro_quantized_model_filename).touch()
+    (tmp_path / settings.kokoro_voices_filename).touch()
+    app = create_app(settings)
+    summary = next(item for item in app.state.model_registry.list_available()
+                   if item.id == settings.quantized_model_id)
+    assert not summary.available
+    assert "until" in summary.unavailable_reason
+    assert summary.id not in {item.id for item in app.state.model_registry.list_benchmark_models()}
+    response = request(app, "POST", "/api/synthesis", {
+        "text": "Hello", "modelId": settings.quantized_model_id, "voiceId": "af_heart",
+    })
+    assert response.status_code == 503

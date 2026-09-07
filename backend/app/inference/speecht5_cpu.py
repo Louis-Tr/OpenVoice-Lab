@@ -15,6 +15,7 @@ import psutil
 
 from app.experiments.common import ExperimentEvidenceError
 from app.experiments.model_registry import ExperimentModelDefinition
+from app.inference.cpu import configure_torch_threads
 
 
 @dataclass(frozen=True, slots=True)
@@ -70,8 +71,7 @@ class SpeechT5CpuRuntime:
         """Load shared evaluation dependencies outside per-model measurements."""
         torch, _soundfile, model_types = self._dependencies()
         with self._lock:
-            if self._cpu_threads:
-                torch.set_num_threads(self._cpu_threads)
+            configure_torch_threads(torch, self._cpu_threads)
             self._load_vocoder(model_types)
             self._load_asr(model_types)
 
@@ -80,8 +80,7 @@ class SpeechT5CpuRuntime:
     ) -> SpeechT5SynthesisOutput:
         torch, soundfile, model_types = self._dependencies()
         with self._lock:
-            if self._cpu_threads:
-                torch.set_num_threads(self._cpu_threads)
+            configure_torch_threads(torch, self._cpu_threads)
             torch.manual_seed(42)
             model_started = time.perf_counter()
             warm = definition.id in self._models
@@ -117,6 +116,7 @@ class SpeechT5CpuRuntime:
 
     def transcribe(self, audio_path: Path) -> tuple[str, float]:
         torch, soundfile, model_types = self._dependencies()
+        configure_torch_threads(torch, self._cpu_threads)
         with self._lock:
             processor, model = self._load_asr(model_types)
             audio, sample_rate = soundfile.read(audio_path, dtype="float32", always_2d=False)
@@ -141,9 +141,12 @@ class SpeechT5CpuRuntime:
         processor = model_types["SpeechT5Processor"].from_pretrained(
             definition.source, local_files_only=True
         )
-        model = model_types["SpeechT5ForTextToSpeech"].from_pretrained(
-            definition.source, local_files_only=True
-        ).to("cpu").eval()
+        model = (
+            model_types["SpeechT5ForTextToSpeech"]
+            .from_pretrained(definition.source, local_files_only=True)
+            .to("cpu")
+            .eval()
+        )
         self._models[definition.id] = (processor, model)
         while len(self._models) > self._maximum_cached_models:
             self._models.popitem(last=False)
@@ -154,9 +157,12 @@ class SpeechT5CpuRuntime:
         if self._vocoder is None:
             if not self._vocoder_root.is_dir():
                 raise ExperimentEvidenceError("The pinned SpeechT5 vocoder is unavailable.")
-            self._vocoder = model_types["SpeechT5HifiGan"].from_pretrained(
-                self._vocoder_root, local_files_only=True
-            ).to("cpu").eval()
+            self._vocoder = (
+                model_types["SpeechT5HifiGan"]
+                .from_pretrained(self._vocoder_root, local_files_only=True)
+                .to("cpu")
+                .eval()
+            )
         return self._vocoder
 
     def _load_asr(self, model_types: dict[str, Any]) -> tuple[Any, Any]:
@@ -166,9 +172,12 @@ class SpeechT5CpuRuntime:
             processor = model_types["WhisperProcessor"].from_pretrained(
                 self._asr_root, local_files_only=True
             )
-            model = model_types["WhisperForConditionalGeneration"].from_pretrained(
-                self._asr_root, local_files_only=True
-            ).to("cpu").eval()
+            model = (
+                model_types["WhisperForConditionalGeneration"]
+                .from_pretrained(self._asr_root, local_files_only=True)
+                .to("cpu")
+                .eval()
+            )
             self._asr = (processor, model)
         return self._asr
 
@@ -196,10 +205,14 @@ class SpeechT5CpuRuntime:
             raise ExperimentEvidenceError(
                 "SpeechT5 CPU dependencies are not installed. Install backend[experiment]."
             ) from error
-        return torch, soundfile, {
-            "SpeechT5ForTextToSpeech": SpeechT5ForTextToSpeech,
-            "SpeechT5HifiGan": SpeechT5HifiGan,
-            "SpeechT5Processor": SpeechT5Processor,
-            "WhisperForConditionalGeneration": WhisperForConditionalGeneration,
-            "WhisperProcessor": WhisperProcessor,
-        }
+        return (
+            torch,
+            soundfile,
+            {
+                "SpeechT5ForTextToSpeech": SpeechT5ForTextToSpeech,
+                "SpeechT5HifiGan": SpeechT5HifiGan,
+                "SpeechT5Processor": SpeechT5Processor,
+                "WhisperForConditionalGeneration": WhisperForConditionalGeneration,
+                "WhisperProcessor": WhisperProcessor,
+            },
+        )

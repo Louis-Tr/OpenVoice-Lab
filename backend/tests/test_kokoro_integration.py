@@ -37,7 +37,7 @@ def test_real_kokoro_audio_is_playable_reproducible_and_warm() -> None:
     artifact_dir = resolve_backend_path(settings.model_artifact_dir)
     required = (
         artifact_dir / settings.kokoro_model_filename,
-        artifact_dir / settings.kokoro_quantized_model_filename,
+        artifact_dir / settings.kokoro_fp16_model_filename,
         artifact_dir / settings.kokoro_voices_filename,
     )
     if not all(path.is_file() for path in required):
@@ -50,42 +50,42 @@ def test_real_kokoro_audio_is_playable_reproducible_and_warm() -> None:
     }
 
     fp32_payload = {**base_payload, "modelId": "kokoro-fp32"}
-    quantized_payload = {**base_payload, "modelId": "kokoro-q8"}
+    fp16_payload = {**base_payload, "modelId": "kokoro-fp16"}
     first = request(app, "POST", "/api/synthesis", fp32_payload)
     second = request(app, "POST", "/api/synthesis", fp32_payload)
-    quantized_first = request(app, "POST", "/api/synthesis", quantized_payload)
-    quantized_second = request(app, "POST", "/api/synthesis", quantized_payload)
+    fp16_first = request(app, "POST", "/api/synthesis", fp16_payload)
+    fp16_second = request(app, "POST", "/api/synthesis", fp16_payload)
 
     assert (
         first.status_code
         == second.status_code
-        == quantized_first.status_code
-        == quantized_second.status_code
+        == fp16_first.status_code
+        == fp16_second.status_code
         == 200
     )
     first_payload = first.json()
     second_payload = second.json()
-    quantized_first_payload = quantized_first.json()
-    quantized_second_payload = quantized_second.json()
+    fp16_first_payload = fp16_first.json()
+    fp16_second_payload = fp16_second.json()
     first_url = first_payload["audioUrl"]
     assert first_url == second_payload["audioUrl"]
-    assert quantized_first_payload["audioUrl"] == quantized_second_payload["audioUrl"]
-    assert first_url != quantized_first_payload["audioUrl"]
+    assert fp16_first_payload["audioUrl"] == fp16_second_payload["audioUrl"]
+    assert first_url != fp16_first_payload["audioUrl"]
     assert app.state.model_loader.load_count("kokoro-fp32") == 1
-    assert app.state.model_loader.load_count("kokoro-q8") == 1
+    assert app.state.model_loader.load_count("kokoro-fp16") == 1
     assert first_payload["metrics"]["warm"] is False
     assert second_payload["metrics"]["warm"] is True
-    assert quantized_first_payload["metrics"]["warm"] is False
-    assert quantized_second_payload["metrics"]["warm"] is True
+    assert fp16_first_payload["metrics"]["warm"] is False
+    assert fp16_second_payload["metrics"]["warm"] is True
     assert first_payload["metrics"]["modelVariant"] == "fp32"
-    assert quantized_first_payload["metrics"]["modelVariant"] == "quantized"
+    assert fp16_first_payload["metrics"]["modelVariant"] == "fp16"
     assert second_payload["metrics"]["modelLoadMs"] == 0.0
-    assert quantized_second_payload["metrics"]["modelLoadMs"] == 0.0
+    assert fp16_second_payload["metrics"]["modelLoadMs"] == 0.0
     for measured in (
         first_payload["metrics"],
         second_payload["metrics"],
-        quantized_first_payload["metrics"],
-        quantized_second_payload["metrics"],
+        fp16_first_payload["metrics"],
+        fp16_second_payload["metrics"],
     ):
         assert measured["inferenceMs"] > 0
         assert measured["audioDurationMs"] > 0
@@ -104,9 +104,9 @@ def test_real_kokoro_audio_is_playable_reproducible_and_warm() -> None:
         assert audio_file.getframerate() == 24_000
         assert audio_file.getnframes() > 0
 
-    quantized_audio = request(app, "GET", quantized_first_payload["audioUrl"])
-    assert quantized_audio.status_code == 200
-    with wave.open(BytesIO(quantized_audio.content), "rb") as audio_file:
+    fp16_audio = request(app, "GET", fp16_first_payload["audioUrl"])
+    assert fp16_audio.status_code == 200
+    with wave.open(BytesIO(fp16_audio.content), "rb") as audio_file:
         assert audio_file.getframerate() == 24_000
         assert audio_file.getnframes() > 0
 

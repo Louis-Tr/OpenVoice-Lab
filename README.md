@@ -126,6 +126,10 @@ not just inspect a backend experiment.
 **Responsibility:** separate model execution from model evaluation.
 
 `MetricsCollector` measures each inference call independently from the engine.
+Main synthesis uses a [shared-engine scheduler](docs/ENGINE_SCHEDULER.md) to
+protect active engines from eviction and reserve CPU/memory per request. Kokoro
+INT8 is currently unavailable for new synthesis pending a measured admission
+budget; historical benchmark results remain available.
 The API and Angular now expose model load time, inference latency, exact audio
 duration, RTF, process RSS memory, cold/warm state, and model variant.
 

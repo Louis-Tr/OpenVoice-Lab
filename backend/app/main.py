@@ -15,9 +15,12 @@ from app.experiments.cloud import create_cloud_experiment_service
 from app.experiments.common import ExperimentEvidenceError
 from app.experiments.service import ExperimentService, create_experiment_service
 from app.health.service import HealthService
+from app.inference.cpu import configure_torch_threads
 from app.metrics.collector import MetricsCollector
 from app.models.loader import ModelLoader
 from app.models.registry import ModelDefinition, ModelRegistry
+from app.models.resources import INT8_UNAVAILABLE, MEMORY_PROFILES, ResourceManager
+from app.models.scheduler import EngineScheduler
 from app.synthesis.service import SynthesisService
 from app.text_processing.service import TextProcessingService
 from app.web import AngularStaticFiles
@@ -45,6 +48,7 @@ def create_app(
     model_loader: ModelLoader | None = None,
     audio_service: AudioService | None = None,
     metrics_collector: MetricsCollector | None = None,
+    resource_manager: ResourceManager | None = None,
     benchmark_job_service: BenchmarkJobService | None = None,
     text_processing_service: TextProcessingService | None = None,
     experiment_service: ExperimentService | None = None,
@@ -76,9 +80,7 @@ def create_app(
                 precision="FP16",
                 variant="fp16",
                 model_version=resolved_settings.kokoro_model_version,
-                model_path=(
-                    model_artifact_root / resolved_settings.kokoro_fp16_model_filename
-                ),
+                model_path=(model_artifact_root / resolved_settings.kokoro_fp16_model_filename),
                 voices_path=model_artifact_root / resolved_settings.kokoro_voices_filename,
                 voices=(resolved_settings.default_voice_id,),
                 language=resolved_settings.kokoro_language,
@@ -101,6 +103,8 @@ def create_app(
                 speed=resolved_settings.kokoro_speed,
                 runtime="ONNX Runtime",
                 description="Weight-quantized Kokoro for the smallest local footprint.",
+                enabled=False,
+                unavailable_reason=INT8_UNAVAILABLE,
             ),
             ModelDefinition(
                 model_id=resolved_settings.speecht5_model_id,
@@ -122,9 +126,7 @@ def create_app(
                     model_artifact_root
                     / resolved_settings.speecht5_model_dirname
                     / "pytorch_model.bin",
-                    model_artifact_root
-                    / resolved_settings.speecht5_model_dirname
-                    / "config.json",
+                    model_artifact_root / resolved_settings.speecht5_model_dirname / "config.json",
                     model_artifact_root
                     / resolved_settings.speecht5_vocoder_dirname
                     / "pytorch_model.bin",
@@ -144,19 +146,33 @@ def create_app(
             ),
         )
     )
-    resolved_loader = model_loader or ModelLoader(
-        maximum_cached_engines=resolved_settings.product_maximum_cached_models,
+    resolved_resources = resource_manager or ResourceManager(
+        profiles={
+            resolved_settings.default_model_id: MEMORY_PROFILES["kokoro-fp32"],
+            resolved_settings.fp16_model_id: MEMORY_PROFILES["kokoro-fp16"],
+            resolved_settings.speecht5_model_id: MEMORY_PROFILES["speecht5-pretrained"],
+        },
+        cpu_units=resolved_settings.product_cpu_units,
         cpu_threads=resolved_settings.product_cpu_threads,
+        memory_limit_mb=resolved_settings.product_memory_limit_mb,
+        memory_headroom_mb=resolved_settings.product_memory_headroom_mb,
     )
+    resolved_loader = model_loader or ModelLoader(cpu_threads=resolved_resources.cpu_threads)
     resolved_audio = audio_service or AudioService(
         resolve_backend_path(resolved_settings.generated_audio_dir),
         resolved_settings.audio_url_prefix,
     )
     resolved_metrics = metrics_collector or MetricsCollector()
+    scheduler = EngineScheduler(
+        resolved_loader,
+        resolved_resources,
+        resolved_metrics,
+        maximum_cached_engines=resolved_settings.product_maximum_cached_models,
+    )
     resolved_text_processing = text_processing_service or TextProcessingService()
     synthesis_service = SynthesisService(
         resolved_registry,
-        resolved_loader,
+        scheduler,
         resolved_audio,
         resolved_metrics,
         resolved_text_processing,
@@ -243,6 +259,14 @@ def create_app(
             "SpeechT5, deterministic text processing, and measured experiments."
         ),
     )
+
+    def initialize_cpu_runtime() -> None:
+        if speecht5_dependencies_ready:
+            import torch
+
+            configure_torch_threads(torch, resolved_resources.cpu_threads)
+
+    application.router.add_event_handler("startup", initialize_cpu_runtime)
     application.include_router(synthesis.create_router(synthesis_service), prefix="/api")
     application.include_router(models.create_router(resolved_registry), prefix="/api")
     application.include_router(
@@ -282,6 +306,8 @@ def create_app(
         )
     register_error_handlers(application)
     application.state.model_loader = resolved_loader
+    application.state.engine_scheduler = scheduler
+    application.state.resource_manager = resolved_resources
     application.state.model_registry = resolved_registry
     application.state.metrics_collector = resolved_metrics
     application.state.synthesis_service = synthesis_service

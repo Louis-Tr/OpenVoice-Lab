@@ -5,8 +5,11 @@ from pathlib import Path
 import numpy as np
 
 from app.inference.base import AudioResult, TTSInferenceEngine
+from app.metrics.collector import MetricsCollector
 from app.models.loader import ModelLoader
 from app.models.registry import ModelDefinition
+from app.models.resources import ResourceManager
+from app.models.scheduler import EngineScheduler
 
 
 class CloseableEngine(TTSInferenceEngine):
@@ -57,17 +60,30 @@ def test_bounded_loader_evicts_lru_engine_and_reloads_on_demand(tmp_path: Path) 
 
     first = definition("first", tmp_path / "first.bin")
     second = definition("second", tmp_path / "second.bin")
-    loader = ModelLoader(engine_factory=create, maximum_cached_engines=1)
+    loader = ModelLoader(engine_factory=create)
+    scheduler = EngineScheduler(
+        loader,
+        ResourceManager(
+            profiles={"first": 1, "second": 1},
+            memory_reader=lambda: 100_000,
+            cpu_threads=1,
+        ),
+        MetricsCollector(),
+        maximum_cached_engines=1,
+    )
 
-    first_load = loader.load_with_state(first)
-    assert first_load.warm is False
-    assert loader.load_with_state(first).warm is True
+    with scheduler.acquire(first) as first_load:
+        assert first_load.warm is False
+    with scheduler.acquire(first) as cached:
+        assert cached.warm is True
 
-    loader.load(second)
+    with scheduler.acquire(second):
+        pass
     assert created[0].closed is True
     assert loader.load_count("first") == 1
     assert loader.load_count("second") == 1
 
-    loader.load(first)
+    with scheduler.acquire(first):
+        pass
     assert created[1].closed is True
     assert loader.load_count("first") == 2

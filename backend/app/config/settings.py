@@ -40,6 +40,9 @@ class Settings(BaseSettings):
     speecht5_voice_id: str = "cmu-slt"
     product_maximum_cached_models: int | None = None
     product_cpu_threads: int | None = None
+    product_cpu_units: int | None = None
+    product_memory_limit_mb: float | None = None
+    product_memory_headroom_mb: float = 256
     audio_url_prefix: str = "/audio"
     stage11_artifact_root: Path = Path("../artifacts/stage11/full-training")
     stage11_approach_run_root: Path = Path("../artifacts/stage11/agent-runs")

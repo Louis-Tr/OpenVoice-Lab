@@ -99,7 +99,9 @@ TextProcessingService
   ↓
 ModelRegistry
   ↓
-ModelLoader (cached; bounded LRU in constrained deployment)
+EngineScheduler (shared leases, CPU/memory admission, idle LRU eviction)
+  ↓ cold construction only
+ModelLoader
   ↓
 MetricsCollector wraps TTSInferenceEngine
   ↓
@@ -146,9 +148,9 @@ result with no speakable alphanumeric content is a domain error mapped to `422`.
 
 The model registry maps each stable API identifier to one complete backend
 configuration: precision, artifact path, voices, runtime metadata, and inference
-settings. `kokoro-fp32` and `kokoro-q8` use the same engine abstraction while
-maintaining separate cached runtime sessions. The loader owns runtime lifecycle
-and the load-once cache. Neither responsibility belongs to an API controller,
+settings. Kokoro FP32 and FP16 use the same engine abstraction while maintaining
+separate cached runtime sessions. The scheduler owns runtime lifecycle and the
+shared cache; the loader constructs engines. Neither responsibility belongs to an API controller,
 Angular component, or conditional branch in `SynthesisService`.
 
 ### Inference boundary
@@ -160,10 +162,16 @@ composition, without changing Angular or the public synthesis contract.
 
 ### Audio and metrics boundaries
 
+Main synthesis now uses shared-engine leases and atomic CPU/memory admission.
+`EngineScheduler` owns caching, active-user counts and idle-only eviction;
+`ModelLoader` only constructs engines. Concurrent calls share weights, with
+request-local inference state. See [Engine scheduler](ENGINE_SCHEDULER.md) for
+budgets, runtime thread controls, HTTP 503 behavior and process-level limitations.
+
 The audio service owns encoding, duration, storage, and externally addressable
 audio artifacts. The metrics collector owns inference latency, exact generated
 duration, process RSS memory, real-time factor, and cold/warm classification.
-The collector times the model-loader boundary; the loader reports reuse state.
+The collector times construction or warm lookup; the scheduler reports reuse state.
 Inference adapters return raw audio; they do not calculate or format metrics.
 
 ### Measurement definitions
@@ -175,7 +183,17 @@ Inference adapters return raw audio; they do not calculate or format metrics.
   excluded.
 - Audio duration is derived from `sample_count / sample_rate`.
 - RTF is `inference_time / audio_duration`.
-- Memory is process resident set size measured after inference.
+- The public `memoryMb` value remains the process resident set size measured
+  immediately after inference. In addition, one structured
+  `tts_process_rss_measurement` log event records process RSS immediately before
+  and after model loading, the signed load delta, immediately before and after
+  inference, and the peak observed by a 75 ms sampler that exists only while
+  inference is running. The sampler is stopped in a `finally` block on both
+  success and failure.
+- These are process-level RSS measurements. They estimate the incremental memory
+  impact of the model and runtime within this process; they are not exact bytes
+  owned exclusively by model weights. Allocator behavior, shared libraries,
+  cached models, and concurrent work can all affect the readings.
 - Warm means the engine existed before the current request; it does not mean a
   previous response was returned. Every synthesis request executes inference so
   every metric snapshot belongs to that request.
@@ -350,9 +368,10 @@ rejects comparison jobs explicitly; historical evidence remains visible without
 presenting unavailable weights as a running capability.
 
 This deployment intentionally uses one instance because generated audio and job
-coordination are local to the process. Its model loader uses a one-entry LRU:
-switching configurations evicts the previous engine before loading the next,
-which trades cold-load latency for a safe 4 GiB memory ceiling. Durable object
+coordination are local to the process. Its scheduler uses a one-entry LRU:
+switching configurations evicts the previous idle engine before loading the next;
+an active engine is protected and competing requests receive 503. Static memory
+admission budgets leave headroom but do not guarantee a 4 GiB ceiling. Durable object
 storage and an external job coordinator are prerequisites for horizontal scaling.
 
 ## Primary synthesis request flow
@@ -383,7 +402,7 @@ Registry Adapter     Collector
 ```
 
 In implementation terms, the registry resolves metadata, `ModelLoader` creates
-and caches engines under the configured lifecycle limit, `MetricsCollector`
+engines and `EngineScheduler` admits requests and caches/protects engines, `MetricsCollector`
 measures the abstract inference call, and the audio service writes a stable
 request-addressed WAV referenced by `SynthesisResult`.
 
@@ -416,7 +435,7 @@ request-addressed WAV referenced by `SynthesisResult`.
 ## Composition and future work
 
 `backend/app/main.py` declaratively composes routers, services, both registry
-definitions, the cached model loader, the Kokoro, Audio8, and SpeechT5 adapters, local audio
+definitions, the shared-engine scheduler and construction-only loader, inference adapters, local audio
 delivery, and the benchmark job service. The CLI and browser job coordinator
 both compose one fresh application per model worker and access the same
 `SynthesisService`. It also conditionally composes the artifact-backed Stage 12

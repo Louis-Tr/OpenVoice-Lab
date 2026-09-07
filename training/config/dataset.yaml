@@ -48,7 +48,7 @@ duplicates:
   reject_redundant_exact_audio: true
 
 asr:
-  mode: disabled
+  mode: full
   adapter: transformers_whisper
   model_id: openai/whisper-small.en
   model_revision: e8727524f962ee844a7319d92be39ac1bd25655a

@@ -4,6 +4,7 @@ from pathlib import Path
 from threading import Lock
 
 import numpy as np
+import onnxruntime as ort
 from kokoro_onnx import Kokoro
 
 from app.inference.base import (
@@ -13,19 +14,31 @@ from app.inference.base import (
     UnsupportedVoiceError,
 )
 
+# eSpeak uses process-global native state, including across model variants.
+_phonemization_lock = Lock()
+
 
 class KokoroONNXEngine(TTSInferenceEngine):
     """Run Kokoro locally through one long-lived ONNX Runtime session."""
 
-    def __init__(self, model_path: Path, voices_path: Path) -> None:
+    def __init__(self, model_path: Path, voices_path: Path, *, cpu_threads: int = 1) -> None:
         self._model_path = model_path
         self._voices_path = voices_path
         try:
-            self._runtime = Kokoro(str(model_path), str(voices_path))
+            options = ort.SessionOptions()
+            options.intra_op_num_threads = cpu_threads
+            options.inter_op_num_threads = 1
+            options.execution_mode = ort.ExecutionMode.ORT_SEQUENTIAL
+            options.add_session_config_entry("session.intra_op.allow_spinning", "0")
+            options.add_session_config_entry("session.inter_op.allow_spinning", "0")
+            session = ort.InferenceSession(
+                str(model_path), sess_options=options, providers=["CPUExecutionProvider"]
+            )
+            with _phonemization_lock:
+                self._runtime = Kokoro.from_session(session, str(voices_path))
             self._voices = tuple(self._runtime.get_voices())
         except Exception as error:
             raise InferenceError(f"Failed to initialize Kokoro ONNX: {error}") from error
-        self._inference_lock = Lock()
 
     @property
     def voices(self) -> tuple[str, ...]:
@@ -44,13 +57,15 @@ class KokoroONNXEngine(TTSInferenceEngine):
             raise UnsupportedVoiceError(f"Kokoro voice '{voice}' is not available.")
 
         try:
-            with self._inference_lock:
-                samples, sample_rate = self._runtime.create(
-                    text,
-                    voice=voice,
-                    speed=speed,
-                    lang=language,
-                )
+            with _phonemization_lock:
+                phonemes = self._runtime.tokenizer.phonemize(text, language)
+            samples, sample_rate = self._runtime.create(
+                phonemes,
+                voice=voice,
+                speed=speed,
+                lang=language,
+                is_phonemes=True,
+            )
         except Exception as error:
             raise InferenceError(f"Kokoro ONNX synthesis failed: {error}") from error
 
