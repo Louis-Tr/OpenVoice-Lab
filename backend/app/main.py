@@ -21,6 +21,8 @@ from app.models.loader import ModelLoader
 from app.models.registry import ModelDefinition, ModelRegistry
 from app.models.resources import INT8_UNAVAILABLE, MEMORY_PROFILES, ResourceManager
 from app.models.scheduler import EngineScheduler
+from app.synthesis.job_store import InMemoryJobStore
+from app.synthesis.jobs import SynthesisJobService
 from app.synthesis.service import SynthesisService
 from app.text_processing.service import TextProcessingService
 from app.web import AngularStaticFiles
@@ -117,7 +119,7 @@ def create_app(
                 voices=(resolved_settings.speecht5_voice_id,),
                 runtime="PyTorch CPU",
                 engine="speecht5-transformers",
-                max_input_characters=599,
+                max_input_characters=5_000,
                 max_input_tokens=600,
                 additional_artifacts=(
                     model_artifact_root / resolved_settings.speecht5_vocoder_dirname,
@@ -176,6 +178,13 @@ def create_app(
         resolved_audio,
         resolved_metrics,
         resolved_text_processing,
+    )
+    synthesis_jobs = SynthesisJobService(
+        synthesis_service,
+        InMemoryJobStore(
+            maximum_jobs=resolved_settings.synthesis_job_maximum_records,
+            retention_seconds=resolved_settings.synthesis_job_retention_seconds,
+        ),
     )
     resolved_benchmark_jobs = benchmark_job_service or BenchmarkJobService(
         resolved_registry,
@@ -267,7 +276,10 @@ def create_app(
             configure_torch_threads(torch, resolved_resources.cpu_threads)
 
     application.router.add_event_handler("startup", initialize_cpu_runtime)
-    application.include_router(synthesis.create_router(synthesis_service), prefix="/api")
+    application.include_router(
+        synthesis.create_router(synthesis_service, synthesis_jobs), prefix="/api"
+    )
+    application.router.add_event_handler("shutdown", synthesis_jobs.close)
     application.include_router(models.create_router(resolved_registry), prefix="/api")
     application.include_router(
         benchmarks.create_router(resolved_benchmark_jobs),
@@ -311,6 +323,7 @@ def create_app(
     application.state.model_registry = resolved_registry
     application.state.metrics_collector = resolved_metrics
     application.state.synthesis_service = synthesis_service
+    application.state.synthesis_job_service = synthesis_jobs
     application.state.text_processing_service = resolved_text_processing
     application.state.benchmark_job_service = resolved_benchmark_jobs
     application.state.experiment_service = resolved_experiments

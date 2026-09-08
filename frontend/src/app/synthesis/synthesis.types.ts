@@ -27,6 +27,26 @@ export interface SynthesisResult {
   readonly metrics: InferenceMetrics;
 }
 
+export type SynthesisJobStatus =
+  | 'pending' | 'loading' | 'generating' | 'saving'
+  | 'completed' | 'failed' | 'rejected';
+
+export interface SynthesisJob {
+  readonly jobId: string;
+  readonly status: SynthesisJobStatus;
+  readonly request: SynthesisRequest;
+  readonly createdAt: string;
+  readonly updatedAt: string;
+  readonly completedAt: string | null;
+  readonly expiresAt: string | null;
+  readonly result: SynthesisResult | null;
+  readonly error: { readonly statusCode: number; readonly detail: string } | null;
+}
+
+export function isTerminalJob(job: SynthesisJob): boolean {
+  return ['completed', 'failed', 'rejected'].includes(job.status);
+}
+
 export interface ModelSummary {
   readonly maxInputCharacters?: number;
   readonly maxInputTokens?: number | null;

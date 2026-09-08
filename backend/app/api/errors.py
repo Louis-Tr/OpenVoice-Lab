@@ -17,11 +17,29 @@ from app.metrics.collector import MetricsCollectionError
 from app.models.loader import ModelLoadError
 from app.models.registry import ModelNotFoundError
 from app.models.resources import ResourceUnavailableError
+from app.synthesis.job_store import (
+    IdempotencyConflictError,
+    SynthesisJobCapacityError,
+    SynthesisJobNotFoundError,
+)
+from app.synthesis.jobs import SynthesisJobSubmissionError
 from app.text_processing.service import TextProcessingError
 
 
 def register_error_handlers(application: FastAPI) -> None:
     """Keep transport error mapping out of feature controllers."""
+
+    @application.exception_handler(IdempotencyConflictError)
+    async def idempotency_conflict(
+        _request: Request, error: IdempotencyConflictError,
+    ) -> JSONResponse:
+        return JSONResponse(status_code=409, content={"detail": str(error)})
+
+    @application.exception_handler(SynthesisJobSubmissionError)
+    async def synthesis_job_rejected(
+        _request: Request, error: SynthesisJobSubmissionError,
+    ) -> JSONResponse:
+        return JSONResponse(status_code=error.status_code, content={"detail": str(error)})
 
     @application.exception_handler(ModelNotFoundError)
     async def model_not_found(
@@ -34,6 +52,7 @@ def register_error_handlers(application: FastAPI) -> None:
         )
 
     @application.exception_handler(BenchmarkJobNotFoundError)
+    @application.exception_handler(SynthesisJobNotFoundError)
     @application.exception_handler(ExperimentFixtureNotFoundError)
     @application.exception_handler(ExperimentJobNotFoundError)
     @application.exception_handler(ExperimentModelNotFoundError)
@@ -41,6 +60,7 @@ def register_error_handlers(application: FastAPI) -> None:
         _request: Request,
         error: (
             BenchmarkJobNotFoundError
+            | SynthesisJobNotFoundError
             | ExperimentFixtureNotFoundError
             | ExperimentJobNotFoundError
             | ExperimentModelNotFoundError
@@ -85,9 +105,10 @@ def register_error_handlers(application: FastAPI) -> None:
 
     @application.exception_handler(ModelLoadError)
     @application.exception_handler(ResourceUnavailableError)
+    @application.exception_handler(SynthesisJobCapacityError)
     async def model_unavailable(
         _request: Request,
-        error: ModelLoadError | ResourceUnavailableError,
+        error: ModelLoadError | ResourceUnavailableError | SynthesisJobCapacityError,
     ) -> JSONResponse:
         return JSONResponse(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,

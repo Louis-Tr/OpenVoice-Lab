@@ -4,7 +4,7 @@ import gc
 import json
 import logging
 from collections import OrderedDict
-from collections.abc import Iterator
+from collections.abc import Callable, Iterator
 from contextlib import contextmanager
 from dataclasses import dataclass
 from threading import Lock
@@ -128,10 +128,16 @@ class EngineScheduler:
             close()
 
     @contextmanager
-    def acquire(self, model: ModelDefinition) -> Iterator[EngineLease]:
+    def acquire(
+        self, model: ModelDefinition, *, on_admitted: Callable[[], None] | None = None
+    ) -> Iterator[EngineLease]:
         record = self._reserve(model)
         warm = record is not None
         try:
+            # Notify job submission only after atomic admission, before construction.
+            # The worker owns the reservation and its cleanup throughout.
+            if on_admitted is not None:
+                on_admitted()
             if record is None:
                 loaded = self._metrics.measure_model_load(lambda: self._loader.load(model))
                 record = EngineRecord(

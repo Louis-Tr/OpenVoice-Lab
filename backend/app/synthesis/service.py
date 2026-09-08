@@ -1,9 +1,10 @@
 """Application-level owner of the complete synthesis workflow."""
 
 import asyncio
+from collections.abc import Callable
 
 from app.audio.service import AudioService
-from app.inference.base import InputTooLongError
+from app.inference.base import InputTooLongError, UnsupportedVoiceError
 from app.metrics.collector import MetricsCollector
 from app.models.registry import ModelRegistry
 from app.models.scheduler import EngineScheduler
@@ -28,11 +29,25 @@ class SynthesisService:
         self._metrics_collector = metrics_collector
         self._text_processing_service = text_processing_service
 
-    async def synthesize(self, request: SynthesisRequest) -> SynthesisResult:
+    async def synthesize(
+        self,
+        request: SynthesisRequest,
+        *,
+        on_admitted: Callable[[], None] | None = None,
+        on_stage: Callable[[str], None] | None = None,
+    ) -> SynthesisResult:
         """Run blocking local inference away from the event-loop thread."""
-        return await asyncio.to_thread(self._synthesize_sync, request)
+        return await asyncio.to_thread(
+            self._synthesize_sync, request, on_admitted=on_admitted, on_stage=on_stage
+        )
 
-    def _synthesize_sync(self, request: SynthesisRequest) -> SynthesisResult:
+    def _synthesize_sync(
+        self,
+        request: SynthesisRequest,
+        *,
+        on_admitted: Callable[[], None] | None = None,
+        on_stage: Callable[[str], None] | None = None,
+    ) -> SynthesisResult:
         normalized_text = self._text_processing_service.process(
             request.text,
             sanitize_text=request.sanitize_text,
@@ -40,6 +55,8 @@ class SynthesisService:
         )
         try:
             model = self._model_registry.get(request.model_id)
+            if on_admitted is not None and request.voice_id not in model.voices:
+                raise UnsupportedVoiceError(f"Voice '{request.voice_id}' is not available.")
             if len(request.text) > model.max_input_characters:
                 raise InputTooLongError(
                     f"{model.display_name} accepts at most {model.max_input_characters} "
@@ -55,7 +72,9 @@ class SynthesisService:
                     normalized_text,
                 )
             )
-            with self._engine_scheduler.acquire(model) as lease:
+            with self._engine_scheduler.acquire(model, on_admitted=on_admitted) as lease:
+                if on_stage is not None:
+                    on_stage("generating")
                 measured = self._metrics_collector.measure(
                     lambda: lease.loaded.value.synthesize(
                         normalized_text,
@@ -68,6 +87,8 @@ class SynthesisService:
                     warm=lease.warm,
                     model_variant=model.variant,
                 )
+                if on_stage is not None:
+                    on_stage("saving")
                 artifact = self._audio_service.create_artifact(
                     measured.audio,
                     model=model.label,

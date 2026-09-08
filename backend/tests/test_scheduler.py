@@ -236,9 +236,9 @@ def test_http_task_cancellation_does_not_release_running_thread(tmp_path):
     original_acquire = scheduler.acquire
 
     @contextmanager
-    def observed_acquire(model):
+    def observed_acquire(model, **kwargs):
         try:
-            with original_acquire(model) as lease:
+            with original_acquire(model, **kwargs) as lease:
                 yield lease
         finally:
             released.set()

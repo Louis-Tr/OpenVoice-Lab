@@ -60,6 +60,34 @@ also receive Pydantic `422`; unsupported voices return `422`, unknown models
 return `404`, unavailable artifacts return `503`, and inference, measurement,
 or storage failures return `500`.
 
+Product SpeechT5 accepts up to 5,000 input characters, like Kokoro. The existing
+5,000-character post-cleanup limit also applies. Its `maxInputTokens: 600` is a
+**per-chunk** model limit, not a limit on the complete request. Longer processed
+text is split without truncation, preferring sentence boundaries, then whitespace,
+then character boundaries for overlong words. Every chunk is checked with the
+model tokenizer, including special tokens. Inputs already within the token budget
+remain one unchanged generation call.
+
+Chunks run sequentially on the same engine and speaker profile, with one
+request-local seed-42 generator and one scheduler lease through final audio storage.
+Each chunk is vocoded separately; the 16 kHz waveforms are concatenated in order
+without extra silence or crossfading. Chunk boundaries may change prosody. Timing
+and RSS instrumentation cover the complete engine call, including splitting and
+concatenation. A failed chunk fails the whole request; no partial audio is saved.
+Job status remains `generating` across chunks. This does not change the separate
+experiment-comparison runtime. The 1,600 MiB admission estimate is not a hard memory
+cap: maximum-length, warm and concurrent runs still require capacity measurement.
+
+A local 5,000-character smoke check on Windows with two CPU threads completed
+10 chunks (largest: 571 tokens), producing 270.624 seconds of finite, non-silent
+16 kHz mono audio in 294.807 seconds. Sampled process RSS peaked at 3,980.055 MiB.
+This was one cold run, not an 8 GB-constrained or concurrent capacity test, and
+does not establish worst-case memory or perceptual quality. In particular, it
+exceeds the existing 1,600 MiB SpeechT5 admission estimate. That fixed estimate
+has not been changed automatically and must be retuned before relying on admission
+to protect concurrent long-form workloads. Repeated short-input generation also
+matched within numerical tolerance after this run.
+
 Supported deterministic transformations include USD `$` amounts, numeric
 percentages, email addresses, HTTP(S) URLs, relative `./` paths, Markdown links
 and emphasis, inline code, common comparison operators, snake case, and camel
@@ -85,6 +113,124 @@ Measurement semantics:
 - `modelVariant`: the measured deployed precision variant.
 
 TODO: define artifact retention and cancellation.
+
+## Synthesis jobs and idempotency
+
+`POST /api/synthesis/jobs` accepts the same JSON body as `POST /api/synthesis`,
+plus a required `Idempotency-Key` header (1–128 ASCII letters, digits, `.`, `_`,
+`:`, or `-`). Use a fresh random UUID for each deliberate generation. The
+existing synchronous endpoint is unchanged and does not provide idempotency.
+
+```powershell
+$body = @{ text = 'Hello'; modelId = 'kokoro-fp32'; voiceId = 'af_heart' } | ConvertTo-Json
+$headers = @{ 'Idempotency-Key' = [guid]::NewGuid().ToString() }
+$job = Invoke-RestMethod -Method Post -Uri 'http://localhost:8000/api/synthesis/jobs' `
+    -Headers $headers -ContentType 'application/json' -Body $body
+Invoke-RestMethod "http://localhost:8000/api/synthesis/jobs/$($job.jobId)"
+# Repeating the POST with the SAME headers and body observes this same job.
+```
+
+The service atomically claims a key before starting work. All validated request
+fields participate in the fingerprint; JSON property order and omitted defaults
+do not change it. Identical keys with different input receive `409` with the
+existing `{"detail": ...}` error format. Different keys can generate identical
+input independently; this is job idempotency, not an audio result cache.
+Replays never acquire another engine lease, including during cold construction.
+
+Submission waits for scheduler resource admission, but not model construction,
+inference, or WAV creation. Insufficient CPU/memory, pending model loads, or a
+full job store return `503` before acceptance. Unknown models return `404` and
+invalid input/voices return `422`. Resource/input rejection after key claim is
+retained as `rejected`: the same key replays the same HTTP error. Use a new key
+for a deliberate retry after a definitive rejection. Header/Pydantic validation
+and store-capacity rejections occur before key claim and do not consume a key.
+
+Accepted, unfinished jobs return `202`; already terminal accepted jobs return
+`200`, including a fast first execution that finishes before the response.
+The POST supplies `Location` for status polling and `Retry-After: 2` while active.
+Both success endpoints use `Cache-Control: no-store`.
+
+`GET /api/synthesis/jobs/{jobId}` returns `200` with the current snapshot:
+
+```json
+{
+  "jobId": "f8b131a9069946758006810c4e6b3c46",
+  "status": "generating",
+  "request": {
+    "text": "Hello", "modelId": "kokoro-fp32", "voiceId": "af_heart",
+    "sanitizeText": true, "normalizeText": true
+  },
+  "createdAt": "2026-09-07T12:00:00Z",
+  "updatedAt": "2026-09-07T12:00:01Z",
+  "completedAt": null,
+  "expiresAt": null,
+  "result": null,
+  "error": null
+}
+```
+
+Stages are `pending` (validation/admission), `loading`, `generating`, `saving`,
+and terminal `completed`, `failed`, or `rejected`. A completed job embeds the
+unchanged `SynthesisResult`, including audio URL and original measurements.
+Failures embed `error: {"statusCode": 500, "detail": "..."}` (the code reflects
+the error category). GET remains `200` for an existing failed job; missing or
+expired jobs return `404`. Retrying a failed accepted job returns its recorded
+failure without running inference again. Stage timestamps are observations,
+not exact engine progress percentages; existing RSS/timing logs remain intact.
+
+To reconnect after a browser refresh, a client must save the key and exact
+request **before** POST, then save the returned job ID. On refresh, GET that job
+and resume polling. If the initial response was lost, repeat POST with the saved
+key/body. A transient polling/network error does not mean generation failed.
+The Angular synthesis page uses this flow. It saves the latest submitted text,
+model, voice, cleanup flags, and key in `localStorage` under
+`openvoice.synthesis.v1:<apiBaseUrl>`. After acknowledgement it also saves the job
+ID. Reloading or returning to the synthesis page restores these fields and polls
+the known job immediately, including restoring completed audio and measurements.
+Model-catalog loading does not replace the restored selection. Unsaved edits
+before Generate are not persisted; the saved record represents a submission.
+
+The page polls every two seconds while active, without overlapping slow GETs,
+and stops on a terminal status or navigation. A network error preserves the
+saved identity and offers **Check generation**; it never enables a second
+submission while the first outcome is unknown. A confirmed rejection or missing
+job restores editable input without automatically creating replacement work.
+An explicit Generate after completion/rejection uses a new key. Unacknowledged
+submissions older than 24 hours require an explicit new generation rather than
+being replayed automatically. Jobs with known IDs are always recovered via GET.
+
+Browser storage must be writable before a new POST is sent. Malformed saved
+records are ignored, and blocked storage is reported on the page. The latest
+submitted text remains on this browser until replaced or site storage is
+cleared; audio and metrics are fetched from the backend, not cached in browser
+storage. Backend restart/expiry still prevents restoring a removed job/result.
+
+The job service owns background tasks independently of the HTTP request.
+Disconnects do not cancel generation. Graceful shutdown drains jobs; the engine
+lease remains held through WAV creation and is released on worker completion or
+failure. There is no job cancellation API, automatic retry, or waiting resource
+queue. Admission, replay, and terminal transitions emit structured logs with job
+ID, model ID, and status, without request text or idempotency keys.
+
+The initial `JobStore` is in memory, scoped to this synthesis endpoint in one
+serving process. Keys are not authentication: this public application has no
+user accounts, and possession of a job ID grants access to its snapshot. Use
+unguessable keys/IDs; add authenticated owner scoping if accounts are introduced.
+There is intentionally no global "latest job" recovery endpoint.
+
+`OPENVOICE_SYNTHESIS_JOB_MAXIMUM_RECORDS` defaults to 1000;
+`OPENVOICE_SYNTHESIS_JOB_RETENTION_SECONDS` defaults to 86400. Terminal records
+and their keys expire together after this interval, with lazy cleanup on
+GET/POST. Active jobs never expire. A full store rejects new identities rather
+than discarding promised idempotency records. After expiry, a key may create a
+new generation. This does not delete audio files: existing shared artifact
+storage/retention remains unchanged.
+
+Backend restart loses identities and status. Run one serving process/instance;
+multiple workers would have independent stores and scheduler budgets. Cloud Run
+instance replacement also loses local audio. Durable or multi-instance recovery
+requires shared job coordination and audio storage; this implementation does
+not claim exactly-once execution across process crashes.
 
 ## `GET /api/models`
 

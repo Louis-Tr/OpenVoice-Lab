@@ -5,6 +5,7 @@ import { Observable } from 'rxjs';
 import { API_BASE_URL } from '../core/api-base-url.token';
 import {
   ModelSummary,
+  SynthesisJob,
   SynthesisRequest,
   SynthesisResult,
 } from '../synthesis/synthesis.types';
@@ -20,8 +21,19 @@ export class SynthesisApiService {
     return this.http.post<SynthesisResult>(`${this.apiBaseUrl}/synthesis`, request);
   }
 
+  startJob(request: SynthesisRequest, idempotencyKey: string): Observable<SynthesisJob> {
+    return this.http.post<SynthesisJob>(`${this.apiBaseUrl}/synthesis/jobs`, request, {
+      headers: { 'Idempotency-Key': idempotencyKey },
+    });
+  }
+
+  getJob(jobId: string): Observable<SynthesisJob> {
+    return this.http.get<SynthesisJob>(
+      `${this.apiBaseUrl}/synthesis/jobs/${encodeURIComponent(jobId)}`,
+    );
+  }
+
   listModels(): Observable<readonly ModelSummary[]> {
     return this.http.get<readonly ModelSummary[]>(`${this.apiBaseUrl}/models`);
   }
 }
-

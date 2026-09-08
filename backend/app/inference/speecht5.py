@@ -15,6 +15,7 @@ from app.inference.base import (
 )
 from app.inference.cpu import configure_torch_threads
 from app.inference.speecht5_random import _generator, install_request_dropout
+from app.inference.text_chunks import split_text
 
 
 class SpeechT5InferenceEngine(TTSInferenceEngine):
@@ -80,31 +81,42 @@ class SpeechT5InferenceEngine(TTSInferenceEngine):
             raise InferenceError("SpeechT5 does not expose speed control in this profile.")
         try:
             with self._processor_lock:
-                inputs = self._processor(text=text, return_tensors="pt", verbose=False)
-                token_count = inputs["input_ids"].shape[-1]
                 token_limit = min(
                     self._processor.tokenizer.model_max_length,
                     self._model.config.max_text_positions,
                 )
-                if token_count > token_limit:
-                    raise InputTooLongError(
-                        f"SpeechT5 accepts at most {token_limit} tokens after text cleanup; "
-                        f"received {token_count}. Shorten the text, disable text cleanup, "
-                        "or choose another model."
-                    )
+                chunks = split_text(
+                    text,
+                    lambda chunk: len(self._processor.tokenizer(chunk, verbose=False)["input_ids"]),
+                    token_limit,
+                )
+                prepared = [
+                    self._processor(text=chunk, return_tensors="pt", verbose=False)
+                    for chunk in chunks
+                ]
+                # Keep the model boundary checked even if processor behavior changes.
+                if any(inputs["input_ids"].shape[-1] > token_limit for inputs in prepared):
+                    raise InputTooLongError(f"SpeechT5 chunk exceeds {token_limit} tokens.")
             generator = self._torch.Generator(device="cpu").manual_seed(42)
             token = _generator.set(generator)
             try:
+                parts = []
                 with self._torch.inference_mode():
-                    waveform: Any = self._model.generate_speech(
-                        inputs["input_ids"],
-                        self._speaker,
-                        vocoder=self._vocoder,
-                        attention_mask=inputs.get("attention_mask"),
-                    )
+                    for inputs in prepared:
+                        waveform: Any = self._model.generate_speech(
+                            inputs["input_ids"],
+                            self._speaker,
+                            vocoder=self._vocoder,
+                            attention_mask=inputs.get("attention_mask"),
+                        )
+                        samples = waveform.detach().float().cpu().numpy().astype(np.float32)
+                        del waveform
+                        if samples.ndim != 1 or samples.size == 0 or not np.isfinite(samples).all():
+                            raise InferenceError("SpeechT5 returned an invalid audio buffer.")
+                        parts.append(samples)
             finally:
                 _generator.reset(token)
-            samples = waveform.detach().float().cpu().numpy().astype(np.float32)
+            samples = parts[0] if len(parts) == 1 else np.concatenate(parts)
         except InputTooLongError:
             raise
         except Exception as error:

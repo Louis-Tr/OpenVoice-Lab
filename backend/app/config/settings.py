@@ -3,7 +3,7 @@
 from pathlib import Path
 from typing import Literal
 
-from pydantic import SecretStr
+from pydantic import Field, SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -43,6 +43,8 @@ class Settings(BaseSettings):
     product_cpu_units: int | None = None
     product_memory_limit_mb: float | None = None
     product_memory_headroom_mb: float = 256
+    synthesis_job_maximum_records: int = Field(default=1000, ge=1)
+    synthesis_job_retention_seconds: int = Field(default=86400, ge=1)
     audio_url_prefix: str = "/audio"
     stage11_artifact_root: Path = Path("../artifacts/stage11/full-training")
     stage11_approach_run_root: Path = Path("../artifacts/stage11/agent-runs")

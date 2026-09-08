@@ -158,6 +158,26 @@ def test_health_endpoint(harness: ApiHarness) -> None:
     assert response.json() == {"status": "healthy"}
 
 
+def test_composed_app_exposes_idempotent_jobs_and_drains_on_shutdown(harness: ApiHarness) -> None:
+    async def scenario():
+        transport = httpx.ASGITransport(app=harness.app)
+        jobs = harness.app.state.synthesis_job_service
+        async with httpx.AsyncClient(transport=transport, base_url="http://testserver") as client:
+            payload = {"text": "Hello", "modelId": "kokoro-fp32", "voiceId": "af_heart"}
+            headers = {"Idempotency-Key": "composition-test"}
+            response = await client.post("/api/synthesis/jobs", json=payload, headers=headers)
+            assert response.status_code in (200, 202)
+            await asyncio.gather(*tuple(jobs._tasks))
+            replay = await client.post("/api/synthesis/jobs", json=payload, headers=headers)
+            restored = await client.get(response.headers["location"])
+            assert restored.json() == replay.json()
+            assert restored.json()["status"] == "completed"
+            assert harness.engines["kokoro-fp32"].call_count == 1
+            assert jobs.close in harness.app.router.on_shutdown
+            await jobs.close()
+    asyncio.run(scenario())
+
+
 def test_model_listing(harness: ApiHarness) -> None:
     response = request(harness.app, "GET", "/api/models")
 
@@ -228,7 +248,7 @@ def test_default_catalog_exposes_all_model_options_without_claiming_missing_arti
     speecht5 = next(model for model in models if model["id"] == "speecht5-pretrained")
     assert speecht5["runtime"] == "PyTorch CPU"
     assert speecht5["voices"] == ["cmu-slt"]
-    assert speecht5["maxInputCharacters"] == 599
+    assert speecht5["maxInputCharacters"] == 5000
     assert speecht5["maxInputTokens"] == 600
     assert models[0]["maxInputCharacters"] == 5000
     removed = request(app, "POST", "/api/synthesis", {
@@ -238,12 +258,12 @@ def test_default_catalog_exposes_all_model_options_without_claiming_missing_arti
 
     # Reject overlength requests before trying to load even missing model weights.
     rejected = request(app, "POST", "/api/synthesis", {
-        "text": "a" * 600,
+        "text": "a" * 5001,
         "modelId": "speecht5-pretrained",
         "voiceId": "cmu-slt",
     })
     assert rejected.status_code == 422
-    assert "599 characters; received 600" in rejected.json()["detail"]
+    assert "5000" in str(rejected.json()["detail"])
 
 
 def test_single_container_serves_angular_routes_without_swallowing_api_404s(
